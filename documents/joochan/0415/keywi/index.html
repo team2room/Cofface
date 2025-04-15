@@ -1,0 +1,100 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeyWi Membership</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-md">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16 items-center">
+          <a href="/index.html" class="text-2xl font-bold text-lime-600">KeyWi</a>
+          <!-- Language Selector -->
+          <div class="relative">
+            <select id="langSelect"
+                    class="border rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-lime-500"
+                    onchange="changeLanguage(this.value)">
+              <option value="ko">KO</option>
+              <option value="en">EN</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="bg-gray-50 border-t border-gray-200 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-sm text-gray-500 text-center">
+          <div class="flex justify-center space-x-6">
+            <a href="/index.html" class="hover:underline text-lime-600" data-i18n="index_title"> 회원 탈퇴 방침 </a>
+            <a href="/privacy.html" class="hover:underline text-lime-600" data-i18n="privacy_title"> 개인정보처리방침 </a>
+            <a href="/child-safety.html" class="hover:underline text-lime-600" data-i18n="page_title"> 아동 성적 학대 및 착취(CSAE) 정책</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <!-- Main Content -->
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <!-- Title -->
+      <h2 class="text-3xl font-bold text-gray-800 mb-8"
+          data-i18n="withdrawal_title">회원 탈퇴 안내</h2>
+      <!-- Process Steps -->
+      <ol class="list-decimal space-y-6 pl-6 marker:text-lime-500 marker:font-bold">
+        <li class="text-lg text-gray-700" data-i18n="step1">어플에 로그인이 되어있지 않으면 로그인합니다.</li>
+        <li class="text-lg text-gray-700" data-i18n="step2">마이페이지에 들어갑니다.</li>
+        <li class="text-lg text-gray-700" data-i18n="step3">회원탈퇴 버튼을 누릅니다.</li>
+        <li class="text-lg text-gray-700" data-i18n="step4">확인을 누르면 탈퇴가 완료됩니다.</li>
+      </ol>
+    </div>
+    <script>
+        // 언어 자동 감지 및 설정
+        const userLang = navigator.language.startsWith('en') ? 'en' : 'ko';
+        document.getElementById('langSelect').value = userLang;
+        changeLanguage(userLang);
+
+        // 언어 변경 함수
+        function changeLanguage(lang) {
+            const i18nElements = document.querySelectorAll('[data-i18n]');
+            const translations = {
+                'index_title': { 
+                    'ko': "회원 탈퇴 방침",
+                    'en': "Membership Withdrawal" 
+                },
+                'privacy_title': {
+                    'ko': "개인정보처리방침",
+                    'en': "Privacy Policy"
+                },
+                'page_title': { 
+                    'ko': "아동 성적 학대 및 착취(CSAE) 정책", 
+                    'en': "Child Sexual Abuse and Exploitation (CSAE) Policy"
+                },
+                'withdrawal_title': {
+                    'ko': '회원 탈퇴 안내',
+                    'en': 'Account Deletion Guide'
+                },
+                'step1': {
+                    'ko': '어플에 로그인이 되어있지 않으면 로그인합니다.',
+                    'en': 'Log in if you are not already signed in to the app.'
+                },
+                'step2': {
+                    'ko': '마이페이지에 들어갑니다.',
+                    'en': 'Navigate to the My Page section.'
+                },
+                'step3': {
+                    'ko': '회원탈퇴 버튼을 누릅니다.',
+                    'en': 'Click the \'Delete Account\' button.'
+                },
+                'step4': {
+                    'ko': '확인을 누르면 탈퇴가 완료됩니다.',
+                    'en': 'Confirm the action to complete account deletion.'
+                }
+            };
+
+            i18nElements.forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.textContent = translations[key][lang];
+            });
+        }
+    </script>
+  </body>
+</html>
