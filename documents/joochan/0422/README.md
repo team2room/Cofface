@@ -82,3 +82,19 @@
   - AI가 고객 행동·이력 데이터를 분석해 실시간으로 맞춤형 프로모션, 할인, 이벤트 안내
 - AI 챗봇/음성 인터페이스
   - 음성 안내, 대화형 주문 지원
+
+
+
+
+
+### 2. 3D Depth 카메라 찾기
+
+Devicemart 기준
+
+| 모델명                                                       | SDK 지원 언어                                               | 해상도 (Depth, RGB)                       | 화각 (°) H x V        | 깊이 (m) | 가격 (원) | 비고     |
+| ------------------------------------------------------------ | ----------------------------------------------------------- | ----------------------------------------- | --------------------- | -------- | --------- | -------- |
+| [Intel RealSense D435i ](https://www.devicemart.co.kr/goods/view?no=13017225) | C/C++, Python, ...<br />(pip install pyrealsense2)          | 1280 x 720 30fps,<br />1920 x 1080 30fps  | 86 x 57,<br />64 x 41 | 0.4 ~ 3  | 588,500   | 스테레오 |
+| [Orbbec Astra +](https://www.devicemart.co.kr/goods/view?no=14806826) | C/C++, [비공식 Python], ...<br />(OpenNI2 + numpy + OpenCV) | 1280 x 1024 30fps,<br />1920 x 1080 30fps | 57 x 45,<br />70 x 42 | 0.6 ~ 8  | 176,000   | 모노     |
+| [Orbbec Astra](https://www.devicemart.co.kr/goods/view?no=14564509) | ''''                                                        | 640 x 480 30fps                           | 60 x 50               | 0.6 ~ 8  | 117,700   | 모노     |
+| [Orbbec Gemini 2L](https://www.devicemart.co.kr/goods/view?no=15227657) | ''''                                                        | 1280 x 720 60fps                          | 91 x 66,<br />94 x 68 | 0.25~7   | 584,100   | 스테레오 |
+
