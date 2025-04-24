@@ -31,25 +31,25 @@
 
 하여 웹앱에서 얼굴 정보 등록을 해야하기 때문에, 2D 카메라를 사용할 수 밖에 없게 되어 해당 이미지로 3D 벡터 추출 필요.
 
-| 모델명               | 설명                                     | 라이브러리                                                   |
-| -------------------- | ---------------------------------------- | ------------------------------------------------------------ |
-| **DECA** (2021)      | 표정 + 조명 + 포즈 고려한 3D 메쉬 재구성 | [DECA GitHub](https://github.com/YadiraF/DECA)               |
-| **3DDFA-V2**         | 모바일 환경에서도 가능한 빠른 3D 정렬    | [3DDFA GitHub](https://github.com/cleardusk/3DDFA_V2)        |
-| **FaceVerse** (2022) | 고해상도 정밀 모델, 최신                 | [FaceVerse GitHub](https://github.com/LizhenWangT/FaceVerse) |
+| 모델명                 | 설명                                     | 라이브러리                                                   |
+| ---------------------- | ---------------------------------------- | ------------------------------------------------------------ |
+| **DECA** (2021)        | 표정 + 조명 + 포즈 고려한 3D 메쉬 재구성 | [DECA GitHub](https://github.com/YadiraF/DECA)               |
+| **3DDFA-V2**           | 모바일 환경에서도 가능한 빠른 3D 정렬    | [3DDFA GitHub](https://github.com/cleardusk/3DDFA_V2)        |
+| **FaceVerse_V4**(2024) | 고해상도 정밀 모델, 최신                 | [FaceVerse GitHub](https://github.com/LizhenWangT/FaceVerse_v4) |
 
 
 
 #### 3D Depth 지원
 
-| 목적               | 모델명                                                       | 특징                                |
-| ------------------ | ------------------------------------------------------------ | ----------------------------------- |
-| **얼굴 검출**      | [**RetinaFace (InsightFace)**](https://github.com/deepinsight/insightface) | Accuracy ↑, landmark 포함           |
-|                    | [**YOLOv8-face**](https://github.com/derronqi/yolov8-face)   | 경량, 최신 YOLO 구조                |
-| **얼굴 임베딩**    | **ArcFace (InsightFace)**                                    | SOTA 정확도, 등록/인식용            |
-|                    | [**Face-Transformer**](https://github.com/zhongyy/Face-Transformer) | ViT 기반, 정확도 높음, 하지만 느림  |
-| **나이/성별 추정** | [**SSR-Net (Tiny SSR)**](https://github.com/knowit/SSR.Net)  | 빠름 + 정확도 양호, 리엑트에서 사용 |
-|                    | [**FairFace (ResNet34 기반)**](https://github.com/dchen236/FairFace) | 인종+성별+나이 모두 학습됨          |
-|                    | **InsightFace 내장 Age/Gender**                              | ArcFace와 함께 쓰기 쉬움            |
+| 목적               | 모델명                                                       | 특징                               |
+| ------------------ | ------------------------------------------------------------ | ---------------------------------- |
+| **얼굴 검출**      | [**RetinaFace (InsightFace)**](https://github.com/deepinsight/insightface) | Accuracy ↑, landmark 포함          |
+|                    | [**YOLOv8-face**](https://github.com/derronqi/yolov8-face)   | 경량, 최신 YOLO 구조               |
+| **얼굴 임베딩**    | **ArcFace (InsightFace)**                                    | SOTA 정확도, 등록/인식용           |
+|                    | [**Face-Transformer**](https://github.com/zhongyy/Face-Transformer) | ViT 기반, 정확도 높음, 하지만 느림 |
+| **나이/성별 추정** | [**SSR-Net (Tiny SSR)**](https://github.com/shamangary/SSR-Net) | 빠름 + 정확도 양호                 |
+|                    | [**FairFace (ResNet34 기반)**](https://github.com/dchen236/FairFace) | 인종+성별+나이 모두 학습됨         |
+|                    | **InsightFace 내장 Age/Gender**                              | ArcFace와 함께 쓰기 쉬움           |
 
 
 
