@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/verify/**").permitAll()
+                        .requestMatchers("/api/auth/admin/**").permitAll()
                         .requestMatchers("/api/auth/kiosk/phone-login").permitAll()
                         .requestMatchers("/api/auth/kiosk/face-login").permitAll()
                         .requestMatchers("/api/auth/refresh").permitAll()

@@ -40,7 +40,8 @@ public class JwtTokenProvider {
     public enum TokenType{
         APP(30 * 24 * 60 * 60 * 1000L),          // 30일
         KIOSK(60 * 1000L),                       // 60초
-        REFRESH(60 * 24 * 60 * 60 * 1000L);      // 60일
+        REFRESH(60 * 24 * 60 * 60 * 1000L),      // 60일
+        ADMIN(24 * 60 * 60 * 1000L);            // 1일
 
         private final long validityInMilliseconds;
 

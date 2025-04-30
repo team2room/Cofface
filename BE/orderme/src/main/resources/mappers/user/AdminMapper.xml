@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.orderme.user.mapper.AdminMapper">
+    <resultMap id="AdminResultMap" type="com.ssafy.orderme.user.model.Admin">
+        <id property="id" column="admin_id"/>
+        <result property="password" column="password"/>
+        <result property="storeId" column="store_id"/>
+    </resultMap>
+
+    <!-- 관리자 ID로 조회 -->
+    <select id="selectById" parameterType="String" resultMap="AdminResultMap">
+        SELECT
+            admin_id,
+            password,
+            store_id
+        FROM
+            admins
+        WHERE
+            admin_id = #{id}
+    </select>
+
+    <!-- ID 존재 여부 확인 -->
+    <select id="existsById" parameterType="String" resultType="boolean">
+        SELECT
+            EXISTS (
+                SELECT 1
+                FROM admins
+                WHERE admin_id = #{id}
+            )
+    </select>
+
+    <!-- 관리자 등록 -->
+    <insert id="insert" parameterType="com.ssafy.orderme.user.model.Admin">
+        INSERT INTO admins (
+            admin_id,
+            password,
+            store_id
+        ) VALUES (
+                     #{id},
+                     #{password},
+                     #{storeId}
+                 )
+    </insert>
+
+
+</mapper>
