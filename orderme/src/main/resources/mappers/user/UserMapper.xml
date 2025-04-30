@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.orderme.user.mapper.UserMapper">
+    <resultMap id="UserResultMap" type="com.ssafy.orderme.user.model.User">
+        <id property="id" column="user_id"/>
+        <result property="internalId" column="internal_id"/>
+        <result property="name" column="name"/>
+        <result property="phoneNumber" column="phone_number"/>
+        <result property="birthDate" column="birth_date"/>
+        <result property="password" column="password"/>
+        <result property="gender" column="gender"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="isDeleted" column="is_deleted"/>
+    </resultMap>
+
+    <select id="selectById" parameterType="string" resultMap="UserResultMap">
+        SELECT * FROM users WHERE user_id = #{id}
+    </select>
+
+    <select id="selectByInternalId" parameterType="long" resultMap="UserResultMap">
+        SELECT * FROM users WHERE internal_id = #{internalId}
+    </select>
+
+    <select id="selectByPhoneNumber" parameterType="string" resultMap="UserResultMap">
+        SELECT * FROM users WHERE phone_number = #{phoneNumber}
+    </select>
+
+    <select id="existsByPhoneNumber" parameterType="string" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM users WHERE phone_number = #{phoneNumber})
+    </select>
+
+    <insert id="insert" parameterType="com.ssafy.orderme.user.model.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (user_id, name, phone_number, birth_date, password, gender)
+        VALUES (#{id}, #{name}, #{phoneNumber}, #{birthDate}, #{password}, #{gender})
+    </insert>
+
+    <update id="update" parameterType="com.ssafy.orderme.user.model.User">
+        UPDATE users
+        SET name = #{name},
+            phone_number = #{phoneNumber},
+            birth_date = #{birthDate},
+            password = #{password},
+            gender = #{gender}
+        WHERE user_id = #{id}
+    </update>
+
+    <delete id="delete" parameterType="string">
+        DELETE FROM users WHERE user_id = #{id}
+    </delete>
+</mapper>
