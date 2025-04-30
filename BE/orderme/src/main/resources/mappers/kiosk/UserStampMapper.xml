@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.orderme.kiosk.mapper.UserStampMapper">
+    <!-- 스탬프 정보 조회 결과를 UserStamp 객체에 매핑 -->
+    <resultMap id="UserStampResultMap" type="com.ssafy.orderme.kiosk.model.UserStamp">
+        <id property="stampId" column="stamp_id" />
+        <id property="userId" column="user_id" />
+        <id property="storeId" column="store_id" />
+        <result property="quantity" column="quantity" />
+    </resultMap>
+
+    <!-- 스탬프 정책 조회 결과를 StampPolicy 객체에 매핑 -->
+    <resultMap id="StampPolicyResultMap" type="com.ssafy.orderme.kiosk.model.StampPolicy">
+        <id property="policyId" column="policy_id" />
+        <result property="storeId" column="store_id" />
+        <result property="stampsRequired" column="stamps_required" />
+        <result property="discountAmount" column="discount_amount" />
+        <result property="isActive" column="is_active" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <!-- 사용자의 스탬프 정보 조회 -->
+    <select id="findByUserIdAndStoreId" resultMap="UserStampResultMap">
+        SELECT
+            stamp_id, user_id, store_id, quantity
+        FROM UserStamp
+        WHERE user_id = #{userId}
+          AND store_id = #{storeId}
+    </select>
+
+    <!-- 스탬프 추가 -->
+    <insert id="insertUserStamp" parameterType="com.ssafy.orderme.kiosk.model.UserStamp">
+        INSERT INTO UserStamp (
+            user_id, store_id, quantity
+        ) VALUES (
+                     #{userId}, #{storeId}, #{quantity}
+                 )
+    </insert>
+
+    <!-- 스탬프 수량 업데이트 -->
+    <update id="updateStampQuantity">
+        UPDATE UserStamp
+        SET quantity = #{quantity}
+        WHERE user_id = #{userId}
+          AND store_id = #{storeId}
+    </update>
+
+    <!-- 매장의 스탬프 정책 조회 -->
+    <select id="findStampPolicyByStoreId" parameterType="Long" resultMap="StampPolicyResultMap">
+        SELECT
+            policy_id, store_id, stamps_required, discount_amount,
+            is_active, created_at, updated_at
+        FROM StampPolicy
+        WHERE store_id = #{storeId}
+          AND is_active = TRUE
+    </select>
+</mapper>

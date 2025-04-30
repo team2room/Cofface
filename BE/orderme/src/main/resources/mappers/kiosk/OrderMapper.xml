@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.orderme.kiosk.mapper.OrderMapper">
+    <!-- 주문 조회 결과를 Order 객체에 매핑 -->
+    <resultMap id="OrderResultMap" type="com.ssafy.orderme.kiosk.model.Order">
+        <id property="orderId" column="order_id" />
+        <result property="storeId" column="store_id" />
+        <result property="internalId" column="internal_id" />
+        <result property="orderDate" column="order_date" />
+        <result property="totalAmount" column="total_amount" />
+        <result property="paymentMethod" column="payment_method" />
+        <result property="paymentStatus" column="payment_status" />
+        <result property="isStampUsed" column="is_stamp_used" />
+        <result property="orderStatus" column="order_status" />
+        <result property="isTakeout" column="is_takeout" />
+        <result property="isDeleted" column="is_deleted" />
+        <result property="deletedAt" column="deleted_at" />
+    </resultMap>
+
+    <!-- 주문 메뉴 조회 결과를 OrderMenu 객체에 매핑 -->
+    <resultMap id="OrderMenuResultMap" type="com.ssafy.orderme.kiosk.model.OrderMenu">
+        <id property="orderMenuId" column="order_menu_id" />
+        <result property="orderId" column="order_id" />
+        <result property="menuPrice" column="menu_price" />
+        <result property="menuName" column="menu_name" />
+        <result property="totalPrice" column="total_price" />
+        <result property="isDeleted" column="is_deleted" />
+        <result property="deletedAt" column="deleted_at" />
+    </resultMap>
+
+    <!-- 주문 옵션 조회 결과를 OrderOption 객체에 매핑 -->
+    <resultMap id="OrderOptionResultMap" type="com.ssafy.orderme.kiosk.model.OrderOption">
+        <id property="orderOptionId" column="order_option_id" />
+        <result property="orderMenuId" column="order_menu_id" />
+        <result property="optionName" column="option_name" />
+        <result property="optionPrice" column="option_price" />
+        <result property="quantity" column="quantity" />
+        <result property="isDeleted" column="is_deleted" />
+        <result property="deletedAt" column="deleted_at" />
+    </resultMap>
+
+    <!-- 새로운 주문 생성 -->
+    <insert id="insertOrder" parameterType="com.ssafy.orderme.kiosk.model.Order" useGeneratedKeys="true" keyProperty="orderId">
+        INSERT INTO Orders (
+            store_id, internal_id, order_date, total_amount,
+            payment_method, payment_status, is_stamp_used,
+            order_status, is_takeout, is_deleted
+        ) VALUES (
+                     #{storeId}, #{internalId}, #{orderDate}, #{totalAmount},
+                     #{paymentMethod}, #{paymentStatus}, #{isStampUsed},
+                     #{orderStatus}, #{isTakeout}, FALSE
+                 )
+    </insert>
+
+    <!-- 주문 메뉴 추가 -->
+    <insert id="insertOrderMenu" parameterType="com.ssafy.orderme.kiosk.model.OrderMenu" useGeneratedKeys="true" keyProperty="orderMenuId">
+        INSERT INTO OrderMenu (
+            order_id, menu_price, menu_name, total_price, is_deleted
+        ) VALUES (
+                     #{orderId}, #{menuPrice}, #{menuName}, #{totalPrice}, FALSE
+                 )
+    </insert>
+
+    <!-- 주문 옵션 추가 -->
+    <insert id="insertOrderOption" parameterType="com.ssafy.orderme.kiosk.model.OrderOption">
+        INSERT INTO OrderOption (
+            order_menu_id, option_name, option_price, quantity, is_deleted
+        ) VALUES (
+                     #{orderMenuId}, #{optionName}, #{optionPrice}, #{quantity}, FALSE
+                 )
+    </insert>
+
+    <!-- 주문 ID로 주문 조회 -->
+    <select id="findOrderById" parameterType="Long" resultMap="OrderResultMap">
+        SELECT
+            order_id, store_id, internal_id, order_date, total_amount,
+            payment_method, payment_status, is_stamp_used,
+            order_status, is_takeout, is_deleted, deleted_at
+        FROM Orders
+        WHERE order_id = #{orderId}
+    </select>
+
+    <!-- 주문 ID로 주문 메뉴 목록 조회 -->
+    <select id="findOrderMenusByOrderId" parameterType="Long" resultMap="OrderMenuResultMap">
+        SELECT
+            order_menu_id, order_id, menu_price, menu_name,
+            total_price, is_deleted, deleted_at
+        FROM OrderMenu
+        WHERE order_id = #{orderId}
+          AND is_deleted = FALSE
+    </select>
+
+    <!-- 주문 메뉴 ID로 주문 옵션 목록 조회 -->
+    <select id="findOrderOptionsByOrderMenuId" parameterType="Long" resultMap="OrderOptionResultMap">
+        SELECT
+            order_option_id, order_menu_id, option_name,
+            option_price, quantity, is_deleted, deleted_at
+        FROM OrderOption
+        WHERE order_menu_id = #{orderMenuId}
+          AND is_deleted = FALSE
+    </select>
+</mapper>

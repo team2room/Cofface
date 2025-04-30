@@ -37,6 +37,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/kiosk/phone-login").permitAll()
                         .requestMatchers("/api/auth/kiosk/face-login").permitAll()
                         .requestMatchers("/api/auth/refresh").permitAll()
+                        .requestMatchers("/api/kiosk/**").permitAll() // 키오스크 API 접근 허용
+                        .requestMatchers("/api/test/**").permitAll() // 테스트 API 접근 허용
                         .anyRequest().authenticated()
                 )
                 // 필터를 직접 생성하여 추가
