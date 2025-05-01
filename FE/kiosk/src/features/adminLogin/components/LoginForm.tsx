@@ -3,6 +3,7 @@ import tw from 'twin.macro'
 import { useState, useRef } from 'react'
 import Keyboard from 'react-simple-keyboard'
 import 'react-simple-keyboard/build/css/index.css'
+import { useNavigate } from 'react-router-dom'
 
 const Box = tw.div`
   w-full mt-5 h-80
@@ -19,11 +20,22 @@ const Button = tw.button`
   w-40 p-4 text-[20px] font-bold text-white bg-[#E0115F] rounded
 `
 
+const ErrorText = tw.div`
+  mt-2 text-red-500 font-bold text-center
+`
+
 export default function LoginForm() {
   const [inputType, setInputType] = useState<'id' | 'password'>('id')
   const [form, setForm] = useState({ id: '', password: '' })
   const [layout, setLayout] = useState('default')
   const keyboardRef = useRef<any>(null)
+
+  const navigate = useNavigate()
+
+  // 임의 계정
+  const [errorMessage, setErrorMessage] = useState('')
+  const validId = 'qwer'
+  const validPassword = '1234'
 
   const handleShift = () => {
     const newLayoutName = layout === 'default' ? 'shift' : 'default'
@@ -54,7 +66,12 @@ export default function LoginForm() {
   }
 
   const handleLogin = () => {
-    alert(`로그인 시도\nID: ${form.id}\nPW: ${form.password}`)
+    if (form.id === validId && form.password === validPassword) {
+      setErrorMessage('')
+      navigate('/user')
+    } else {
+      setErrorMessage('아이디 또는 비밀번호가 틀렸습니다.')
+    }
   }
 
   return (
@@ -98,6 +115,8 @@ export default function LoginForm() {
           </Text>
         </Button>
       </FlexBox>
+
+      {errorMessage && <ErrorText>{errorMessage}</ErrorText>}
 
       <Box>
         <Keyboard
