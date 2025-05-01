@@ -16,7 +16,7 @@ const Input = tw.input`
 `
 
 const Button = tw.button`
-  p-4 text-[20px] font-bold text-white bg-blue-500 rounded
+  w-40 p-4 text-[20px] font-bold text-white bg-[#E0115F] rounded
 `
 
 export default function LoginForm() {
