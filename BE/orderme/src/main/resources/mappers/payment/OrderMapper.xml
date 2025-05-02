@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.orderme.payment.mapper.OrderMapper">
+    <select id="findById" resultType="com.ssafy.orderme.payment.model.Order">
+        SELECT
+            order_id as orderId,
+            user_id as userId,
+            kiosk_id as kioskId,
+            total_amount as totalAmount,
+            order_date as orderDate,
+            payment_method as paymentMethod,
+            payment_status as paymentStatus,
+            is_stamp_used as isStampUsed,
+            order_status as orderStatus,
+            is_takeout as isTakeout,
+            is_delete as isDelete
+        FROM orders
+        WHERE order_id = #{orderId}
+    </select>
+
+    <select id="findByUserId" resultType="com.ssafy.orderme.payment.model.Order">
+        SELECT
+            order_id as orderId,
+            user_id as userId,
+            kiosk_id as kioskId,
+            total_amount as totalAmount,
+            order_date as orderDate,
+            payment_method as paymentMethod,
+            payment_status as paymentStatus,
+            is_stamp_used as isStampUsed,
+            order_status as orderStatus,
+            is_takeout as isTakeout,
+            is_delete as isDelete
+        FROM orders
+        WHERE user_id = #{userId}
+          AND is_delete = 0
+        ORDER BY order_date DESC
+    </select>
+
+    <select id="findByKioskId" resultType="com.ssafy.orderme.payment.model.Order">
+        SELECT
+            order_id as orderId,
+            user_id as userId,
+            kiosk_id as kioskId,
+            total_amount as totalAmount,
+            order_date as orderDate,
+            payment_method as paymentMethod,
+            payment_status as paymentStatus,
+            is_stamp_used as isStampUsed,
+            order_status as orderStatus,
+            is_takeout as isTakeout,
+            is_delete as isDelete
+        FROM orders
+        WHERE kiosk_id = #{kioskId}
+          AND is_delete = 0
+        ORDER BY order_date DESC
+    </select>
+
+    <!-- 수정: useGeneratedKeys와 keyProperty 제거 (수동으로 ID 생성하므로) -->
+    <insert id="insertOrder" parameterType="com.ssafy.orderme.payment.model.Order">
+        INSERT INTO orders (
+        order_id, <!-- 이제 직접 값을 넣습니다 -->
+        user_id,
+        kiosk_id,
+        total_amount,
+        order_date,
+        payment_method,
+        payment_status,
+        is_stamp_used,
+        order_status,
+        is_takeout,
+        is_delete
+        ) VALUES (
+        #{orderId}, <!-- 직접 생성한 고유 ID 사용 -->
+        #{userId},
+        #{kioskId},
+        #{totalAmount},
+        #{orderDate},
+        #{paymentMethod},
+        #{paymentStatus},
+        #{isStampUsed},
+        #{orderStatus},
+        #{isTakeout},
+        #{isDelete}
+        )
+    </insert>
+
+    <update id="updateOrder" parameterType="com.ssafy.orderme.payment.model.Order">
+        UPDATE orders
+        SET
+            user_id = #{userId},
+            kiosk_id = #{kioskId},
+            total_amount = #{totalAmount},
+            order_date = #{orderDate},
+            payment_method = #{paymentMethod},
+            payment_status = #{paymentStatus},
+            is_stamp_used = #{isStampUsed},
+            order_status = #{orderStatus},
+            is_takeout = #{isTakeout},
+            is_delete = #{isDelete}
+        WHERE order_id = #{orderId}
+    </update>
+
+    <update id="updateOrderStatus">
+        UPDATE orders
+        SET
+            order_status = #{orderStatus}
+        WHERE order_id = #{orderId}
+    </update>
+
+    <update id="updatePaymentStatus">
+        UPDATE orders
+        SET
+            payment_status = #{paymentStatus}
+        WHERE order_id = #{orderId}
+    </update>
+
+    <update id="softDeleteOrder">
+        UPDATE orders
+        SET
+            is_delete = 1
+        WHERE order_id = #{orderId}
+    </update>
+</mapper>
