@@ -15,5 +15,4 @@ public class VerificationConfirmRequest {
     private String idNumberFront;
     private String idNumberGender;
     private String password;
-
 }

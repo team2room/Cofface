@@ -38,9 +38,8 @@ dependencies {
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 	// CoolSMS 클라이언트 라이브러리
 	implementation 'net.nurigo:sdk:4.3.0'
-
-
-
+	// healthcheck
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'

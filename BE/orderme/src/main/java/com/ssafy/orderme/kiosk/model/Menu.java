@@ -10,9 +10,11 @@ public class Menu {
     private Long storeId;       // 매장 ID
     private String menuName;    // 메뉴 이름
     private Integer price;      // 가격
-    private String category;    // 카테고리
+    private Long categoryId;    // 카테고리 ID
+    private Category category;  // 카테고리 정보
     private Boolean isSoldOut;  // 품절 여부
     private String imageUrl;    // 이미지 URL
+    private String description; // 메뉴 설명
     private Boolean isDeleted;  // 삭제 여부
     private LocalDateTime deletedAt; // 삭제 시간
 
@@ -48,14 +50,21 @@ public class Menu {
         this.price = price;
     }
 
-    public String getCategory() {
+    public Long getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    public Category getCategory() {
         return category;
     }
 
-    public void setCategory(String category) {
+    public void setCategory(Category category) {
         this.category = category;
     }
-
     public Boolean getIsSoldOut() {
         return isSoldOut;
     }
@@ -86,5 +95,13 @@ public class Menu {
 
     public void setDeletedAt(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

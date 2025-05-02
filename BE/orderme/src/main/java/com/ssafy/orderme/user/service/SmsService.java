@@ -53,7 +53,7 @@ public class SmsService {
         String redisKey = "sms:verification:" + verificationId;
         redisTemplate.opsForHash().put(redisKey, "phoneNumber", phoneNumber);
         redisTemplate.opsForHash().put(redisKey, "code", code);
-        redisTemplate.expire(redisKey, 30, TimeUnit.MINUTES);
+        redisTemplate.expire(redisKey, 10, TimeUnit.MINUTES);
     }
 
     // 인증번호 검증

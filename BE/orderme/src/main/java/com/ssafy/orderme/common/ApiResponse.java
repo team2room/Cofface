@@ -21,15 +21,6 @@ public class ApiResponse<T> {
         this.data = data;
     }
 
-    public static <T> ApiResponse<T> success(T data) {
-        return ApiResponse.<T>builder()
-                .status(HttpStatus.OK.value())
-                .success(true)
-                .message("요청이 성공했습니다")
-                .data(data)
-                .build();
-    }
-
     public static <T> ApiResponse<T> success(String message, T data) {
         return ApiResponse.<T>builder()
                 .status(HttpStatus.OK.value())
@@ -37,6 +28,14 @@ public class ApiResponse<T> {
                 .message(message)
                 .data(data)
                 .build();
+    }
+
+    public static <T> ApiResponse<T> success(T data) {
+        return success("요청이 성공했습니다", data);
+    }
+
+    public static <T> ApiResponse<T> success(String message) {
+        return success(message, null);
     }
 
     public static <T> ApiResponse<T> success(HttpStatus httpStatus, String message, T data) {
@@ -81,6 +80,15 @@ public class ApiResponse<T> {
                 .success(false)
                 .message(message)
                 .data(null)
+                .build();
+    }
+
+    public static <T> ApiResponse<T> error(int status, String message, T errorData) {
+        return ApiResponse.<T>builder()
+                .status(status)
+                .success(false)
+                .message(message)
+                .data(errorData)
                 .build();
     }
 }

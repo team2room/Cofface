@@ -1,20 +1,17 @@
 package com.ssafy.orderme.kiosk.controller;
 
 import com.ssafy.orderme.common.ApiResponse;
-import com.ssafy.orderme.kiosk.dto.request.OrderRequest;
 import com.ssafy.orderme.kiosk.dto.response.MenuDetailResponse;
 import com.ssafy.orderme.kiosk.dto.response.MenuResponse;
-import com.ssafy.orderme.kiosk.dto.response.OrderResponse;
 import com.ssafy.orderme.kiosk.dto.response.RecommendedMenuResponse;
-import com.ssafy.orderme.kiosk.dto.response.UserStampResponse;
 import com.ssafy.orderme.kiosk.service.MenuService;
-import com.ssafy.orderme.kiosk.service.OrderService;
-import com.ssafy.orderme.kiosk.service.UserStampService;
 import com.ssafy.orderme.kiosk.util.MockJwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.ssafy.orderme.kiosk.service.CategoryService;
+import com.ssafy.orderme.kiosk.dto.response.CategoryResponse;
 
 import java.util.List;
 
@@ -26,17 +23,15 @@ import java.util.List;
 public class KioskController {
 
     private final MenuService menuService;
-    private final OrderService orderService;
-    private final UserStampService userStampService;
     private final MockJwtService mockJwtService;
+    private final CategoryService categoryService;
 
     @Autowired
-    public KioskController(MenuService menuService, OrderService orderService,
-                           UserStampService userStampService, MockJwtService mockJwtService) {
+    public KioskController(MenuService menuService, MockJwtService mockJwtService,
+                           CategoryService categoryService) {
         this.menuService = menuService;
-        this.orderService = orderService;
-        this.userStampService = userStampService;
         this.mockJwtService = mockJwtService;
+        this.categoryService = categoryService;
     }
 
     /**
@@ -84,11 +79,11 @@ public class KioskController {
     /**
      * 카테고리별 메뉴 목록 조회
      */
-    @GetMapping("/menus/category/{category}")
-    public ResponseEntity<ApiResponse<List<MenuResponse>>> getMenusByCategory(
+    @GetMapping("/menus/category/{categoryId}")
+    public ResponseEntity<ApiResponse<List<MenuResponse>>> getMenusByCategoryId(
             @RequestParam Long storeId,
-            @PathVariable String category) {
-        List<MenuResponse> menus = menuService.getMenusByCategory(storeId, category);
+            @PathVariable Long categoryId) {
+        List<MenuResponse> menus = menuService.getMenusByCategoryId(storeId, categoryId);
         return ResponseEntity.ok(ApiResponse.success("카테고리별 메뉴 목록 조회 성공", menus));
     }
 
@@ -105,61 +100,11 @@ public class KioskController {
     }
 
     /**
-     * 주문 생성
+     * 매장의 모든 카테고리 목록 조회
      */
-    @PostMapping("/orders")
-    public ResponseEntity<ApiResponse<OrderResponse>> createOrder(
-            @RequestBody OrderRequest orderRequest,
-            @RequestHeader(value = "Authorization", required = false) String token) {
-
-        // 토큰이 있는 경우 사용자 ID 설정
-        if (token != null && token.startsWith("Bearer ")) {
-            String jwtToken = token.substring(7);
-            if (mockJwtService.validateToken(jwtToken)) {
-                String userIdStr = mockJwtService.getUserIdFromToken(jwtToken);
-                Long userId = Long.parseLong(userIdStr);
-                orderRequest.setInternalId(userId);
-            }
-        }
-
-        OrderResponse order = orderService.createOrder(orderRequest);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created("주문이 성공적으로 생성되었습니다", order));
-    }
-
-    /**
-     * 주문 상세 정보 조회
-     */
-    @GetMapping("/orders/{orderId}")
-    public ResponseEntity<ApiResponse<OrderResponse>> getOrderDetail(@PathVariable Long orderId) {
-        OrderResponse order = orderService.getOrderDetail(orderId);
-        if (order == null) {
-            return ResponseEntity.ok(ApiResponse.error(HttpStatus.NOT_FOUND, "주문을 찾을 수 없습니다."));
-        }
-        return ResponseEntity.ok(ApiResponse.success("주문 상세 정보 조회 성공", order));
-    }
-
-    /**
-     * 스탬프 정보 조회
-     */
-    @GetMapping("/stamps")
-    public ResponseEntity<ApiResponse<UserStampResponse>> getUserStamp(
-            @RequestParam Long storeId,
-            @RequestHeader("Authorization") String token) {
-
-        if (!token.startsWith("Bearer ")) {
-            return ResponseEntity.ok(ApiResponse.error(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."));
-        }
-
-        String jwtToken = token.substring(7);
-        if (!mockJwtService.validateToken(jwtToken)) {
-            return ResponseEntity.ok(ApiResponse.error(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."));
-        }
-
-        String userIdStr = mockJwtService.getUserIdFromToken(jwtToken);
-        Long userId = Long.parseLong(userIdStr);
-        UserStampResponse stampInfo = userStampService.getUserStamp(userId, storeId);
-
-        return ResponseEntity.ok(ApiResponse.success("스탬프 정보 조회 성공", stampInfo));
+    @GetMapping("/categories")
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getCategories(@RequestParam Long storeId) {
+        List<CategoryResponse> categories = categoryService.getAllCategoriesByStoreId(storeId);
+        return ResponseEntity.ok(ApiResponse.success("카테고리 목록 조회 성공", categories));
     }
 }

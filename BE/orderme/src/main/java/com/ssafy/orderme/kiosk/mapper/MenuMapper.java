@@ -22,10 +22,17 @@ public interface MenuMapper {
     /**
      * 카테고리별 메뉴 조회
      * @param storeId 매장 ID
-     * @param category 카테고리
+     * @param categoryId 카테고리
      * @return 메뉴 목록
      */
-    List<Menu> findByCategory(@Param("storeId") Long storeId, @Param("category") String category);
+    List<Menu> findByCategoryId(@Param("storeId") Long storeId, @Param("categoryId") Long categoryId);
+
+    /**
+     * 매장의 모든 카테고리 목록 조회
+     * @param storeId 매장 ID
+     * @return 카테고리 목록
+     */
+    List<String> findCategoriesByStoreId(Long storeId);
 
     /**
      * 메뉴 ID로 메뉴 상세 정보 조회

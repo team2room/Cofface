@@ -1,9 +1,6 @@
 package com.ssafy.orderme.kiosk.service;
 
-import com.ssafy.orderme.kiosk.dto.response.MenuDetailResponse;
-import com.ssafy.orderme.kiosk.dto.response.MenuOptionResponse;
-import com.ssafy.orderme.kiosk.dto.response.MenuResponse;
-import com.ssafy.orderme.kiosk.dto.response.RecommendedMenuResponse;
+import com.ssafy.orderme.kiosk.dto.response.*;
 import com.ssafy.orderme.kiosk.mapper.MenuMapper;
 import com.ssafy.orderme.kiosk.model.Menu;
 import com.ssafy.orderme.kiosk.model.MenuOption;
@@ -12,10 +9,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 메뉴 관련 비즈니스 로직을 처리하는 서비스 클래스
+ * 메뉴 관련 비즈니스 로직을 처리하는 서비스
  */
 @Service
 public class MenuService {
@@ -40,11 +38,11 @@ public class MenuService {
     /**
      * 카테고리별 메뉴 목록 조회
      * @param storeId 매장 ID
-     * @param category 카테고리
+     * @param categoryId 카테고리
      * @return 메뉴 목록
      */
-    public List<MenuResponse> getMenusByCategory(Long storeId, String category) {
-        List<Menu> menus = menuMapper.findByCategory(storeId, category);
+    public List<MenuResponse> getMenusByCategoryId(Long storeId, Long categoryId) {
+        List<Menu> menus = menuMapper.findByCategoryId(storeId, categoryId);
         return convertToMenuResponseList(menus);
     }
 
@@ -61,14 +59,57 @@ public class MenuService {
 
         List<MenuOption> options = menuMapper.findOptionsByMenuId(menuId);
 
+        // 옵션을 카테고리별로 그룹화
+        Map<String, List<MenuOption>> optionsByCategory = options.stream()
+                .collect(Collectors.groupingBy(MenuOption::getOptionCategory));
+
+        List<MenuOptionCategoryResponse> optionCategoryResponses = new ArrayList<>();
+
+        for (Map.Entry<String, List<MenuOption>> entry : optionsByCategory.entrySet()) {
+            String category = entry.getKey();
+            List<MenuOption> categoryOptions = entry.getValue();
+
+            // 카테고리별 옵션 응답 생성
+            MenuOptionCategoryResponse categoryResponse = new MenuOptionCategoryResponse();
+            categoryResponse.setOptionCategory(category);
+
+            // 해당 카테고리의 첫 번째 옵션의 필수 여부로 설정 (같은 카테고리는 모두 동일한 필수 여부를 가짐)
+            categoryResponse.setIsRequired(categoryOptions.get(0).getIsRequired());
+
+            // 각 필드별 리스트 생성
+            List<String> optionNames = new ArrayList<>();
+            List<Integer> additionalPrices = new ArrayList<>();
+            List<Long> optionIds = new ArrayList<>();
+
+            // 카테고리 내의 모든 옵션을 리스트에 추가
+            for (MenuOption option : categoryOptions) {
+                optionNames.add(option.getOptionName());
+                additionalPrices.add(option.getAdditionalPrice());
+                optionIds.add(option.getOptionId());
+            }
+
+            // 해당 카테고리의 최대 선택 수는 첫 번째 옵션의 값으로 설정 (같은 카테고리는 동일한 최대 선택 수를 가짐)
+            categoryResponse.setMaxSelections(categoryOptions.get(0).getMaxSelections());
+
+            // 리스트 설정
+            categoryResponse.setOptionNames(optionNames);
+            categoryResponse.setAdditionalPrices(additionalPrices);
+            categoryResponse.setOptionIds(optionIds);
+
+            optionCategoryResponses.add(categoryResponse);
+        }
+
+        // 메뉴 상세 응답 생성
         MenuDetailResponse response = new MenuDetailResponse();
         response.setMenuId(menu.getMenuId());
         response.setMenuName(menu.getMenuName());
         response.setPrice(menu.getPrice());
-        response.setCategory(menu.getCategory());
+        response.setCategoryId(menu.getCategoryId());
+        response.setCategoryName(menu.getCategory() != null ? menu.getCategory().getCategoryName() : null);
         response.setIsSoldOut(menu.getIsSoldOut());
         response.setImageUrl(menu.getImageUrl());
-        response.setOptions(convertToMenuOptionResponseList(options));
+        response.setDescription(menu.getDescription());
+        response.setOptions(optionCategoryResponses);
 
         return response;
     }
@@ -128,41 +169,17 @@ public class MenuService {
      * Menu 모델 객체를 MenuResponse DTO로 변환
      */
     private List<MenuResponse> convertToMenuResponseList(List<Menu> menus) {
-        if (menus == null) {
-            return new ArrayList<>();
-        }
-
         return menus.stream()
                 .map(menu -> {
                     MenuResponse response = new MenuResponse();
                     response.setMenuId(menu.getMenuId());
                     response.setMenuName(menu.getMenuName());
                     response.setPrice(menu.getPrice());
-                    response.setCategory(menu.getCategory());
+                    response.setCategoryId(menu.getCategoryId());
+                    response.setCategoryName(menu.getCategory() != null ? menu.getCategory().getCategoryName() : null);
                     response.setIsSoldOut(menu.getIsSoldOut());
                     response.setImageUrl(menu.getImageUrl());
-                    return response;
-                })
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * MenuOption 모델 객체를 MenuOptionResponse DTO로 변환
-     */
-    private List<MenuOptionResponse> convertToMenuOptionResponseList(List<MenuOption> options) {
-        if (options == null) {
-            return new ArrayList<>();
-        }
-
-        return options.stream()
-                .map(option -> {
-                    MenuOptionResponse response = new MenuOptionResponse();
-                    response.setOptionId(option.getOptionId());
-                    response.setOptionName(option.getOptionName());
-                    response.setAdditionalPrice(option.getAdditionalPrice());
-                    response.setIsDefault(option.getIsDefault());
-                    response.setMaxSelections(option.getMaxSelections());
-                    response.setIsSoldOut(option.getIsSoldOut());
+                    response.setDescription(menu.getDescription());
                     return response;
                 })
                 .collect(Collectors.toList());
