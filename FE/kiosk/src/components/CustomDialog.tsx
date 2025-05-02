@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { ReactNode } from 'react'
 import CustomButton from './CustomButton'
+import NumKeyPad from '@/features/userLogin/components/NumKeyPad'
 
 interface CommonAlertDialogProps {
   open: boolean
@@ -19,6 +20,7 @@ interface CommonAlertDialogProps {
   confirmText?: string
   onCancel?: () => void
   onConfirm?: () => void
+  showKeypad?: boolean
 }
 
 export default function CustomDialog({
@@ -31,13 +33,14 @@ export default function CustomDialog({
   confirmText = '확인',
   onCancel,
   onConfirm,
+  showKeypad = false,
 }: CommonAlertDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="rounded-xl p-12 pb-16 text-center">
         {title && <AlertDialogTitle>{title}</AlertDialogTitle>}
         {description && (
-          <AlertDialogDescription className="mt-28 mb-36 whitespace-pre-line leading-10">
+          <AlertDialogDescription className="mt-28 mb-28 whitespace-pre-line leading-10">
             <Text variant="title3" weight="extrabold" color="lightBlack">
               {description}
             </Text>
@@ -46,6 +49,7 @@ export default function CustomDialog({
                 <img src={icon} alt="alert" className="w-80" />
               </div>
             )}
+            {showKeypad && <NumKeyPad />}
           </AlertDialogDescription>
         )}
 

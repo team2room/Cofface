@@ -13,7 +13,7 @@ const FlexBox = tw.div`
   w-full flex flex-row items-center justify-between my-5
 `
 const Input = tw.input`
-  w-full p-2.5 text-[20px] border border-gray-300 rounded
+  w-full p-2.5 text-[20px] border border-gray rounded
 `
 
 const Button = tw.button`
