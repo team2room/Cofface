@@ -26,7 +26,7 @@ const ButtonGroup = tw.div`
 `
 
 const Button = tw.button`
-  px-8 py-4 rounded-lg w-[397px] h-[234px] bg-[#FEFEFE] shadow-[1px_4px_10px_6px_rgba(0,0,0,0.10)]
+  px-8 py-4 rounded-lg w-[397px] h-[234px] bg-[#FEFEFE] shadow-[1px_4px_10px_6px_rgba(0,0,0,0.10)] cursor-none
 `
 
 export default function StartScreen() {
@@ -76,7 +76,11 @@ export default function StartScreen() {
   return (
     <>
       <ImageWrapper>
-        <MiddleImg src="https://picsum.photos/200" alt="Spring Garden" />
+        <MiddleImg
+          src="https://picsum.photos/200"
+          alt="Spring Garden"
+          draggable={false}
+        />
       </ImageWrapper>
 
       <TopLeftText>

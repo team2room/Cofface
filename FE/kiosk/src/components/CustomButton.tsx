@@ -22,6 +22,7 @@ const StyledButton = styled.button<{
     items-center
     justify-center
     text-white
+    cursor-none
   `}
 
   ${({ variant }) => {

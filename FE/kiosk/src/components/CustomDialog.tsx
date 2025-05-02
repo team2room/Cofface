@@ -46,7 +46,12 @@ export default function CustomDialog({
             </Text>
             {icon && (
               <div className="my-16 flex justify-center">
-                <img src={icon} alt="alert" className="w-80" />
+                <img
+                  src={icon}
+                  alt="alert"
+                  className="w-80"
+                  draggable={false}
+                />
               </div>
             )}
             {showKeypad && <NumKeyPad />}

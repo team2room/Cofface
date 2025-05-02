@@ -6,6 +6,9 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  cursor: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 body {
@@ -17,8 +20,6 @@ body {
   white-space: pre-wrap; /* 줄바꿈과 공백 유지 */
   word-wrap: break-word;
 }
-
-
 
 @layer base {
   :root {
@@ -75,8 +76,6 @@ body {
     --chart-5: 340 75% 55%;
   }
 }
-
-
 
 @layer base {
   * {
