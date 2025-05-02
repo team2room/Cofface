@@ -26,7 +26,8 @@ export const colors = {
   // button
   default: '#E0115F',
   hover: '#FF2175',
-  disabled: '#FAD4E3',
+  cancle: '#FAD4E3',
+  disabled: '#FEE0EC',
   pressed: '#CB1257',
 } as const
 
