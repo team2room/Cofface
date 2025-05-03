@@ -2,6 +2,8 @@ import { Text } from '@/styles/typography'
 import tw from 'twin.macro'
 import CustomDialog from '@/components/CustomDialog'
 import { useState } from 'react'
+import { useLoginStore } from '@/stores/loginStore'
+import { useNavigate } from 'react-router-dom'
 
 const TopLeftText = tw.div`
   absolute top-4 left-6 z-50
@@ -30,10 +32,14 @@ const Button = tw.button`
 `
 
 export default function StartScreen() {
+  const navigate = useNavigate()
   type ModalState = 'waiting' | 'success' | 'failure' | 'phone'
   const [modalState, setModalState] = useState<ModalState>('waiting')
   const [showModal, setShowModal] = useState(false)
-  const [phoneNumber, setPhoneNumber] = useState('')
+
+  const phoneNumber = useLoginStore((state) => state.phoneNumber)
+  const resetPhoneNumber = useLoginStore((state) => state.resetPhoneNumber)
+  const VALID_PHONE = '01012345678'
 
   let modalContent
 
@@ -120,18 +126,22 @@ export default function StartScreen() {
           } else {
             setShowModal(false)
             setModalState('waiting')
-            setPhoneNumber('')
           }
         }}
         onConfirm={() => {
           if (modalState === 'phone') {
-            console.log('전화번호:', phoneNumber)
-            setShowModal(false)
-            setModalState('waiting')
-            setPhoneNumber('')
+            if (phoneNumber === VALID_PHONE) {
+              resetPhoneNumber()
+              setShowModal(false)
+              setModalState('waiting')
+              alert('전화번호가 일치합니다' + phoneNumber)
+              navigate('/menu')
+            } else {
+              alert('전화번호가 일치하지 않습니다')
+            }
           } else if (modalState === 'success') {
             setShowModal(false)
-            // 메뉴 화면으로 이동
+            navigate('/menu')
           } else {
             setModalState('phone')
           }

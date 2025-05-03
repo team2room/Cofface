@@ -1,7 +1,7 @@
-import { useState } from 'react'
 import { Text } from '@/styles/typography'
 import tw from 'twin.macro'
 import { LuDelete } from 'react-icons/lu'
+import { useLoginStore } from '@/stores/loginStore'
 
 const Container = tw.div`
   flex flex-col items-center p-4 mt-8
@@ -18,15 +18,17 @@ const KeyButton = tw.button`
 
 export default function NumKeyPad() {
   const numberPad = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '←']
-  const [phoneNum, setPhoneNum] = useState('')
+  const phoneNumber = useLoginStore((state) => state.phoneNumber)
+  const setPhoneNumber = useLoginStore((state) => state.setPhoneNumber)
+  const resetPhoneNumber = useLoginStore((state) => state.resetPhoneNumber)
 
   const handleClick = (key: string) => {
     if (key === 'C') {
-      setPhoneNum('')
+      resetPhoneNumber()
     } else if (key === '←') {
-      setPhoneNum((prev) => prev.slice(0, -1))
-    } else if (phoneNum.length < 11) {
-      setPhoneNum((prev) => prev + key)
+      setPhoneNumber(phoneNumber.slice(0, -1))
+    } else if (phoneNumber.length < 11) {
+      setPhoneNumber(phoneNumber + key)
     }
   }
 
@@ -40,7 +42,7 @@ export default function NumKeyPad() {
     <Container>
       <div className="border-b-2 border-littleDarkGray mb-6 w-2/3 h-14 text-center">
         <Text variant="title3" weight="bold" color="black">
-          {formatPhoneNumber(phoneNum)}
+          {formatPhoneNumber(phoneNumber)}
         </Text>
       </div>
       <KeypadContainer>
