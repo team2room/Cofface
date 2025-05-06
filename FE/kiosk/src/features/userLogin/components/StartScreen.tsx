@@ -105,7 +105,7 @@ export default function StartScreen() {
             회원 주문
           </Text>
         </Button>
-        <Button>
+        <Button onClick={() => navigate('/order')}>
           <Text variant="title2" weight="bold">
             비회원 주문
           </Text>
@@ -135,13 +135,13 @@ export default function StartScreen() {
               setShowModal(false)
               setModalState('waiting')
               alert('전화번호가 일치합니다' + phoneNumber)
-              navigate('/menu')
+              navigate('/order')
             } else {
               alert('전화번호가 일치하지 않습니다')
             }
           } else if (modalState === 'success') {
             setShowModal(false)
-            navigate('/menu')
+            navigate('/order')
           } else {
             setModalState('phone')
           }
