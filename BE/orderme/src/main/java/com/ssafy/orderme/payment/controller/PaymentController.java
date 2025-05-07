@@ -66,17 +66,17 @@ public class PaymentController {
     }
 
     // 결제 승인
-//    @PostMapping("/approve")
-//    public ResponseEntity<ApiResponse<?>> approve(@RequestBody PaymentApprovalRequest request) {
-//        log.info("결제 승인 요청: {}", request);
-//
-//        try {
-//            // 필수 정보 검증
-//            if (request.getPaymentKey() == null || request.getOrderId() == null || request.getAmount() == null) {
-//                return ResponseEntity.ok(ApiResponse.error(400, "필수 결제 정보가 누락되었습니다."));
-//            }
-//
-//            // 결제 승인 처리
+    @PostMapping("/approve")
+    public ResponseEntity<ApiResponse<?>> approve(@RequestBody PaymentApprovalRequest request) {
+        log.info("결제 승인 요청: {}", request);
+
+        try {
+            // 필수 정보 검증
+            if (request.getPaymentKey() == null || request.getOrderId() == null || request.getAmount() == null) {
+                return ResponseEntity.ok(ApiResponse.error(400, "필수 결제 정보가 누락되었습니다."));
+            }
+
+            // 결제 승인 처리
 //            Payment payment = paymentService.approvePayment(request);
 //
 //            // 응답 데이터 구성
@@ -86,13 +86,14 @@ public class PaymentController {
 //            responseData.put("amount", payment.getAmount());
 //            responseData.put("status", payment.getStatus());
 //            responseData.put("paymentDate", payment.getPaymentDate());
-//
+
 //            return ResponseEntity.ok(ApiResponse.success("결제가 성공적으로 승인되었습니다.", responseData));
-//        } catch (Exception e) {
-//            log.error("결제 승인 중 오류 발생", e);
-//            return ResponseEntity.ok(ApiResponse.error(500, "결제 승인 중 오류가 발생했습니다."));
-//        }
-//    }
+            return ResponseEntity.ok(ApiResponse.success("결제가 성공적으로 승인되었습니다."));
+        } catch (Exception e) {
+            log.error("결제 승인 중 오류 발생", e);
+            return ResponseEntity.ok(ApiResponse.error(500, "결제 승인 중 오류가 발생했습니다."));
+        }
+    }
     // 결제 성공 페이지
 
     // 결제 실패 처리
