@@ -100,6 +100,32 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
   })
 
   useEffect(() => {
+    console.log(`isCapturing 상태 변경됨: ${isCapturing}`)
+
+    if (isCapturing && cameraRef.current) {
+      // 캡처 모드 활성화 시 카메라 시작
+      console.log('카메라 시작 시도...')
+      cameraRef.current
+        .start()
+        .then(() => {
+          console.log('카메라 시작됨')
+        })
+        .catch((err) => {
+          console.error('카메라 시작 오류:', err)
+        })
+    } else if (!isCapturing && cameraRef.current) {
+      // 캡처 모드 비활성화 시 카메라 정지
+      try {
+        console.log('카메라 정지 시도...')
+        cameraRef.current.stop()
+        console.log('카메라 정지됨')
+      } catch (err) {
+        console.error('카메라 정지 오류:', err)
+      }
+    }
+  }, [isCapturing])
+
+  useEffect(() => {
     if (isCapturing) {
       // 아직 캡처되지 않은 방향 중 순서에 맞는 첫 번째 방향 선택
       const directionOrder: FaceDirection[] = [
@@ -229,8 +255,19 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
 
   // 카운트다운 시작 함수 수정
   const startCountdown = () => {
-    console.log('카운트다운 시작 함수 호출됨')
-    updateCountdown(60) // 함수를 통해 상태와 ref 모두 업데이트
+    console.log(
+      `카운트다운 시작 함수 호출됨 - ${currentTargetDirection} 방향 카운트다운 시작`,
+    )
+    // 명시적으로 콘솔에 출력해서 확인
+    console.table({
+      isCapturing,
+      currentDirection,
+      currentTargetDirection,
+      captureCountdown: captureCountdownRef.current,
+      방향일치여부: currentDirection === currentTargetDirection,
+    })
+
+    updateCountdown(60)
   }
 
   // 카운트다운 리셋 함수 수정
@@ -322,6 +359,7 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
         // 감지된 방향을 현재 방향으로 설정
         if (detectedDirection !== currentDirection) {
           setCurrentDirection(detectedDirection)
+          console.log('방향 변경됨:', detectedDirection)
         }
 
         // 디버그 정보 표시 (반전된 화면에 맞게)
@@ -334,7 +372,9 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
             detectedDirection === currentTargetDirection
 
           console.log(
-            `방향 비교: 감지=${detectedDirection}, 목표=${currentTargetDirection}, 일치=${isMatchingDirection}, 카운트다운=${captureCountdownRef.current}`,
+            `현재상태: 방향=${currentDirection}, 목표=${currentTargetDirection}, ` +
+              `일치=${currentDirection === currentTargetDirection}, ` +
+              `카운트다운=${captureCountdown}, 캡처된방향=${Object.keys(capturedImages).join(',')}`,
           )
 
           // 2. 방향이 일치하고 카운트다운이 시작되지 않았으면 카운트다운 시작
@@ -353,11 +393,6 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
             console.log(`방향 불일치: ${detectedDirection}, 카운트다운 리셋`)
             resetCountdown() // 수정된 함수 호출
           }
-        }
-
-        // 카운트다운 진행 중인 경우 링 그리기
-        if (captureCountdown > 0) {
-          drawCountdownRing(canvasCtx, flippedLandmarks, captureCountdown)
         }
 
         // 현재 상태 표시
@@ -402,102 +437,53 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
   }
 
   useEffect(() => {
-    let timerId: number
+    let timerId: number | null = null
 
     if (captureCountdown > 0) {
       console.log(`카운트다운 시작/변경: ${captureCountdown}`)
-
-      // 즉시 ref 값도 업데이트 (중요!)
       captureCountdownRef.current = captureCountdown
 
       timerId = window.setInterval(() => {
         setCaptureCountdown((prev) => {
-          const newValue = prev - 1
-          console.log(`타이머에서 카운트다운 감소: ${prev} -> ${newValue}`)
+          if (prev <= 1) {
+            console.log(`카운트다운 완료`)
+            if (timerId) clearInterval(timerId)
 
-          // 즉시 ref 값도 업데이트
-          captureCountdownRef.current = newValue
-
-          if (newValue <= 0) {
-            console.log(`카운트다운 완료, 캡처 실행 예정`)
-            clearInterval(timerId)
-
-            // setTimeout 대신 즉시 실행 (0ms 딜레이)
-            if (isCapturing && currentTargetDirection) {
-              console.log(`${currentTargetDirection} 방향 캡처 실행`)
-              captureImage(currentTargetDirection)
-            }
-
+            // 별도 함수로 분리하여 캡처 로직 실행
+            handleCountdownComplete()
             return 0
           }
-          return newValue
+          return prev - 1
         })
       }, 33) // 약 30fps
     }
 
     return () => {
       if (timerId) {
-        console.log(`타이머 정리 (카운트다운: ${captureCountdown})`)
         clearInterval(timerId)
       }
     }
-  }, [captureCountdown, isCapturing, currentTargetDirection])
+  }, [captureCountdown])
 
-  // 5. 카운트다운 링 그리기 함수
-  const drawCountdownRing = (
-    ctx: CanvasRenderingContext2D,
-    landmarks: facemesh.NormalizedLandmarkList,
-    countdown: number,
-  ) => {
-    // 얼굴 주변에 링 그리기
-    const faceOvalPoints: { x: number; y: number }[] = [] // 얼굴 타원 경계 포인트 수집
-
-    // FACEMESH_FACE_OVAL 랜드마크 인덱스
-    const faceOvalIndices = [
-      10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379,
-      378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127,
-      162, 21, 54, 103, 67, 109,
-    ]
-
-    // 얼굴 타원 포인트 수집
-    faceOvalIndices.forEach((idx) => {
-      faceOvalPoints.push({
-        x: landmarks[idx].x * ctx.canvas.width,
-        y: landmarks[idx].y * ctx.canvas.height,
-      })
-    })
-
-    // 얼굴 중심 계산
-    let centerX = 0
-    let centerY = 0
-    faceOvalPoints.forEach((point) => {
-      centerX += point.x
-      centerY += point.y
-    })
-    centerX /= faceOvalPoints.length
-    centerY /= faceOvalPoints.length
-
-    // 얼굴 크기 계산 (반지름)
-    let radius = 0
-    faceOvalPoints.forEach((point) => {
-      const distance = Math.sqrt(
-        Math.pow(point.x - centerX, 2) + Math.pow(point.y - centerY, 2),
+  // 카운트다운 완료 처리를 별도 함수로 분리
+  const handleCountdownComplete = () => {
+    // 캡처 실행 전에 방향이 일치하는지 최종 확인
+    if (isCapturing && currentDirectionRef.current === currentTargetDirection) {
+      console.log(
+        `카운트다운 완료 후 방향 일치 확인: ${currentTargetDirection}`,
       )
-      radius = Math.max(radius, distance)
-    })
 
-    // 링을 약간 크게 그리기 (얼굴보다 20% 크게)
-    radius *= 1.2
-
-    // 카운트다운 프로그레스 계산 (60 -> 0)
-    const progress = countdown / 60
-
-    // 링 그리기
-    ctx.beginPath()
-    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2 * progress)
-    ctx.strokeStyle = '#00FF00'
-    ctx.lineWidth = 5
-    ctx.stroke()
+      // 약간의 지연 후 캡처 실행 (UI 업데이트 후)
+      window.setTimeout(() => {
+        if (currentDirectionRef.current === currentTargetDirection) {
+          captureImage(currentTargetDirection)
+        } else {
+          console.log('지연 확인 중 방향 변경 감지, 캡처 취소')
+        }
+      }, 100)
+    } else {
+      console.log('카운트다운 완료 시 방향 불일치, 캡처 취소')
+    }
   }
 
   // 캡처 이미지 반전 처리 함수
@@ -540,21 +526,46 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
       return
     }
 
+    // 캡처 시점에 한 번 더 명시적으로 방향 확인
+    console.log(
+      `캡처 직전 방향 확인: 목표=${direction}, 현재=${currentDirectionRef.current}`,
+    )
+
+    if (currentDirectionRef.current !== direction) {
+      console.log(`방향 불일치로 캡처 취소`)
+      resetCountdown()
+      return
+    }
+
     // 캔버스에서 이미지 데이터 추출
     const imageData =
       captureNonFlippedImage(direction) ||
       canvasRef.current.toDataURL('image/jpeg', 0.9)
 
+    // 이미지가 추출되었는지 확인
+    if (!imageData) {
+      console.error('이미지 데이터 추출 실패')
+      return
+    }
+
+    console.log(`${direction} 방향 이미지 캡처 성공`)
+
     // 캡처된 이미지 저장
-    setCapturedImages((prev) => ({
-      ...prev,
-      [direction]: imageData,
-    }))
+    setCapturedImages((prev) => {
+      const updated = { ...prev, [direction]: imageData }
+      console.log(`캡처된 방향 업데이트: ${Object.keys(updated).join(', ')}`)
+      return updated
+    })
 
     // 진행 상황 메시지 업데이트
     setMessage(`${direction} 방향 캡처 완료!`)
 
-    // 다음 타겟 방향 설정
+    // 다음 단계로 진행
+    processNextDirection(direction)
+  }
+
+  // 다음 방향 처리 로직을 별도 함수로 분리
+  const processNextDirection = (currentDirection: FaceDirection) => {
     const directionOrder: FaceDirection[] = [
       'front',
       'left',
@@ -564,22 +575,15 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
     ]
 
     const nextDirectionIndex =
-      directionOrder.findIndex((dir) => dir === direction) + 1
+      directionOrder.findIndex((dir) => dir === currentDirection) + 1
 
     // 다음 타겟 방향 (순서대로)
     if (nextDirectionIndex < directionOrder.length) {
       const nextDirection = directionOrder[nextDirectionIndex]
+      console.log(`다음 방향으로 진행: ${nextDirection}`)
 
-      // 방향 카운터 초기화
-      detectedDirectionCountRef.current = {
-        front: 0,
-        left: 0,
-        right: 0,
-        up: 0,
-        down: 0,
-        unknown: 0,
-      }
-      frameCounterRef.current = 0
+      // 상태 초기화
+      resetCountdown()
 
       // 다음 방향으로 설정
       setTimeout(() => {
@@ -590,6 +594,7 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
       }, 1000)
     } else {
       // 모든 방향 캡처 완료
+      console.log('모든 방향 캡처 완료, 등록 진행')
       setTimeout(() => {
         setIsCapturing(false)
         submitRegistration()
@@ -623,46 +628,6 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
     }
   }
 
-  // 카메라 초기화
-  const initCamera = async () => {
-    if (!videoRef.current) return
-
-    try {
-      // 기존 스트림 정리
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach((track) => track.stop())
-      }
-
-      if (cameraRef.current) {
-        cameraRef.current.stop()
-      }
-
-      // FaceMesh 초기화
-      initFaceMesh()
-
-      // 카메라 유틸리티 설정
-      cameraRef.current = new camera.Camera(videoRef.current, {
-        onFrame: async () => {
-          if (faceMeshRef.current && videoRef.current) {
-            await faceMeshRef.current.send({ image: videoRef.current })
-          }
-        },
-        width: 1280,
-        height: 720,
-      })
-
-      // 카메라 시작
-      await cameraRef.current.start()
-
-      setMessage(
-        '카메라가 준비되었습니다. 시작하려면 "시작" 버튼을 클릭하세요.',
-      )
-    } catch (err) {
-      console.error('카메라 초기화 오류:', err)
-      setMessage('카메라 접근에 실패했습니다. 권한을 확인해주세요.')
-    }
-  }
-
   // 캡처 시작
   const handleStart = () => {
     setIsCapturing(true)
@@ -690,23 +655,70 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
 
   // 컴포넌트 마운트 시 카메라 초기화
   useEffect(() => {
-    initCamera()
+    initCameraResources() // 카메라 리소스만 초기화
 
     // 컴포넌트 언마운트 시 리소스 정리
     return () => {
-      if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach((track) => track.stop())
-      }
-
-      if (cameraRef.current) {
-        cameraRef.current.stop()
-      }
-
-      if (faceMeshRef.current) {
-        faceMeshRef.current.close()
-      }
+      cleanupCameraResources()
     }
   }, [])
+
+  // 카메라 리소스 초기화만 수행하는 함수
+  const initCameraResources = async () => {
+    if (!videoRef.current) return
+
+    try {
+      // FaceMesh 초기화
+      faceMeshRef.current = new facemesh.FaceMesh({
+        locateFile: (file) => {
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+        },
+      })
+
+      // 설정 수정 - 감도 높임
+      faceMeshRef.current.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.3,
+        minTrackingConfidence: 0.3,
+      })
+
+      faceMeshRef.current.onResults(onFaceMeshResults)
+
+      // 카메라 객체만 생성하고 아직 시작하지 않음
+      cameraRef.current = new camera.Camera(videoRef.current, {
+        onFrame: async () => {
+          if (faceMeshRef.current && videoRef.current) {
+            await faceMeshRef.current.send({ image: videoRef.current })
+          }
+        },
+        width: 1280,
+        height: 720,
+      })
+
+      setMessage(
+        '카메라가 준비되었습니다. 시작하려면 "시작" 버튼을 클릭하세요.',
+      )
+    } catch (err) {
+      console.error('카메라 초기화 오류:', err)
+      setMessage('카메라 접근에 실패했습니다. 권한을 확인해주세요.')
+    }
+  }
+
+  // 카메라 리소스 정리 함수
+  const cleanupCameraResources = () => {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop())
+    }
+
+    if (cameraRef.current) {
+      cameraRef.current.stop()
+    }
+
+    if (faceMeshRef.current) {
+      faceMeshRef.current.close()
+    }
+  }
 
   return (
     <div className="face-registration-container">
@@ -748,13 +760,28 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
               {directionGuides[currentTargetDirection]}
             </div>
             {captureCountdown > 0 && (
-              <div className="countdown-timer">
-                <div className="timer-text">
-                  {Math.ceil(captureCountdown / 30)}초 유지
+              <div
+                className="countdown-timer"
+                style={{
+                  backgroundColor: 'rgba(76, 175, 80, 0.3)',
+                  padding: '10px',
+                  borderRadius: '5px',
+                }}
+              >
+                <div
+                  className="timer-text"
+                  style={{ fontSize: '22px', marginBottom: '8px' }}
+                >
+                  {Math.ceil(captureCountdown / 30)}초 유지 중
                 </div>
                 <div
                   className="timer-progress"
-                  style={{ width: `${(captureCountdown / 60) * 100}%` }}
+                  style={{
+                    width: `${(captureCountdown / 60) * 100}%`,
+                    height: '8px',
+                    backgroundColor: '#4caf50',
+                    transition: 'width 0.1s linear',
+                  }}
                 ></div>
               </div>
             )}

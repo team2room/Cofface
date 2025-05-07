@@ -171,8 +171,10 @@ button:disabled {
 
 .button-group {
   display: flex;
+  justify-content: center;
   gap: 1rem;
   margin-top: 1.5rem;
+  width: 100%;
 }
 
 /* 알림 메시지 */
