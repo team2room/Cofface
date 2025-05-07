@@ -1,0 +1,5 @@
+*.log
+venv
+invenv
+__pycache__
+models
