@@ -23,3 +23,29 @@ export interface OrderItem {
 export interface OrderSectionProps {
   orders: OrderItem[]
 }
+
+// 옵션 모달에서 사용되는 인터페이스
+export interface MenuOption {
+  optionCategory: string
+  isRequired: boolean
+  optionNames: string[]
+  additionalPrices: number[]
+  optionIds: number[]
+  maxSelections: number
+}
+
+export interface MenuData {
+  menuName: string
+  price: number
+  imageUrl: string
+  description: string
+  options: MenuOption[]
+}
+
+export interface OptionModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onCancel?: () => void
+  onConfirm?: () => void
+  menu: MenuData
+}
