@@ -2,7 +2,7 @@ import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
 import { useNavigate } from 'react-router-dom'
 
-const HeaderContainer = tw.div`w-full flex justify-between items-center mb-4`
+const HeaderContainer = tw.div`w-full flex justify-between items-center my-4`
 const Actions = tw.div`flex items-center gap-8`
 
 interface HeaderProps {
