@@ -436,13 +436,13 @@ const FaceRecognition: React.FC = () => {
       case FaceDetectionState.FRONT_FACE:
         return '얼굴이 원 안에 위치하도록 해주세요';
       case FaceDetectionState.LEFT_FACE:
-        return '왼쪽으로 약 30도 정도 돌려주세요';
+        return '왼쪽으로 약 40도 정도 돌려주세요';
       case FaceDetectionState.RIGHT_FACE:
         return '오른쪽으로 약 30도 정도 돌려주세요';
       case FaceDetectionState.UP_FACE:
-        return '위쪽으로 약 30도 정도 올려주세요';
+        return '위쪽으로 약 11도 정도 올려주세요';
       case FaceDetectionState.DOWN_FACE:
-        return '아래쪽으로 약 30도 정도 내려주세요';
+        return '아래쪽으로 약 11도 정도 내려주세요';
       case FaceDetectionState.COMPLETED:
         return '모든 방향에서 얼굴이 캡처되었습니다';
       default:
@@ -521,6 +521,8 @@ const FaceRecognition: React.FC = () => {
   }, [detectionState]);
 
   // MediaPipe 결과 처리 함수
+  // MediaPipe 결과 처리 함수
+  // MediaPipe 결과 처리 함수 (수정된 버전)
   const onResults = (results: mp.Results): void => {
     if (!canvasRef.current || !videoRef.current) return;
 
@@ -529,13 +531,9 @@ const FaceRecognition: React.FC = () => {
 
     if (!canvasCtx) return;
 
-    // 강제 상태 변경 코드 추가
-    if (detectionState === FaceDetectionState.INIT && modelsLoaded) {
-      console.log('onResults에서 상태 강제 변경: INIT → FRONT_FACE');
-      setDetectionState(FaceDetectionState.FRONT_FACE);
-      setStateStable(true);
-      lastStateTime.current = Date.now();
-    }
+    // 강제 상태 변경 코드 수정
+    // 참조를 통해 현재 값 확인
+    const currentState = currentStateRef.current;
 
     // 최근 프레임 저장 (캡처용)
     if (results.image) {
@@ -583,7 +581,7 @@ const FaceRecognition: React.FC = () => {
         console.log('얼굴 감지 시작됨');
       }
 
-      // 즉시 변수에 값 설정 (React의 상태 업데이트 전에 사용할 수 있도록)
+      // 즉시 변수에 값 설정
       const faceDetectedNow = true;
       setFaceDetected(faceDetectedNow);
 
@@ -609,13 +607,12 @@ const FaceRecognition: React.FC = () => {
       // 디버그 캔버스 업데이트
       updateDebugCanvas(rotationValues);
 
-      // 이 부분에서 현재 상태를 직접 확인
-      // React state가 업데이트되지 않았을 수 있으므로
-      // FaceDetectionState.FRONT_FACE로 강제 설정
-      const currentState =
-        detectionState === FaceDetectionState.INIT
-          ? FaceDetectionState.FRONT_FACE
-          : detectionState;
+      // 현재 상태 표시 (추가 로깅)
+      console.log('onResults 처리 중:', {
+        detectionState: FaceDetectionState[detectionState],
+        currentStateRef: FaceDetectionState[currentStateRef.current],
+        uiState: document.querySelector('.current-state-element')?.textContent,
+      });
 
       console.log('현재 처리 중인 상태:', FaceDetectionState[currentState]);
 
@@ -657,7 +654,7 @@ const FaceRecognition: React.FC = () => {
         }
       }
 
-      // 경계선 색상 설정 (강제 정면 상태 사용)
+      // 경계선 색상 설정
       if (stateTimer > 0) {
         setBorderColor('#4285F4'); // 타이머 작동 중 (파란색)
         console.log('타이머 작동 중 - 파란색');
@@ -1012,7 +1009,7 @@ const FaceRecognition: React.FC = () => {
       return false;
     }
 
-    // 개선된 방향 체크 로직
+    // 개선된 방향 체크 로직 - 부호 수정
     switch (state) {
       case FaceDetectionState.FRONT_FACE:
         // 정면: roll, pitch, yaw 모두 ±15도 이내
@@ -1020,23 +1017,20 @@ const FaceRecognition: React.FC = () => {
         const frontPitchOK = Math.abs(rotation.pitch) <= 15;
         const frontYawOK = Math.abs(rotation.yaw) <= 15;
 
-        const result = frontRollOK && frontPitchOK && frontYawOK;
+        const frontResult = frontRollOK && frontPitchOK && frontYawOK;
         console.log('정면 방향 체크:', {
-          result,
+          result: frontResult,
           frontRollOK,
           frontPitchOK,
           frontYawOK,
-          roll: rotation.roll,
-          pitch: rotation.pitch,
-          yaw: rotation.yaw,
         });
-        return result;
+        return frontResult;
 
       case FaceDetectionState.LEFT_FACE:
-        // 왼쪽: yaw가 25~45도, pitch/roll은 ±15도 이내
+        // 왼쪽: yaw가 -45~-35도 (부호 수정)
         const leftRollOK = Math.abs(rotation.roll) <= 15;
         const leftPitchOK = Math.abs(rotation.pitch) <= 15;
-        const leftYawOK = rotation.yaw >= 25 && rotation.yaw <= 45;
+        const leftYawOK = rotation.yaw <= -35 && rotation.yaw >= -45;
 
         const leftResult = leftRollOK && leftPitchOK && leftYawOK;
         console.log('왼쪽 방향 체크:', {
@@ -1044,17 +1038,14 @@ const FaceRecognition: React.FC = () => {
           leftRollOK,
           leftPitchOK,
           leftYawOK,
-          roll: rotation.roll,
-          pitch: rotation.pitch,
-          yaw: rotation.yaw,
         });
         return leftResult;
 
       case FaceDetectionState.RIGHT_FACE:
-        // 오른쪽: yaw가 -45~-25도, pitch/roll은 ±15도 이내
+        // 오른쪽: yaw가 25~35도 (부호 수정)
         const rightRollOK = Math.abs(rotation.roll) <= 15;
         const rightPitchOK = Math.abs(rotation.pitch) <= 15;
-        const rightYawOK = rotation.yaw <= -25 && rotation.yaw >= -45;
+        const rightYawOK = rotation.yaw >= 25 && rotation.yaw <= 35;
 
         const rightResult = rightRollOK && rightPitchOK && rightYawOK;
         console.log('오른쪽 방향 체크:', {
@@ -1062,16 +1053,13 @@ const FaceRecognition: React.FC = () => {
           rightRollOK,
           rightPitchOK,
           rightYawOK,
-          roll: rotation.roll,
-          pitch: rotation.pitch,
-          yaw: rotation.yaw,
         });
         return rightResult;
 
       case FaceDetectionState.UP_FACE:
-        // 위: pitch가 -45~-25도, yaw/roll은 ±15도 이내
+        // 위: pitch가 -13~-9도
         const upRollOK = Math.abs(rotation.roll) <= 15;
-        const upPitchOK = rotation.pitch <= -25 && rotation.pitch >= -45;
+        const upPitchOK = rotation.pitch <= -9 && rotation.pitch >= -13;
         const upYawOK = Math.abs(rotation.yaw) <= 15;
 
         const upResult = upRollOK && upPitchOK && upYawOK;
@@ -1080,16 +1068,13 @@ const FaceRecognition: React.FC = () => {
           upRollOK,
           upPitchOK,
           upYawOK,
-          roll: rotation.roll,
-          pitch: rotation.pitch,
-          yaw: rotation.yaw,
         });
         return upResult;
 
       case FaceDetectionState.DOWN_FACE:
-        // 아래: pitch가 25~45도, yaw/roll은 ±15도 이내
+        // 아래: pitch가 9~13도
         const downRollOK = Math.abs(rotation.roll) <= 15;
-        const downPitchOK = rotation.pitch >= 25 && rotation.pitch <= 45;
+        const downPitchOK = rotation.pitch >= 9 && rotation.pitch <= 13;
         const downYawOK = Math.abs(rotation.yaw) <= 15;
 
         const downResult = downRollOK && downPitchOK && downYawOK;
@@ -1098,9 +1083,6 @@ const FaceRecognition: React.FC = () => {
           downRollOK,
           downPitchOK,
           downYawOK,
-          roll: rotation.roll,
-          pitch: rotation.pitch,
-          yaw: rotation.yaw,
         });
         return downResult;
 
@@ -1152,11 +1134,12 @@ const FaceRecognition: React.FC = () => {
       return;
     }
 
-    // 방향이 올바른지 확인
+    // 방향이 올바른지 확인 - 여기서 현재 상태 그대로 사용
     const isCorrect = isCorrectOrientation(rotationValues, currentState);
 
     if (isCorrect) {
       console.log('✅ 모든 조건 만족! 타이머 시작');
+      // 타이머 시작을 위한 함수 호출
       handleStateTimer();
     } else {
       console.log('❌ 방향 부정확으로 타이머 미작동');
@@ -1177,12 +1160,7 @@ const FaceRecognition: React.FC = () => {
       return;
     }
 
-    // 마지막 상태 변경 후 최소 1초가 지났는지 확인
-    const now = Date.now();
-    if (now - lastStateTime.current < 1000) {
-      console.log('상태 변경 후 시간이 충분히 지나지 않음');
-      return;
-    }
+    console.log('타이머 시작 함수 호출됨');
 
     // 기존 타이머가 있으면 제거
     if (timerRef.current) {
@@ -1250,19 +1228,13 @@ const FaceRecognition: React.FC = () => {
         setTimerProgress(0);
         timerActiveRef.current = false;
         timerInProgressRef.current = false;
-
-        // 상태 변경 후 확인 (디버깅)
-        setTimeout(() => {
-          console.log(
-            '타이머 완료 후 현재 상태:',
-            FaceDetectionState[detectionState]
-          );
-        }, 500);
       }
     }, updateInterval);
 
     // 타이머 ID 저장
     timerRef.current = interval as unknown as number;
+
+    console.log('타이머 설정 완료');
   };
 
   // 얼굴 캡처
