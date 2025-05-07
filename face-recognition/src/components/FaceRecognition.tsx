@@ -341,6 +341,7 @@ const CapturedImg = styled.img`
 
 // 메인 컴포넌트
 const FaceRecognition: React.FC = () => {
+  const currentStateRef = useRef<FaceDetectionState>(FaceDetectionState.INIT);
   const [detectionState, setDetectionState] = useState<FaceDetectionState>(
     FaceDetectionState.INIT
   );
@@ -373,6 +374,15 @@ const FaceRecognition: React.FC = () => {
   const timerRef = useRef<number | null>(null);
   const timerActiveRef = useRef<boolean>(false); // 타이머 활성화 상태를 추적
   const timerInProgressRef = useRef<boolean>(false); // 타이머 진행 중 상태 (카운트다운 중)
+  const isFirstMount = useRef<boolean>(true);
+
+  // detectionState가 변경될 때마다 ref 값도 업데이트
+  useEffect(() => {
+    currentStateRef.current = detectionState;
+    console.log(
+      `상태 변경됨 및 ref 업데이트: ${FaceDetectionState[detectionState]}`
+    );
+  }, [detectionState]);
 
   // 상태 변경 감지용 useEffect 추가
   useEffect(() => {
@@ -381,6 +391,15 @@ const FaceRecognition: React.FC = () => {
     setStateStable(true);
     lastStateTime.current = Date.now();
   }, [detectionState]);
+
+  useEffect(() => {
+    // 앱 처음 마운트 시에만 INIT으로 설정
+    if (isFirstMount.current) {
+      console.log('컴포넌트 첫 마운트, 상태 초기화');
+      setDetectionState(FaceDetectionState.INIT);
+      isFirstMount.current = false;
+    }
+  }, []);
 
   // 메시지와 서브메시지 설정
   const getMessage = (): string => {
@@ -479,6 +498,27 @@ const FaceRecognition: React.FC = () => {
       }
     };
   }, []);
+
+  // detectionState 변경 확인을 위한 useEffect 추가
+  useEffect(() => {
+    console.log(`상태가 변경됨: ${FaceDetectionState[detectionState]}`);
+
+    // 상태가 변경되면 새로운 상태에 맞는 UI 조정
+    if (detectionState !== FaceDetectionState.INIT) {
+      // 타이머 상태 리셋
+      timerActiveRef.current = false;
+      timerInProgressRef.current = false;
+      setProcessing(false);
+      setStateTimer(0);
+      setTimerProgress(0);
+
+      // 상태 안정화 시간 설정
+      lastStateTime.current = Date.now();
+      setStateStable(true);
+
+      console.log(`UI 업데이트: ${getMessage()} / ${getSubMessage()}`);
+    }
+  }, [detectionState]);
 
   // MediaPipe 결과 처리 함수
   const onResults = (results: mp.Results): void => {
@@ -1197,10 +1237,12 @@ const FaceRecognition: React.FC = () => {
       if (currentStep >= totalSteps) {
         clearInterval(interval);
         timerRef.current = null;
-        console.log('타이머 완료: 얼굴 캡처');
+        console.log('타이머 완료: 얼굴 캡처 호출');
 
         // 타이머 완료 후 캡처 진행
         captureFace(); // 카운트 완료 후 얼굴 캡처
+
+        console.log('captureFace 호출 완료');
 
         // 상태 리셋
         setProcessing(false);
@@ -1208,6 +1250,14 @@ const FaceRecognition: React.FC = () => {
         setTimerProgress(0);
         timerActiveRef.current = false;
         timerInProgressRef.current = false;
+
+        // 상태 변경 후 확인 (디버깅)
+        setTimeout(() => {
+          console.log(
+            '타이머 완료 후 현재 상태:',
+            FaceDetectionState[detectionState]
+          );
+        }, 500);
       }
     }, updateInterval);
 
@@ -1217,6 +1267,15 @@ const FaceRecognition: React.FC = () => {
 
   // 얼굴 캡처
   const captureFace = (): void => {
+    console.log(
+      'captureFace 함수 시작, 현재 상태:',
+      FaceDetectionState[detectionState]
+    );
+    console.log(
+      'currentStateRef 값:',
+      FaceDetectionState[currentStateRef.current]
+    );
+
     if (!lastFrameRef.current) return;
 
     // 캡처용 캔버스 생성
@@ -1244,32 +1303,61 @@ const FaceRecognition: React.FC = () => {
     // 이미지 배열에 추가
     setCapturedImages((prev) => [...prev, capturedImage]);
 
+    console.log('캡처 완료, 다음 상태로 이동 호출');
+    console.log('이동 전 현재 상태:', FaceDetectionState[detectionState]);
+
     // 다음 상태로 이동
     moveToNextState();
+    console.log(
+      'moveToNextState 호출 후, React 상태:',
+      FaceDetectionState[detectionState]
+    );
+    console.log(
+      'moveToNextState 호출 후, Ref 상태:',
+      FaceDetectionState[currentStateRef.current]
+    );
+    // 이동 후 확인 (비동기 처리 때문에 setTimeout 사용)
+    setTimeout(() => {
+      console.log('이동 후 현재 상태:', FaceDetectionState[detectionState]);
+    }, 100);
+
+    console.log('moveToNextState 호출 완료');
   };
 
   // 다음 상태로 이동
   const moveToNextState = (): void => {
+    // 현재 ref에서 상태 읽기
+    const currentState = currentStateRef.current;
+    console.log(
+      'moveToNextState 함수 시작, 현재 상태:',
+      FaceDetectionState[currentState]
+    );
+
     // 타이머 상태 리셋
     timerActiveRef.current = false;
     timerInProgressRef.current = false;
 
-    switch (detectionState) {
+    let nextState: FaceDetectionState;
+
+    switch (currentState) {
+      case FaceDetectionState.INIT:
+        nextState = FaceDetectionState.FRONT_FACE;
+        break;
       case FaceDetectionState.FRONT_FACE:
-        setDetectionState(FaceDetectionState.LEFT_FACE);
+        nextState = FaceDetectionState.LEFT_FACE;
         break;
       case FaceDetectionState.LEFT_FACE:
-        setDetectionState(FaceDetectionState.RIGHT_FACE);
+        nextState = FaceDetectionState.RIGHT_FACE;
         break;
       case FaceDetectionState.RIGHT_FACE:
-        setDetectionState(FaceDetectionState.UP_FACE);
+        nextState = FaceDetectionState.UP_FACE;
         break;
       case FaceDetectionState.UP_FACE:
-        setDetectionState(FaceDetectionState.DOWN_FACE);
+        nextState = FaceDetectionState.DOWN_FACE;
         break;
       case FaceDetectionState.DOWN_FACE:
         // 모든 얼굴 각도 캡처 완료
-        setDetectionState(FaceDetectionState.COMPLETED);
+        nextState = FaceDetectionState.COMPLETED;
 
         // 카메라 중지
         if (cameraRef.current) {
@@ -1277,10 +1365,31 @@ const FaceRecognition: React.FC = () => {
         }
         break;
       default:
+        nextState = detectionState; // 변경 없음
         break;
     }
+    // 상태 변경
+    if (nextState !== currentState) {
+      console.log(
+        `상태 변경 시도: ${FaceDetectionState[currentState]} -> ${FaceDetectionState[nextState]}`
+      );
 
-    setStateTimer(0);
+      // 함수형 업데이트 사용
+      setDetectionState((prevState) => {
+        console.log(
+          `상태 변경 실행: ${FaceDetectionState[prevState]} -> ${FaceDetectionState[nextState]}`
+        );
+        return nextState;
+      });
+
+      // 상태 변경 후 안정화 시간 리셋
+      lastStateTime.current = Date.now();
+      setStateStable(true);
+
+      // 타이머 상태 리셋
+      setStateTimer(0);
+      setTimerProgress(0);
+    }
   };
 
   // 비디오 시작
