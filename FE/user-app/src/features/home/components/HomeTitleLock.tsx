@@ -10,7 +10,7 @@ export function HomeTitleLock() {
       <Text variant="title3" weight="heavy" color="main" className="mr-1">
         ORDER.ME
       </Text>
-      <Text variant="title3" weight="bold">
+      <Text variant="title3" weight="semibold">
         를<br />
         간편하게 사용하기 위해서
         <br />

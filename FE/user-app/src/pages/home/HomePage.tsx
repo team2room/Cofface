@@ -52,7 +52,6 @@ export default function HomePage() {
   const locked = false
 
   const [isScrolled, setIsScrolled] = useState(false)
-  const lastScrollY = useRef(0)
   const isScrollingRef = useRef(false)
   const touchStartY = useRef(0)
 
@@ -174,7 +173,7 @@ export default function HomePage() {
           </HomeNav>
           {/* 등록 여부 */}
           {locked ? <HomeTitleLock /> : <HomeTitleUnlock />}
-          <HomeSelectDrinks />
+          <HomeSelectDrinks locked={locked} />
           <ScrollDown onClick={handleScrollDown}>
             <img
               className="w-16"

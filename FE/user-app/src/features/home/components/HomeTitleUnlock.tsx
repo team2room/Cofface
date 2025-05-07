@@ -7,7 +7,7 @@ const HomeTitle = tw.div`
 export function HomeTitleUnlock() {
   return (
     <HomeTitle>
-      <Text variant="title3" weight="bold">
+      <Text variant="title3" weight="semibold">
         방문했던 카페를 확인해봐요
         <br />
         <br />
