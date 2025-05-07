@@ -1,4 +1,4 @@
-import MenuCard from '@/components/MenuCard'
+import MenuCard from '@/features/order/components/MenuCard'
 import tw from 'twin.macro'
 import styled from '@emotion/styled'
 import { MenuItem } from '@/interfaces/OrderInterface'
