@@ -7,6 +7,7 @@ import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
 import CustomButton from '@/components/CustomButton'
 import OrderSection from '@/features/order/components/OrderSection'
+import ReceiptModal from '@/features/order/components/Receipt/ReceiptDialog'
 
 const Container = tw.div`flex flex-col items-center justify-center min-h-screen bg-white px-7`
 const MenuButton = tw.button`border border-main rounded-xl px-8 py-1 my-4 shadow-md`
@@ -15,36 +16,44 @@ export default function MenuPage() {
   const [showAllMenu, setShowAllMenu] = useState(false)
   const total = 19000
 
+  const [receiptOpen, setReceiptOpen] = useState(false)
+
   return (
-    <Container>
-      <Header isMember={true} />
+    <>
+      <Container>
+        <Header isMember={true} />
 
-      {/* 추천 메뉴 or 전체 메뉴 */}
-      {showAllMenu ? (
-        <AllMenuSection menuItems={menuItems} />
-      ) : (
-        <RecommendSection
-          recentMenus={recentMenus}
-          customMenus={recommendedMenus}
+        {/* 추천 메뉴 or 전체 메뉴 */}
+        {showAllMenu ? (
+          <AllMenuSection menuItems={menuItems} />
+        ) : (
+          <RecommendSection
+            recentMenus={recentMenus}
+            customMenus={recommendedMenus}
+          />
+        )}
+
+        {/* 추천 메뉴 <-> 전체 메뉴 전환 버튼 */}
+        <MenuButton onClick={() => setShowAllMenu(!showAllMenu)}>
+          <Text variant="body2" weight="bold" color="main">
+            {showAllMenu ? '추천메뉴 보기' : '전체메뉴 보기'}
+          </Text>
+        </MenuButton>
+
+        {/* 주문 내역 */}
+        <OrderSection orders={orderList} />
+
+        {/* 결제하기 버튼 */}
+        <CustomButton
+          text={`${total.toLocaleString()}원 결제하기`}
+          variant={'main'}
+          onClick={() => setReceiptOpen(true)}
         />
-      )}
+      </Container>
 
-      {/* 추천 메뉴 <-> 전체 메뉴 전환 버튼 */}
-      <MenuButton onClick={() => setShowAllMenu(!showAllMenu)}>
-        <Text variant="body2" weight="bold" color="main">
-          {showAllMenu ? '추천메뉴 보기' : '전체메뉴 보기'}
-        </Text>
-      </MenuButton>
-
-      {/* 주문 내역 */}
-      <OrderSection orders={orderList} />
-
-      {/* 결제하기 버튼 */}
-      <CustomButton
-        text={`${total.toLocaleString()}원 결제하기`}
-        variant={'main'}
-      />
-    </Container>
+      {/* 주문 정보 모달 */}
+      <ReceiptModal open={receiptOpen} onOpenChange={setReceiptOpen} />
+    </>
   )
 }
 

@@ -49,3 +49,16 @@ export interface OptionModalProps {
   onConfirm?: () => void
   menu: MenuData
 }
+
+// 옵션 포함 주문 정보
+export interface OrderOption {
+  name: string
+  price: number // 0이면 추가금 없음
+}
+
+export interface RealOrderItem {
+  name: string
+  quantity: number
+  basePrice: number
+  options: OrderOption[]
+}
