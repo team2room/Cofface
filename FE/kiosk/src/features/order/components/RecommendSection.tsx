@@ -1,27 +1,15 @@
 import MenuCard from '@/components/MenuCard'
 import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
+import { RecommendSectionProps } from '@/interfaces/OrderInterface'
 
-const Container = tw.div`w-full mb-6`
-const Section = tw.section`bg-pink-50 p-6 rounded-xl flex`
-const Left = tw.div`w-1/2 flex flex-col justify-center items-start pr-4`
-const Right = tw.div`w-1/2 grid grid-cols-2 gap-4`
-const Title = tw.h2`text-lg font-bold mb-2`
-const Grid = tw.div`grid grid-cols-2 gap-4`
-const CustomSection = tw.section`bg-yellow-50 p-6 rounded-xl flex mt-4`
-const CustomLeft = tw.div`w-1/2 flex flex-col justify-center items-start pr-4`
-const CustomRight = tw.div`w-1/2 grid grid-cols-2 gap-4`
-
-interface RecommendSectionProps {
-  recentMenus: MenuItem[]
-  customMenus: MenuItem[]
-}
-
-export interface MenuItem {
-  name: string
-  price: number
-  image?: string
-}
+const Container = tw.div`w-full`
+const UpSection = tw.section`bg-[#FFF1EF] px-16 py-5 rounded-xl flex`
+const UpLeft = tw.div`grid grid-cols-2 gap-4`
+const UpRight = tw.div`flex flex-col justify-start items-start p-12`
+const DownSection = tw.section`bg-[#FFF8EC] px-16 py-5 rounded-xl flex mt-4`
+const DownLeft = tw.div`w-1/2 flex flex-col justify-start items-end text-end p-12`
+const DownRight = tw.div`grid grid-cols-2 gap-4`
 
 export default function RecommendSection({
   recentMenus,
@@ -29,47 +17,59 @@ export default function RecommendSection({
 }: RecommendSectionProps) {
   return (
     <Container>
-      <Section>
-        <Right>
+      <UpSection>
+        <UpLeft>
           {recentMenus.slice(0, 4).map((item, idx) => (
-            <MenuCard key={`recent-${idx}`} item={item} />
+            <MenuCard
+              key={`recent-${idx}`}
+              item={item}
+              boxShadowColor={'#FDCBC4'}
+            />
           ))}
           {/* {recentMenus.map((item, idx) => (
             <MenuCard key={`recent-${idx}`} item={item} />
           ))} */}
-        </Right>
-        <Left>
+        </UpLeft>
+        <UpRight>
           <Text variant="title4" weight="bold" className="mb-1">
             최근 주문 메뉴
           </Text>
-          <Text variant="body2" className="text-darkGray">
-            해당 매장에서 가장 최근에 주문한
+          <Text variant="body3" weight="bold" className="text-darkGray">
+            해당 매장에서
             <br />
-            메뉴 4개예요
+            가장 최근에 주문한
+            <br />
+            메뉴 4개에요
           </Text>
-        </Left>
-      </Section>
+        </UpRight>
+      </UpSection>
 
-      <CustomSection>
-        <CustomLeft>
+      <DownSection>
+        <DownLeft>
           <Text variant="title4" weight="bold" className="mb-1">
             고객 맞춤 메뉴
           </Text>
-          <Text variant="body4" className="text-gray-500">
+          <Text variant="body3" weight="bold" className="text-darkGray">
             모든 주문 내역으로
             <br />
-            고객님이 선호하신 메뉴를 추천했어요
+            고객님이 선호하실만한
+            <br />
+            메뉴를 추천했어요
           </Text>
-        </CustomLeft>
-        <CustomRight>
+        </DownLeft>
+        <DownRight>
           {/* {customMenus.slice(0, 4).map((item, idx) => (
             <MenuCard key={`custom-${idx}`} item={item} />
           ))} */}
           {customMenus.map((item, idx) => (
-            <MenuCard key={`custom-${idx}`} item={item} />
+            <MenuCard
+              key={`custom-${idx}`}
+              item={item}
+              boxShadowColor={'#F9E6C5'}
+            />
           ))}
-        </CustomRight>
-      </CustomSection>
+        </DownRight>
+      </DownSection>
     </Container>
   )
 }

@@ -1,16 +1,16 @@
-import { MenuItem } from '@/features/order/components/RecommendSection'
 import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
+import { MenuCardProps } from '@/interfaces/OrderInterface'
 
 const Container = tw.div`w-56 h-72 px-4 py-3 rounded-xl bg-white grid justify-items-center`
 const Image = tw.img`w-32 h-32 object-cover`
 const Divider = tw.hr`w-full h-px my-2 bg-gray border-0`
 
-export default function MenuCard({ item }: { item: MenuItem }) {
+export default function MenuCard({ item, boxShadowColor }: MenuCardProps) {
   return (
     <Container
       style={{
-        boxShadow: '1.462px 1.462px 4px 2px #FDCBC4',
+        boxShadow: `1.462px 1.462px 4px 2px ${boxShadowColor}`,
       }}
     >
       {item.image ? (
