@@ -5,7 +5,9 @@ import com.ssafy.orderme.kiosk.dto.response.MenuDetailResponse;
 import com.ssafy.orderme.kiosk.dto.response.MenuResponse;
 import com.ssafy.orderme.kiosk.dto.response.RecommendedMenuResponse;
 import com.ssafy.orderme.kiosk.service.MenuService;
-import com.ssafy.orderme.kiosk.util.MockJwtService;
+import com.ssafy.orderme.security.JwtTokenProvider;
+import com.ssafy.orderme.user.mapper.UserMapper;
+import com.ssafy.orderme.user.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,15 +25,17 @@ import java.util.List;
 public class KioskController {
 
     private final MenuService menuService;
-    private final MockJwtService mockJwtService;
     private final CategoryService categoryService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final UserMapper userMapper;
 
     @Autowired
-    public KioskController(MenuService menuService, MockJwtService mockJwtService,
-                           CategoryService categoryService) {
+    public KioskController(MenuService menuService, CategoryService categoryService,
+                           JwtTokenProvider jwtTokenProvider, UserMapper userMapper) {
         this.menuService = menuService;
-        this.mockJwtService = mockJwtService;
         this.categoryService = categoryService;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.userMapper = userMapper;
     }
 
     /**
@@ -51,9 +55,8 @@ public class KioskController {
         // 토큰이 있는 경우 (회원)
         if (token != null && token.startsWith("Bearer ")) {
             String jwtToken = token.substring(7);
-            if (mockJwtService.validateToken(jwtToken)) {
-                String userIdStr = mockJwtService.getUserIdFromToken(jwtToken);
-                Long userId = Long.parseLong(userIdStr);
+            if (jwtTokenProvider.validateToken(jwtToken)) {
+                String userId = jwtTokenProvider.getUserId(jwtToken);
                 recommendedMenus = menuService.getRecommendedMenusForUser(storeId, userId);
             } else {
                 // 유효하지 않은 토큰인 경우 비회원 처리
@@ -66,7 +69,6 @@ public class KioskController {
 
         return ResponseEntity.ok(ApiResponse.success("추천 메뉴 목록 조회 성공", recommendedMenus));
     }
-
     /**
      * 전체 메뉴 목록 조회
      */

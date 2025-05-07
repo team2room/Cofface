@@ -59,11 +59,11 @@ public interface MenuMapper {
     /**
      * 사용자가 가장 많이 주문한 메뉴 목록 조회
      * @param storeId 매장 ID
-     * @param userId 사용자 ID
+     * @param userId 사용자 ID (UUID 문자열)
      * @param limit 조회할 개수
      * @return 자주 주문한 메뉴 목록
      */
     List<Menu> findFrequentOrderedMenus(@Param("storeId") Long storeId,
-                                        @Param("userId") Long userId,
+                                        @Param("userId") String userId,
                                         @Param("limit") int limit);
 }
