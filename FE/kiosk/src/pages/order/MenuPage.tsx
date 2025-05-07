@@ -15,23 +15,13 @@ export default function MenuPage() {
   const [showAllMenu, setShowAllMenu] = useState(false)
   const total = 19000
 
-  const [selectedCategory, setSelectedCategory] = useState('전체 메뉴')
-  const handleSelectCategory = (cat: string) => {
-    setSelectedCategory(cat)
-  }
-
   return (
     <Container>
       <Header isMember={true} />
 
       {/* 추천 메뉴 or 전체 메뉴 */}
       {showAllMenu ? (
-        <AllMenuSection
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={handleSelectCategory}
-          menuItems={menuItems}
-        />
+        <AllMenuSection menuItems={menuItems} />
       ) : (
         <RecommendSection
           recentMenus={recentMenus}
@@ -90,32 +80,86 @@ const orderList = [
   },
 ]
 
-// categories
-const categories = [
-  '전체 메뉴',
-  '커피',
-  '디카페인',
-  '에이드&주스',
-  '티',
-  '스무디&프라페',
-  '디저트',
-]
-
 // menuItems
 const menuItems: MenuItem[] = [
   {
     name: '디카페인 카페모카',
     price: 2500,
-    image: '/images/menu1.png',
+    image: 'https://picsum.photos/200',
   },
   {
     name: '디카페인 헬카페라떼',
     price: 4500,
-    image: '/images/menu2.png',
+    image: 'https://picsum.photos/200',
   },
   {
     name: '콜드브루 아메리카노',
     price: 3000,
-    image: '/images/menu3.png',
+    image: 'https://picsum.photos/200',
+  },
+  {
+    name: '콜드브루 아메리카노',
+    price: 3000,
+    image: 'https://picsum.photos/200',
+  },
+  {
+    name: '디카페인 카페모카',
+    price: 2500,
+    image: 'https://picsum.photos/200',
+  },
+  {
+    name: '디카페인 헬카페라떼',
+    price: 4500,
+    image: 'https://picsum.photos/200',
+  },
+  {
+    name: '콜드브루 아메리카노',
+    price: 3000,
+    image: 'https://picsum.photos/200',
+  },
+  {
+    name: '콜드브루 아메리카노',
+    price: 3000,
+    image: 'https://picsum.photos/200',
+  },
+  {
+    name: '디카페인 카페모카',
+    price: 2500,
+    image: 'https://picsum.photos/200',
+  },
+  {
+    name: '디카페인 헬카페라떼',
+    price: 4500,
+    image: 'https://picsum.photos/200',
+  },
+  {
+    name: '콜드브루 아메리카노',
+    price: 3000,
+    image: 'https://picsum.photos/200',
+  },
+  {
+    name: '콜드브루 아메리카노',
+    price: 3000,
+    image: 'https://picsum.photos/200',
+  },
+  {
+    name: '디카페인 카페모카',
+    price: 2500,
+    image: 'https://picsum.photos/200',
+  },
+  {
+    name: '디카페인 헬카페라떼',
+    price: 4500,
+    image: 'https://picsum.photos/200',
+  },
+  {
+    name: '콜드브루 아메리카노',
+    price: 3000,
+    image: 'https://picsum.photos/200',
+  },
+  {
+    name: '콜드브루 아메리카노',
+    price: 3000,
+    image: 'https://picsum.photos/200',
   },
 ]
