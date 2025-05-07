@@ -1014,8 +1014,8 @@ const FaceRecognition: React.FC = () => {
       case FaceDetectionState.FRONT_FACE:
         // 정면: roll, pitch, yaw 모두 ±15도 이내
         const frontRollOK = Math.abs(rotation.roll) <= 20;
-        const frontPitchOK = Math.abs(rotation.pitch) <= 15;
-        const frontYawOK = Math.abs(rotation.yaw) <= 15;
+        const frontPitchOK = Math.abs(rotation.pitch) <= 6;
+        const frontYawOK = Math.abs(rotation.yaw) <= 10;
 
         const frontResult = frontRollOK && frontPitchOK && frontYawOK;
         console.log('정면 방향 체크:', {
@@ -1030,7 +1030,7 @@ const FaceRecognition: React.FC = () => {
         // 왼쪽: yaw가 -45~-35도 (부호 수정)
         const leftRollOK = Math.abs(rotation.roll) <= 15;
         const leftPitchOK = Math.abs(rotation.pitch) <= 15;
-        const leftYawOK = rotation.yaw <= -35 && rotation.yaw >= -45;
+        const leftYawOK = rotation.yaw <= -15 && rotation.yaw >= -35;
 
         const leftResult = leftRollOK && leftPitchOK && leftYawOK;
         console.log('왼쪽 방향 체크:', {
@@ -1045,7 +1045,7 @@ const FaceRecognition: React.FC = () => {
         // 오른쪽: yaw가 25~35도 (부호 수정)
         const rightRollOK = Math.abs(rotation.roll) <= 15;
         const rightPitchOK = Math.abs(rotation.pitch) <= 15;
-        const rightYawOK = rotation.yaw >= 25 && rotation.yaw <= 35;
+        const rightYawOK = rotation.yaw >= 15 && rotation.yaw <= 35;
 
         const rightResult = rightRollOK && rightPitchOK && rightYawOK;
         console.log('오른쪽 방향 체크:', {
@@ -1059,7 +1059,7 @@ const FaceRecognition: React.FC = () => {
       case FaceDetectionState.UP_FACE:
         // 위: pitch가 -13~-9도
         const upRollOK = Math.abs(rotation.roll) <= 15;
-        const upPitchOK = rotation.pitch <= -9 && rotation.pitch >= -13;
+        const upPitchOK = rotation.pitch <= -2 && rotation.pitch >= -7;
         const upYawOK = Math.abs(rotation.yaw) <= 15;
 
         const upResult = upRollOK && upPitchOK && upYawOK;
@@ -1074,7 +1074,7 @@ const FaceRecognition: React.FC = () => {
       case FaceDetectionState.DOWN_FACE:
         // 아래: pitch가 9~13도
         const downRollOK = Math.abs(rotation.roll) <= 15;
-        const downPitchOK = rotation.pitch >= 9 && rotation.pitch <= 13;
+        const downPitchOK = rotation.pitch >= 9 && rotation.pitch <= 15;
         const downYawOK = Math.abs(rotation.yaw) <= 15;
 
         const downResult = downRollOK && downPitchOK && downYawOK;
