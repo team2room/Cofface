@@ -339,6 +339,28 @@ class KoreanTextUtil {
   }
 }
 
+// 벡터 내적 계산
+const dotProduct = (a: {x: number, y: number, z: number}, b: {x: number, y: number, z: number}): number => {
+  return a.x * b.x + a.y * b.y + a.z * b.z;
+};
+
+// 벡터 크기 계산
+const vectorMagnitude = (v: {x: number, y: number, z: number}): number => {
+  return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+};
+
+// 두 벡터 사이의 각도 계산 (라디안)
+const angleBetweenVectors = (a: {x: number, y: number, z: number}, b: {x: number, y: number, z: number}): number => {
+  const dot = dotProduct(a, b);
+  const magA = vectorMagnitude(a);
+  const magB = vectorMagnitude(b);
+  
+  // 내적을 벡터 크기의 곱으로 나누면 코사인 값
+  // 부동소수점 오류 방지를 위해 -1 ~ 1 사이로 제한
+  const cos = Math.max(-1, Math.min(1, dot / (magA * magB)));
+  return Math.acos(cos);
+};
+
 interface FaceAngles {
   pitch: number;
   yaw: number;
@@ -371,6 +393,7 @@ const FaceRecognition: React.FC = () => {
   const lastTextUpdateRef = useRef<number>(0); // 텍스트 업데이트 타이밍 제어
   const TEXT_UPDATE_INTERVAL = 500; // 500ms마다 텍스트 업데이트
   const baselineAnglesRef = useRef<FaceAngles | null>(null); // 기준 각도 저장
+  const rollMeasurements = useRef<number[]>([]); // Roll 측정값 버퍼
 
   // MediaPipe 관련 참조
   const faceMeshRef = useRef<facemesh.FaceMesh | null>(null);
@@ -436,6 +459,21 @@ const FaceRecognition: React.FC = () => {
     }
   };
 
+  // Roll 측정값을 평균화하는 함수
+  const smoothRollMeasurement = (newValue: number): number => {
+    // 새 측정값 추가
+    rollMeasurements.current.push(newValue);
+    
+    // 배열 크기 제한
+    if (rollMeasurements.current.length > 5) {
+      rollMeasurements.current.shift();
+    }
+    
+    // 평균 계산
+    const sum = rollMeasurements.current.reduce((a, b) => a + b, 0);
+    return sum / rollMeasurements.current.length;
+  };
+
   // 한글 텍스트 유틸리티 초기화
   useEffect(() => {
     koreanTextUtilRef.current = new KoreanTextUtil();
@@ -449,13 +487,15 @@ const FaceRecognition: React.FC = () => {
     ) {
       // 새로운 상태로 변경될 때 안정화 시간 필요
       setStateStable(false);
-
-      // 상태 변경 후 1.5초 후에 안정화 허용
+      console.log('상태 변경: 안정화 대기 시작', FaceDetectionState[detectionState]);
+  
+      // 상태 변경 후 1초 후에 안정화 허용
       const timer = setTimeout(() => {
         setStateStable(true);
         lastStateTime.current = Date.now();
-      }, 1500);
-
+        console.log('상태 안정화 완료', FaceDetectionState[detectionState]);
+      }, 1000);
+  
       return () => clearTimeout(timer);
     }
   }, [detectionState]);
@@ -581,6 +621,184 @@ const FaceRecognition: React.FC = () => {
     }
   };
 
+  // 벡터 계산을 위한 도우미 함수
+  const getVector = (
+    p1: facemesh.NormalizedLandmark,
+    p2: facemesh.NormalizedLandmark
+  ) => ({
+    x: p2.x - p1.x,
+    y: p2.y - p1.y,
+    z: p2.z - p1.z,
+  });
+
+  // MediaPipe 얼굴 랜드마크로 얼굴 방향 계산 (수정된 버전)
+  const calculateFaceAngles = (
+    landmarks: facemesh.NormalizedLandmarkList
+  ): FaceAngles => {
+    // 랜드마크 선택
+    const nose = landmarks[1]; // 코 끝
+    const forehead = landmarks[10]; // 이마 중앙
+    const chin = landmarks[152]; // 턱 중앙
+    const leftEye = landmarks[33]; // 왼쪽 눈 바깥
+    const rightEye = landmarks[263]; // 오른쪽 눈 바깥
+  
+    // 새로운 Pitch 계산 방식
+    // z축 방향을 기준으로 계산
+    const faceNormal = {
+      x: 0,
+      y: 0,
+      z: -1  // 카메라를 향한 방향이 -z
+    };
+    
+    // 얼굴 평면 계산 (왼쪽 눈 - 오른쪽 눈 - 턱)
+    const v1 = {
+      x: rightEye.x - leftEye.x,
+      y: rightEye.y - leftEye.y,
+      z: rightEye.z - leftEye.z
+    };
+    
+    const v2 = {
+      x: chin.x - leftEye.x,
+      y: chin.y - leftEye.y,
+      z: chin.z - leftEye.z
+    };
+    
+    // 평면의 법선 벡터 계산 (외적)
+    const normal = {
+      x: v1.y * v2.z - v1.z * v2.y,
+      y: v1.z * v2.x - v1.x * v2.z,
+      z: v1.x * v2.y - v1.y * v2.x
+    };
+    
+    // 법선 벡터 정규화
+    const normalLength = Math.sqrt(
+      normal.x * normal.x + 
+      normal.y * normal.y + 
+      normal.z * normal.z
+    );
+    
+    normal.x /= normalLength;
+    normal.y /= normalLength;
+    normal.z /= normalLength;
+    
+    // Pitch 각도: 정면 법선 벡터와 얼굴 법선 벡터의 y-z 평면에서의 각도
+    const pitchCos = normal.z / Math.sqrt(normal.y * normal.y + normal.z * normal.z);
+    let pitch = Math.acos(pitchCos) * (180 / Math.PI);
+    
+    // 방향 보정
+    if (normal.y < 0) {
+      pitch = -pitch;
+    }
+    
+    // Yaw 계산: 좌우 시선 방향
+    const eyeVector = {
+      x: rightEye.x - leftEye.x,
+      y: rightEye.y - leftEye.y,
+      z: rightEye.z - leftEye.z,
+    };
+  
+    // z축 회전에 의한 yaw 각도 계산
+    const yawRad = Math.atan2(eyeVector.z, eyeVector.x);
+    const yaw = (yawRad * 180) / Math.PI;
+  
+    // Roll 계산 (기울기) - 동일
+    const rollRad = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x);
+    const roll = (rollRad * 180) / Math.PI;
+  
+    return {
+      pitch: pitch,
+      yaw: yaw,
+      roll: roll,
+    };
+  };
+
+  // 기준점을 고려한 상대적 각도 계산 (개선)
+  const calculateRelativeAngles = (angles: FaceAngles): FaceAngles => {
+    if (!baselineAnglesRef.current) {
+      return angles;
+    }
+  
+    console.log('원본 각도:', angles);
+    console.log('기준 각도:', baselineAnglesRef.current);
+  
+    // 상대적 각도 계산
+    const relativePitch = angles.pitch - baselineAnglesRef.current.pitch;
+    const relativeYaw = angles.yaw - baselineAnglesRef.current.yaw;
+    let relativeRoll = angles.roll - baselineAnglesRef.current.roll;
+  
+    // Roll 각도 정규화 (-180 ~ 180 범위)
+    if (relativeRoll > 180) relativeRoll -= 360;
+    if (relativeRoll < -180) relativeRoll += 360;
+  
+    console.log('상대 각도:', { pitch: relativePitch, yaw: relativeYaw, roll: relativeRoll });
+  
+    return {
+      pitch: relativePitch,
+      yaw: relativeYaw,
+      roll: relativeRoll,
+    };
+  };
+
+  // 얼굴 방향 시각화 함수
+  const drawFaceOrientationVectors = (
+    ctx: CanvasRenderingContext2D,
+    landmarks: facemesh.NormalizedLandmarkList,
+    canvas: HTMLCanvasElement
+  ) => {
+    // 코 끝점 (기준점)
+    const nose = landmarks[1];
+    const noseX = nose.x * canvas.width;
+    const noseY = nose.y * canvas.height;
+    
+    // 방향 벡터 길이 (픽셀)
+    const vectorLength = 50;
+    
+    // 현재 얼굴 각도
+    const angles = calculateFaceAngles(landmarks);
+    
+    // Pitch 벡터 (상하 방향) - 파란색
+    const pitchRadians = (angles.pitch * Math.PI) / 180;
+    const pitchX = noseX;
+    const pitchY = noseY - vectorLength * Math.sin(pitchRadians);
+    // 저장
+    ctx.save();
+    
+    // Pitch 벡터 (상하 방향) - 파란색
+    ctx.beginPath();
+    ctx.moveTo(noseX, noseY);
+    ctx.lineTo(pitchX, pitchY);
+    ctx.strokeStyle = '#4285F4'; // 파란색
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Yaw 벡터 (좌우 방향) - 초록색
+    const yawRadians = (angles.yaw * Math.PI) / 180;
+    const yawX = noseX + vectorLength * Math.cos(yawRadians);
+    const yawY = noseY;
+    
+    ctx.beginPath();
+    ctx.moveTo(noseX, noseY);
+    ctx.lineTo(yawX, yawY);
+    ctx.strokeStyle = '#00c853'; // 초록색
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Roll 벡터 (회전 방향) - 빨간색
+    const rollRadians = (angles.roll * Math.PI) / 180;
+    const rollX = noseX + vectorLength * Math.cos(rollRadians);
+    const rollY = noseY + vectorLength * Math.sin(rollRadians);
+    
+    ctx.beginPath();
+    ctx.moveTo(noseX, noseY);
+    ctx.lineTo(rollX, rollY);
+    ctx.strokeStyle = '#ff3d00'; // 빨간색
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // 복원
+    ctx.restore();
+  };
+
   // MediaPipe 얼굴 메시 결과 처리
   const onFaceMeshResults = (results: facemesh.Results) => {
     if (!canvasRef.current) return;
@@ -634,6 +852,9 @@ const FaceRecognition: React.FC = () => {
       if (stateStable) {
         checkFaceOrientation(relativeAngles);
       }
+
+      // 얼굴 방향 시각화 추가
+      drawFaceOrientationVectors(ctx, results.multiFaceLandmarks[0], canvas);
 
       // 캔버스에 텍스트 그리기 (주기적으로만)
       const now = Date.now();
@@ -712,80 +933,6 @@ const FaceRecognition: React.FC = () => {
     }
   };
 
-  // 벡터 계산을 위한 도우미 함수
-  const getVector = (
-    p1: facemesh.NormalizedLandmark,
-    p2: facemesh.NormalizedLandmark
-  ) => ({
-    x: p2.x - p1.x,
-    y: p2.y - p1.y,
-    z: p2.z - p1.z,
-  });
-
-  // 기준점을 고려한 상대적 각도 계산
-  const calculateRelativeAngles = (angles: FaceAngles): FaceAngles => {
-    if (!baselineAnglesRef.current) {
-      return angles;
-    }
-
-    return {
-      pitch: angles.pitch - baselineAnglesRef.current.pitch,
-      yaw: angles.yaw - baselineAnglesRef.current.yaw,
-      roll: angles.roll - baselineAnglesRef.current.roll,
-    };
-  };
-
-  // MediaPipe 얼굴 랜드마크로 얼굴 방향 계산 (개선된 버전)
-  const calculateFaceAngles = (
-    landmarks: facemesh.NormalizedLandmarkList
-  ): FaceAngles => {
-    // 더 안정적인 랜드마크 선택
-    const nose = landmarks[1]; // 코 끝
-    const noseBridge = landmarks[168]; // 코 윗부분
-    const leftEye = landmarks[33]; // 왼쪽 눈 바깥
-    const rightEye = landmarks[263]; // 오른쪽 눈 바깥
-    const leftCheek = landmarks[50]; // 왼쪽 볼
-    const rightCheek = landmarks[280]; // 오른쪽 볼
-    const forehead = landmarks[10]; // 이마 중앙
-    const chin = landmarks[152]; // 턱 중앙
-
-    // Pitch 계산 (상하 각도): 코-턱 벡터와 수직선 사이의 각도
-    const noseToForehead = getVector(nose, forehead);
-    const noseToChin = getVector(nose, chin);
-
-    // 수직 벡터 (정면 기준)
-    const verticalVector = { x: 0, y: -1, z: 0 };
-
-    // 코-턱 벡터와 수직 벡터 사이의 각도 계산
-    const dotProduct = noseToChin.y * verticalVector.y;
-    const magnitudes =
-      Math.sqrt(noseToChin.y * noseToChin.y + noseToChin.z * noseToChin.z) *
-      Math.sqrt(verticalVector.y * verticalVector.y);
-
-    const pitchRad = Math.acos(dotProduct / magnitudes);
-    // Z 축 방향에 따라 부호 결정
-    const pitchSign = noseToChin.z < 0 ? -1 : 1;
-    const pitch = pitchSign * (pitchRad * (180 / Math.PI));
-
-    // Yaw 계산 (좌우 각도): 왼쪽 눈에서 오른쪽 눈으로의 벡터 사용
-    const eyeVector = getVector(leftEye, rightEye);
-    const horizontalVector = { x: 1, y: 0, z: 0 };
-
-    // 좌우 방향: 눈 벡터와 수평 벡터 사이의 각도
-    const yawRad = Math.atan2(eyeVector.z, eyeVector.x);
-    const yaw = yawRad * (180 / Math.PI);
-
-    // Roll 계산 (기울기): 양쪽 눈의 높이 차이
-    const rollRad = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x);
-    const roll = rollRad * (180 / Math.PI);
-
-    return {
-      pitch: pitch,
-      yaw: yaw,
-      roll: roll,
-    };
-  };
-
   // 방향 신뢰도 기반 감지 함수들 (개선)
   const updatePitchConfidence = (
     isPitchUp: boolean,
@@ -845,24 +992,42 @@ const FaceRecognition: React.FC = () => {
 
   // 얼굴 방향 확인 - 개선된 버전
   const checkFaceOrientation = (angles: FaceAngles): void => {
-    if (processing || !stateStable) return;
-
+    // 디버깅을 위한 로그 추가
+    console.log('checkFaceOrientation 호출됨:', {
+      processing,
+      stateStable,
+      state: FaceDetectionState[detectionState],
+      angles
+    });
+  
+    if (processing || !stateStable) {
+      console.log('처리 중이거나 상태가 안정화되지 않음');
+      return;
+    }
+  
     const { pitch, yaw, roll } = angles;
-
-    // 임계값 설정 (상대적 각도에 맞게 조정)
-    const PITCH_THRESHOLD = 10; // 기존보다 더 낮게 설정
-    const YAW_THRESHOLD = 15; // 기존보다 더 낮게 설정
-    const ROLL_THRESHOLD = 15;
-
-    // 얼굴이 감지된 상태에서 인식 로직 진행
+  
+    // 임계값 설정 (상대적 각도에 맞게 조정 - 더 관대하게)
+    const PITCH_THRESHOLD = 20; // 임계값 증가
+    const YAW_THRESHOLD = 20;
+    const ROLL_THRESHOLD = 20;
+  
+    // 상태 확인
     switch (detectionState) {
       case FaceDetectionState.FRONT_FACE:
+        console.log('정면 확인 검사:', {
+          pitch: Math.abs(pitch) < PITCH_THRESHOLD,
+          yaw: Math.abs(yaw) < YAW_THRESHOLD,
+          roll: Math.abs(roll) < ROLL_THRESHOLD
+        });
+        
         // 정면 얼굴 확인 (모든 각도가 임계값 내에 있어야 함)
         if (
           Math.abs(pitch) < PITCH_THRESHOLD &&
           Math.abs(yaw) < YAW_THRESHOLD &&
           Math.abs(roll) < ROLL_THRESHOLD
         ) {
+          console.log('정면 조건 충족! 타이머 시작');
           handleStateTimer();
         }
         break;
@@ -899,39 +1064,53 @@ const FaceRecognition: React.FC = () => {
 
   // 상태 타이머 처리 및 원형 게이지 업데이트
   const handleStateTimer = (): void => {
-    if (processing) return;
-
-    // 마지막 상태 변경 후 최소 1초가 지났는지 확인
+    console.log('타이머 함수 호출됨');
+    
+    if (processing) {
+      console.log('이미 처리 중이어서 타이머 시작 안함');
+      return;
+    }
+  
+    // 마지막 상태 변경 시간 제약 완화 (0ms으로 설정)
     const now = Date.now();
-    if (now - lastStateTime.current < 1000) return;
-
+    if (now - lastStateTime.current < 0) {
+      console.log('마지막 상태 변경 후 시간 제약:', now - lastStateTime.current);
+      return;
+    }
+  
+    console.log('타이머 시작!');
     setProcessing(true);
-
+    
+    // 타이머 시작을 명확히 표시하기 위해 색상 변경
+    setBorderColor('#4285F4'); // 파란색 (진행 중)
+  
     // 3초 카운트다운
     let count = 3;
     let progress = 0;
     setStateTimer(count);
     setTimerProgress(progress);
-
+  
     // 50ms 단위로 진행도 업데이트 (부드러운 애니메이션)
     const updateInterval = 50; // 50ms (더 부드럽게)
     const totalDuration = 3000; // 3초
     const totalSteps = totalDuration / updateInterval;
     let currentStep = 0;
-
+  
     const interval = setInterval(() => {
       currentStep++;
       progress = currentStep / totalSteps;
       setTimerProgress(progress);
-
+  
       if (currentStep % (totalSteps / 3) === 0) {
         // 1초마다 카운트 감소
         count--;
         setStateTimer(count);
+        console.log('타이머 카운트:', count);
       }
-
+  
       if (currentStep >= totalSteps) {
         clearInterval(interval);
+        console.log('타이머 완료, 다음 상태로 전환');
         moveToNextState();
         setProcessing(false);
         setTimerProgress(0);
@@ -1415,7 +1594,15 @@ const FaceRecognition: React.FC = () => {
         <div>Yaw Right 신뢰도: {yawRightConfidence.current.toFixed(2)}</div>
         <div>Pitch 측정값: {faceAngles.pitch.toFixed(2)}</div>
         <div>Yaw 측정값: {faceAngles.yaw.toFixed(2)}</div>
+        <div>Roll 측정값: {faceAngles.roll.toFixed(2)}</div>
         <div>상태: {FaceDetectionState[detectionState]}</div>
+        {baselineAnglesRef.current && (
+          <div>
+            <div>기준 Pitch: {baselineAnglesRef.current.pitch.toFixed(2)}</div>
+            <div>기준 Yaw: {baselineAnglesRef.current.yaw.toFixed(2)}</div>
+            <div>기준 Roll: {baselineAnglesRef.current.roll.toFixed(2)}</div>
+          </div>
+        )}
       </DebugPanel>
     );
   };
@@ -1454,38 +1641,36 @@ const FaceRecognition: React.FC = () => {
                   cy='250'
                   r='248'
                   progress={timerProgress}
-                  color='#4285F4'
-                />
-              </TimerCircleSVG>
-            </TimerCircleContainer>
-          )}
-        </VideoContainer>
-      </FaceCircle>
+color='#4285F4'
+/>
+</TimerCircleSVG>
+</TimerCircleContainer>
+)}
+</VideoContainer>
+</FaceCircle>
+  <Message>{getMessage()}</Message>
+  <SubMessage>{getSubMessage()}</SubMessage>
 
-      <Message>{getMessage()}</Message>
-      <SubMessage>{getSubMessage()}</SubMessage>
+  {/* 단계 표시기 */}
+  {detectionState !== FaceDetectionState.INIT &&
+    detectionState !== FaceDetectionState.COMPLETED &&
+    detectionState !== FaceDetectionState.VERIFYING &&
+    renderProgressSteps()}
 
-      {/* 단계 표시기 */}
-      {detectionState !== FaceDetectionState.INIT &&
-        detectionState !== FaceDetectionState.COMPLETED &&
-        detectionState !== FaceDetectionState.VERIFYING &&
-        renderProgressSteps()}
+  {detectionState === FaceDetectionState.INIT && !loadingError && (
+    <>
+      <Button onClick={handleStartCamera} disabled={!modelsLoaded}>
+        {modelsLoaded ? '카메라 켜기' : '모델 로딩 중...'}
+      </Button>
+      {/* 색상 안내 */}
+      {renderColorGuide()}
+    </>
+  )}
 
-      {detectionState === FaceDetectionState.INIT && !loadingError && (
-        <>
-          <Button onClick={handleStartCamera} disabled={!modelsLoaded}>
-            {modelsLoaded ? '카메라 켜기' : '모델 로딩 중...'}
-          </Button>
-          {/* 색상 안내 */}
-          {renderColorGuide()}
-        </>
-      )}
-
-      {loadingError && (
-        <Button onClick={() => window.location.reload()}>다시 시도하기</Button>
-      )}
-    </Container>
-  );
+  {loadingError && (
+    <Button onClick={() => window.location.reload()}>다시 시도하기</Button>
+  )}
+</Container>
+);
 };
-
 export default FaceRecognition;
