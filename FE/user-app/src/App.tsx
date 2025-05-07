@@ -1,3 +1,4 @@
+import HomePage from './pages/home/HomePage'
 import LoginConfirmPage from './pages/login/LoginConfirmPage'
 import LoginVerifyPage from './pages/login/LoginVerifyPage'
 import MainPage from './pages/login/MainPage'
@@ -9,7 +10,8 @@ function App() {
     <>
       <Fonts />
       <Routes>
-        <Route path="/" element={<MainPage />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<MainPage />} />
         <Route path="/login/verify" element={<LoginVerifyPage />} />
         <Route path="/login/confirm" element={<LoginConfirmPage />} />
       </Routes>
