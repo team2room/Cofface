@@ -3,7 +3,8 @@ package com.ssafy.orderme.kiosk.service;
 import com.ssafy.orderme.kiosk.dto.response.*;
 import com.ssafy.orderme.kiosk.mapper.MenuMapper;
 import com.ssafy.orderme.kiosk.model.Menu;
-import com.ssafy.orderme.kiosk.model.MenuOption;
+import com.ssafy.orderme.kiosk.model.OptionCategory;
+import com.ssafy.orderme.kiosk.model.OptionItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -55,44 +56,39 @@ public class MenuService {
             return null;
         }
 
-        List<MenuOption> options = menuMapper.findOptionsByMenuId(menuId);
-
-        // 옵션을 카테고리별로 그룹화
-        Map<String, List<MenuOption>> optionsByCategory = options.stream()
-                .collect(Collectors.groupingBy(MenuOption::getOptionCategory));
-
+        // 새로운 시스템: 메뉴에 연결된 옵션 카테고리 목록 조회
+        List<OptionCategory> optionCategories = menuMapper.findOptionCategoriesByMenuId(menuId);
         List<MenuOptionCategoryResponse> optionCategoryResponses = new ArrayList<>();
 
-        for (Map.Entry<String, List<MenuOption>> entry : optionsByCategory.entrySet()) {
-            String category = entry.getKey();
-            List<MenuOption> categoryOptions = entry.getValue();
+        // 각 옵션 카테고리에 대해 옵션 아이템 조회 및 응답 생성
+        for (OptionCategory category : optionCategories) {
+            List<OptionItem> items = menuMapper.findOptionItemsByCategoryId(category.getCategoryId());
 
-            // 카테고리별 옵션 응답 생성
             MenuOptionCategoryResponse categoryResponse = new MenuOptionCategoryResponse();
-            categoryResponse.setOptionCategory(category);
+            categoryResponse.setOptionCategory(category.getCategoryName());
+            categoryResponse.setIsRequired(category.getIsRequired());
 
-            // 해당 카테고리의 첫 번째 옵션의 필수 여부로 설정 (같은 카테고리는 모두 동일한 필수 여부를 가짐)
-            categoryResponse.setIsRequired(categoryOptions.get(0).getIsRequired());
+            // 최대 선택 수(maxSelections)는 현재 OptionCategory에 없음
+            // 추후 필요하면 OptionCategory 모델에 추가 필요
+            categoryResponse.setMaxSelections(1); // 기본값으로 설정하거나 다른 로직 적용
 
-            // 각 필드별 리스트 생성
+            // 옵션 아이템 정보 매핑
             List<String> optionNames = new ArrayList<>();
             List<Integer> additionalPrices = new ArrayList<>();
             List<Long> optionIds = new ArrayList<>();
+            List<Boolean> isDefault = new ArrayList<>(); // 추가
 
-            // 카테고리 내의 모든 옵션을 리스트에 추가
-            for (MenuOption option : categoryOptions) {
-                optionNames.add(option.getOptionName());
-                additionalPrices.add(option.getAdditionalPrice());
-                optionIds.add(option.getOptionId());
+            for (OptionItem item : items) {
+                optionNames.add(item.getOptionName());
+                additionalPrices.add(item.getAdditionalPrice());
+                optionIds.add(item.getItemId());
+                isDefault.add(item.getIsDefault()); // 추가
             }
 
-            // 해당 카테고리의 최대 선택 수는 첫 번째 옵션의 값으로 설정 (같은 카테고리는 동일한 최대 선택 수를 가짐)
-            categoryResponse.setMaxSelections(categoryOptions.get(0).getMaxSelections());
-
-            // 리스트 설정
             categoryResponse.setOptionNames(optionNames);
             categoryResponse.setAdditionalPrices(additionalPrices);
             categoryResponse.setOptionIds(optionIds);
+            categoryResponse.setIsDefault(isDefault); // 추가
 
             optionCategoryResponses.add(categoryResponse);
         }

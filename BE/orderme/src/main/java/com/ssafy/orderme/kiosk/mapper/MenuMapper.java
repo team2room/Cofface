@@ -1,10 +1,10 @@
 package com.ssafy.orderme.kiosk.mapper;
 
 import com.ssafy.orderme.kiosk.model.Menu;
-import com.ssafy.orderme.kiosk.model.MenuOption;
+import com.ssafy.orderme.kiosk.model.OptionCategory;
+import com.ssafy.orderme.kiosk.model.OptionItem;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
 import java.util.List;
 
 /**
@@ -42,13 +42,6 @@ public interface MenuMapper {
     Menu findById(Long menuId);
 
     /**
-     * 메뉴 ID로 메뉴 옵션 목록 조회
-     * @param menuId 메뉴 ID
-     * @return 메뉴 옵션 목록
-     */
-    List<MenuOption> findOptionsByMenuId(Long menuId);
-
-    /**
      * 매장에서 가장 많이 팔린 메뉴 목록 조회
      * @param storeId 매장 ID
      * @param limit 조회할 개수
@@ -66,4 +59,20 @@ public interface MenuMapper {
     List<Menu> findFrequentOrderedMenus(@Param("storeId") Long storeId,
                                         @Param("userId") String userId,
                                         @Param("limit") int limit);
+
+    /**
+     * 메뉴 ID로 옵션 카테고리 목록 조회
+     * @param menuId 메뉴 ID
+     * @return 옵션 카테고리 목록
+     */
+    List<OptionCategory> findOptionCategoriesByMenuId(Long menuId);
+
+    /**
+     * 옵션 카테고리 ID로 옵션 아이템 목록 조회
+     * @param categoryId 옵션 카테고리 ID
+     * @return 옵션 아이템 목록
+     */
+    List<OptionItem> findOptionItemsByCategoryId(Long categoryId);
+
+
 }

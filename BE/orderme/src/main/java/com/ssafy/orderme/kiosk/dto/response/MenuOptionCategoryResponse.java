@@ -6,13 +6,15 @@ import java.util.List;
  * 메뉴 옵션 카테고리별 응답 DTO
  */
 public class MenuOptionCategoryResponse {
-    private String optionCategory;         // 옵션 카테고리
+    private String optionCategory;         // 옵션 카테고리 이름
     private Boolean isRequired;            // 필수 여부
     private List<String> optionNames;      // 옵션 이름 목록
     private List<Integer> additionalPrices;// 추가 가격 목록
     private List<Long> optionIds;          // 옵션 ID 목록
+    private List<Boolean> isDefault;       // 기본 옵션 여부 목록
     private Integer maxSelections;         // 최대 선택 가능 수
 
+    // 모든 getter와 setter 메서드 추가
     public String getOptionCategory() {
         return optionCategory;
     }
@@ -51,6 +53,14 @@ public class MenuOptionCategoryResponse {
 
     public void setOptionIds(List<Long> optionIds) {
         this.optionIds = optionIds;
+    }
+
+    public List<Boolean> getIsDefault() {
+        return isDefault;
+    }
+
+    public void setIsDefault(List<Boolean> isDefault) {
+        this.isDefault = isDefault;
     }
 
     public Integer getMaxSelections() {
