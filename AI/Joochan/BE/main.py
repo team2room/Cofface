@@ -1,11 +1,10 @@
- from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Optional, List
 import numpy as np
 import base64
-import cv2
-import os
+import cv2, os, torch
 import logging
 from pathlib import Path
 import uuid
@@ -15,6 +14,7 @@ from insightface.app import FaceAnalysis
 from insightface.model_zoo import get_model
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
+from contextlib import asynccontextmanager
 
 # 로깅 설정
 logging.basicConfig(
@@ -27,17 +27,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger("face_recognition")
 
-# 앱 초기화
-app = FastAPI(title="안면인식 백엔드 API")
-
-# CORS 설정
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 프로덕션에서는 특정 도메인으로 제한
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # 설정
 VECTOR_DIMENSION = 512  # InsightFace 임베딩 차원
@@ -197,9 +186,23 @@ def base64_to_image(base64_str):
 face_system = FaceRecognitionSystem()
 
 # 시스템 초기화 미들웨어
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     await face_system.initialize()
+    yield
+
+# 앱 초기화
+app = FastAPI(title="안면인식 백엔드 API", lifespan=lifespan)
+
+# CORS 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 프로덕션에서는 특정 도메인으로 제한
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # API 엔드포인트: 얼굴 등록
 @app.post("/register", response_model=dict)
@@ -318,8 +321,6 @@ async def verify_face(rgb_image: str, depth_image: Optional[str] = None):
 @app.get("/health")
 async def health_check():
     """서버 상태 및 모델 상태 확인"""
-    import torch
-    
     return {
         "status": "healthy",
         "initialized": face_system.is_initialized,
