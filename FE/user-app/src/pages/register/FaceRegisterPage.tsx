@@ -6,23 +6,24 @@ import { Text } from '@/styles/typography'
 import { useEffect, useState } from 'react'
 import tw from 'twin.macro'
 
+const HeaderWrapper = tw.div`
+  sticky top-0 z-10 bg-white w-full
+`
+
 const Container = tw.div`
-  w-full 
-  max-w-screen-sm 
-  mx-auto 
-  flex 
-  flex-col 
-  h-screen
-  pb-4
-  px-8
+  w-full max-w-screen-sm mx-auto flex flex-col min-h-screen
+`
+
+const ContentWrapper = tw.div`
+  flex flex-col px-6 flex-1 pb-6
 `
 
 const TextWrapper = tw.div`
-  text-center mb-6
+  text-center mb-8
 `
 
 const ButtonWrapper = tw.div`
-  flex flex-col gap-4
+  flex flex-col gap-6
 `
 
 export function FaceRegisterPage() {
@@ -62,9 +63,11 @@ export function FaceRegisterPage() {
   ]
 
   return (
-    <>
-      <DetailHeader />
-      <Container>
+    <Container>
+      <HeaderWrapper>
+        <DetailHeader title="ㅤ" />
+      </HeaderWrapper>
+      <ContentWrapper>
         <TextWrapper>
           <Text variant="title3" weight="heavy" color="main">
             ORDER.ME
@@ -82,12 +85,12 @@ export function FaceRegisterPage() {
             return <FaceRegisterMainButton key={index} {...button} />
           })}
         </ButtonWrapper>
-      </Container>
-      <FaceRegisterCheckModal
-        isOpen={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        onConfirm={handleConfirmConsent}
-      />
-    </>
+        <FaceRegisterCheckModal
+          isOpen={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          onConfirm={handleConfirmConsent}
+        />
+      </ContentWrapper>
+    </Container>
   )
 }

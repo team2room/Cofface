@@ -2,6 +2,7 @@ import HomePage from './pages/home/HomePage'
 import LoginConfirmPage from './pages/login/LoginConfirmPage'
 import LoginVerifyPage from './pages/login/LoginVerifyPage'
 import MainPage from './pages/login/MainPage'
+import { FaceRegisterConfirmPage } from './pages/register/FaceRegisterConfirmPage'
 import { FaceRegisterPage } from './pages/register/FaceRegisterPage'
 import { PayRegisterPage } from './pages/register/PayRegisterPage'
 import { SettingPage } from './pages/setting/SettingPage'
@@ -20,6 +21,11 @@ function App() {
         <Route path="/login/confirm" element={<LoginConfirmPage />} />
 
         <Route path="/register/face" element={<FaceRegisterPage />} />
+        <Route path="/register/face/capture" />
+        <Route
+          path="/register/face/confirm"
+          element={<FaceRegisterConfirmPage />}
+        />
         <Route path="/register/pay" element={<PayRegisterPage />} />
 
         <Route path="/setting" element={<SettingPage />} />

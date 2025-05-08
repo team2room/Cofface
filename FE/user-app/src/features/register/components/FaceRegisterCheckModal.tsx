@@ -75,7 +75,7 @@ export function FaceRegisterCheckModal({
             </CheckboxLabel>
             <NavArrowDown color="darkGray" />
           </ConsentItem>
-          <ConfirmButton>
+          <ConfirmButton onClick={() => {}}>
             <Text variant="caption1" weight="medium" color="white">
               필수 동의하기
             </Text>
