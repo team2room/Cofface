@@ -39,7 +39,7 @@ public class JwtTokenProvider {
     // 토큰 유형
     public enum TokenType{
         APP(30 * 24 * 60 * 60 * 1000L),          // 30일
-        KIOSK(60 * 1000L),                       // 60초
+        KIOSK(60 * 2 * 1000L),                       // 120초
         REFRESH(60 * 24 * 60 * 60 * 1000L),      // 60일
         ADMIN(24 * 60 * 60 * 1000L);            // 1일
 

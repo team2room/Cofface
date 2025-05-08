@@ -9,6 +9,7 @@ import java.util.List;
 @Mapper
 public interface OrderMapper {
     Order findById(@Param("orderId") Integer orderId);
+    Order findByOrderId(@Param("orderId") String orderId);
     List<Order> findByUserId(@Param("userId") String userId);
     List<Order> findByKioskId(@Param("kioskId") Integer kioskId);
     int insertOrder(Order order);

@@ -142,7 +142,7 @@ public class AuthController {
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("accessToken", accessToken);
             responseData.put("tokenType", "Bearer");
-            responseData.put("expiresIn", 60); // 60초
+            responseData.put("expiresIn", 60 * 2); // 60초
             responseData.put("user", user.toDto());
 
             return ResponseEntity.ok(ApiResponse.success("로그인이 완료되었습니다.", responseData));
