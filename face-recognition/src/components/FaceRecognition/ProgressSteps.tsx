@@ -1,12 +1,13 @@
+// ProgressSteps.tsx
 import React from 'react';
-import { FaceDetectionState } from '../types';
-import { ProgressStepsContainer, ProgressStep } from '../styles';
+import { ProgressStepsContainer, ProgressStep } from './styles';
+import { FaceDetectionState } from './types';
 
 interface ProgressStepsProps {
-  currentState: FaceDetectionState;
+  detectionState: FaceDetectionState;
 }
 
-export const ProgressSteps: React.FC<ProgressStepsProps> = ({ currentState }) => {
+const ProgressSteps: React.FC<ProgressStepsProps> = ({ detectionState }) => {
   const steps = [
     FaceDetectionState.FRONT_FACE,
     FaceDetectionState.LEFT_FACE,
@@ -20,10 +21,12 @@ export const ProgressSteps: React.FC<ProgressStepsProps> = ({ currentState }) =>
       {steps.map((step, index) => (
         <ProgressStep
           key={index}
-          active={currentState === step}
-          completed={currentState > step}
+          active={detectionState === step}
+          completed={detectionState > step}
         />
       ))}
     </ProgressStepsContainer>
   );
 };
+
+export default ProgressSteps;

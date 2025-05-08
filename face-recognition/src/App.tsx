@@ -1,5 +1,5 @@
 import React from 'react';
-import FaceRecognition from './components/FaceRecognition/index';
+import FaceRecognition from './components/FaceRecognition/FaceRecognition';
 import './App.css';
 
 const App: React.FC = () => {

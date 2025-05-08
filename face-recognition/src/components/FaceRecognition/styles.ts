@@ -1,7 +1,17 @@
+// styles.ts
 import styled from '@emotion/styled';
-import { FaceCircleProps, TimerCircleProps } from '../types';
 
-// 메인 컨테이너
+// 스타일 컴포넌트 타입 정의
+export interface FaceCircleProps {
+  borderColor: string;
+}
+
+export interface TimerCircleProps {
+  progress: number;
+  color: string;
+}
+
+// 스타일 컴포넌트 정의
 export const Container = styled.div`
   display: flex;
   flex-direction: column;
@@ -140,7 +150,7 @@ export const TimerDisplay = styled.div`
 `;
 
 // 디버그 패널 스타일 컴포넌트
-export const DebugPanel = styled.div`
+export const DebugPanelContainer = styled.div`
   width: 100%;
   background-color: rgba(0, 0, 0, 0.7);
   border: 1px solid #555;
@@ -170,7 +180,7 @@ export const DebugValue = styled.div`
 `;
 
 // 색상 가이드 스타일 컴포넌트
-export const ColorGuide = styled.div`
+export const ColorGuideContainer = styled.div`
   width: 100%;
   background-color: rgba(0, 0, 0, 0.7);
   border: 1px solid #555;
@@ -245,7 +255,7 @@ export const ProgressStep = styled.div<{ active: boolean; completed: boolean }>`
 `;
 
 // 얼굴 가이드라인 컴포넌트
-export const FaceGuideline = styled.div`
+export const FaceGuidelineContainer = styled.div`
   position: absolute;
   width: 100%;
   height: 100%;
@@ -253,6 +263,16 @@ export const FaceGuideline = styled.div`
   left: 0;
   z-index: 1;
   pointer-events: none;
+`;
+
+// 회전 가이드 마커 컴포넌트 추가
+export const RotationMarker = styled.div`
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: white;
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
 `;
 
 // 캡처된 이미지 그리드 스타일

@@ -1,28 +1,28 @@
+// ColorGuide.tsx
 import React from 'react';
-import { BORDER_COLORS } from '../utils/constants';
-import { ColorGuide as StyledColorGuide, ColorItem, ColorSwatch } from '../styles';
+import { ColorGuideContainer, ColorItem, ColorSwatch } from './styles';
 
-export const ColorGuide: React.FC = () => {
+const ColorGuide: React.FC = () => {
   return (
-    <StyledColorGuide>
+    <ColorGuideContainer>
       <h3 style={{ margin: '0 0 15px 0' }}>경계선 색상 의미</h3>
 
       <ColorItem>
-        <ColorSwatch color={BORDER_COLORS.NO_FACE} />
+        <ColorSwatch color='#ff3d00' />
         <div>
           <strong>빨간색</strong>: 얼굴 미감지
         </div>
       </ColorItem>
 
       <ColorItem>
-        <ColorSwatch color={BORDER_COLORS.WRONG_POSITION} />
+        <ColorSwatch color='#FFC107' />
         <div>
           <strong>노란색</strong>: 얼굴이 원 밖에 위치함
         </div>
       </ColorItem>
 
       <ColorItem>
-        <ColorSwatch color={BORDER_COLORS.PARTIAL_CORRECT} />
+        <ColorSwatch color='#FFAB00' />
         <div>
           <strong>주황색</strong>: 얼굴은 원 안에 있으나
           <br />
@@ -31,7 +31,7 @@ export const ColorGuide: React.FC = () => {
       </ColorItem>
 
       <ColorItem>
-        <ColorSwatch color={BORDER_COLORS.POSITION_CORRECT} />
+        <ColorSwatch color='#00c853' />
         <div>
           <strong>초록색</strong>: 위치와 방향 모두 올바름
           <br />
@@ -40,11 +40,13 @@ export const ColorGuide: React.FC = () => {
       </ColorItem>
 
       <ColorItem>
-        <ColorSwatch color={BORDER_COLORS.TIMER_ACTIVE} />
+        <ColorSwatch color='#4285F4' />
         <div>
           <strong>파란색</strong>: 카운트다운 진행 중
         </div>
       </ColorItem>
-    </StyledColorGuide>
+    </ColorGuideContainer>
   );
 };
+
+export default ColorGuide;

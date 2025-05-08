@@ -1,14 +1,15 @@
+// StageInfo.tsx
 import React from 'react';
-import { FaceDetectionState } from '../types';
-import { ColorGuide as StyledColorGuide } from '../styles';
+import { ColorGuideContainer } from './styles';
+import { FaceDetectionState } from './types';
 
 interface StageInfoProps {
   detectionState: FaceDetectionState;
 }
 
-export const StageInfo: React.FC<StageInfoProps> = ({ detectionState }) => {
+const StageInfo: React.FC<StageInfoProps> = ({ detectionState }) => {
   return (
-    <StyledColorGuide>
+    <ColorGuideContainer>
       <h3 style={{ margin: '0 0 15px 0' }}>현재 촬영 단계</h3>
 
       <div style={{ marginBottom: '10px' }}>
@@ -36,6 +37,8 @@ export const StageInfo: React.FC<StageInfoProps> = ({ detectionState }) => {
             </>
           )}
       </div>
-    </StyledColorGuide>
+    </ColorGuideContainer>
   );
 };
+
+export default StageInfo;
