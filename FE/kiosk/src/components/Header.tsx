@@ -9,9 +9,10 @@ const TimeBox = tw.div`flex w-[250px] justify-center border-b-2 border-gray`
 interface HeaderProps {
   isMember: boolean
   userName?: string
+  onTimeout?: () => void
 }
 
-export default function Header({ isMember, userName }: HeaderProps) {
+export default function Header({ isMember, userName, onTimeout }: HeaderProps) {
   const navigate = useNavigate()
   const [remainingSeconds, setRemainingSeconds] = useState(180)
 
@@ -20,6 +21,7 @@ export default function Header({ isMember, userName }: HeaderProps) {
       setRemainingSeconds((prev) => {
         if (prev <= 1) {
           clearInterval(interval)
+          onTimeout?.()
           return 0
         }
         return prev - 1
