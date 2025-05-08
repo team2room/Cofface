@@ -7,7 +7,7 @@ import { OrderSectionProps } from '@/interfaces/OrderInterface'
 import { useDragScroll } from '@/hooks/useDragScroll'
 
 const Section = tw.div`w-full h-72 bg-[#FFF4F8] px-6 py-3.5 mb-4 rounded-xl`
-const List = tw.div`flex flex-col gap-2 mt-3.5 h-52 overflow-auto cursor-grab`
+const List = tw.div`flex flex-col gap-2 mt-3.5 h-52 overflow-auto`
 const ListItem = tw.div`flex justify-between items-center px-12 py-1 bg-white rounded-md`
 const CntButton = tw.button`border border-dark p-2 shadow-md`
 

@@ -28,7 +28,7 @@ const ButtonGroup = tw.div`
 `
 
 const Button = tw.button`
-  px-8 py-4 rounded-lg w-[397px] h-[234px] bg-[#FEFEFE] shadow-[1px_4px_10px_6px_rgba(0,0,0,0.10)] cursor-none
+  px-8 py-4 rounded-lg w-[397px] h-[234px] bg-[#FEFEFE] shadow-[1px_4px_10px_6px_rgba(0,0,0,0.10)]
 `
 
 export default function StartScreen() {
