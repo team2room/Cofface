@@ -23,6 +23,7 @@ export interface RotationState {
 export interface CapturedImage {
   state: FaceDetectionState;
   imageData: string;
+  direction?: string | null; // null도 허용하도록 수정
 }
 
 // 메인 컴포넌트 Props

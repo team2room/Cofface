@@ -4,6 +4,7 @@ import * as mp from '@mediapipe/face_mesh';
 import * as cam from '@mediapipe/camera_utils';
 import * as drawing from '@mediapipe/drawing_utils';
 
+
 // 컴포넌트 임포트
 import CameraView from './CameraView';
 import CapturedImages from './CapturedImages';
@@ -11,6 +12,7 @@ import ProgressSteps from './ProgressSteps';
 import DebugPanel from './DebugPanel';
 import ColorGuide from './ColorGuide';
 import StageInfo from './StageInfo';
+import {registerFace} from './api';
 
 // 스타일 임포트
 import {
@@ -58,6 +60,10 @@ const FaceRecognition: React.FC = () => {
   });
   const [capturedImages, setCapturedImages] = useState<CapturedImage[]>([]);
   const [faceWithinBounds, setFaceWithinBounds] = useState<boolean>(false);
+  const [userId, setUserId] = useState<string>(''); // 사용자 ID
+  const [registering, setRegistering] = useState<boolean>(false); // 등록 중 상태
+  const [apiResponse, setApiResponse] = useState<any>(null); // API 응답
+  const [apiError, setApiError] = useState<string | null>(null); // API 오류
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -81,6 +87,17 @@ const FaceRecognition: React.FC = () => {
       `상태 변경됨 및 ref 업데이트: ${FaceDetectionState[detectionState]}`
     );
   }, [detectionState]);
+
+  // 캡처 완료 상태 디버깅을 위한 useEffect
+  useEffect(() => {
+    if (detectionState === FaceDetectionState.COMPLETED) {
+      console.log('캡처 완료 상태');
+      console.log('캡처된 이미지 수:', capturedImages.length);
+      console.log('캡처된 이미지 상태:', capturedImages.map(img => 
+        `${FaceDetectionState[img.state]} (${img.state})`
+      ));
+    }
+  }, [detectionState, capturedImages]);
 
   // 상태 변경 감지용 useEffect 추가
   useEffect(() => {
@@ -168,6 +185,39 @@ const FaceRecognition: React.FC = () => {
       console.log(`UI 업데이트: ${getMessage(detectionState, loadingError, modelsLoaded)} / ${getSubMessage(detectionState, loadingError)}`);
     }
   }, [detectionState, loadingError, modelsLoaded]);
+
+  // 사용자 ID 입력 핸들러
+  const handleUserIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUserId(e.target.value);
+  };
+
+  // 얼굴 등록 함수
+  const handleRegisterFace = async () => {
+    if (!userId.trim()) {
+      setApiError('사용자 ID를 입력해주세요');
+      return;
+    }
+
+    if (capturedImages.length < 5) {
+      setApiError('모든 방향의 얼굴을 캡처해야 합니다');
+      return;
+    }
+
+    try {
+      setRegistering(true);
+      setApiError(null);
+      
+      const result = await registerFace(userId, capturedImages);
+      setApiResponse(result);
+      
+      console.log('얼굴 등록 성공:', result);
+    } catch (error) {
+      console.error('얼굴 등록 중 오류:', error);
+      setApiError(error instanceof Error ? error.message : '얼굴 등록 중 오류가 발생했습니다');
+    } finally {
+      setRegistering(false);
+    }
+  };
 
   // MediaPipe 결과 처리 함수
   const onResults = (results: mp.Results): void => {
@@ -700,14 +750,8 @@ const FaceRecognition: React.FC = () => {
 
   // 얼굴 캡처
   const captureFace = (): void => {
-    console.log(
-      'captureFace 함수 시작, 현재 상태:',
-      FaceDetectionState[detectionState]
-    );
-    console.log(
-      'currentStateRef 값:',
-      FaceDetectionState[currentStateRef.current]
-    );
+    const currentState = currentStateRef.current;
+    console.log('captureFace 함수 시작, 현재 상태:', FaceDetectionState[currentState]);
 
     if (!lastFrameRef.current) return;
 
@@ -727,35 +771,47 @@ const FaceRecognition: React.FC = () => {
     const imgData = lastFrameRef.current;
     ctx.putImageData(imgData, 0, 0);
 
-    // 캡처된 이미지 저장
-    const capturedImage: CapturedImage = {
-      state: detectionState,
-      imageData: canvas.toDataURL('image/jpeg'),
-    };
-
-    // 이미지 배열에 추가
-    setCapturedImages((prev) => [...prev, capturedImage]);
-
-    console.log('캡처 완료, 다음 상태로 이동 호출');
-    console.log('이동 전 현재 상태:', FaceDetectionState[detectionState]);
-
-    // 다음 상태로 이동
-    moveToNextState();
-    console.log(
-      'moveToNextState 호출 후, React 상태:',
-      FaceDetectionState[detectionState]
-    );
-    console.log(
-      'moveToNextState 호출 후, Ref 상태:',
-      FaceDetectionState[currentStateRef.current]
-    );
-    // 이동 후 확인 (비동기 처리 때문에 setTimeout 사용)
-    setTimeout(() => {
-      console.log('이동 후 현재 상태:', FaceDetectionState[detectionState]);
-    }, 100);
-
-    console.log('moveToNextState 호출 완료');
+  // 현재 상태에 따른 방향 결정 (currentStateRef 사용)
+  let direction: string;
+  switch (currentState) {
+    case FaceDetectionState.FRONT_FACE:
+      direction = 'front';
+      break;
+    case FaceDetectionState.LEFT_FACE:
+      direction = 'left';
+      break;
+    case FaceDetectionState.RIGHT_FACE:
+      direction = 'right';
+      break;
+    case FaceDetectionState.UP_FACE:
+      direction = 'up';
+      break;
+    case FaceDetectionState.DOWN_FACE:
+      direction = 'down';
+      break;
+    default:
+      direction = 'unknown';
+  }
+  
+  console.log(`캡처: ${FaceDetectionState[currentState]} -> ${direction}`);
+  
+  // 캡처된 이미지 저장 (direction 포함, currentState 사용)
+  const imageData = canvas.toDataURL('image/jpeg');
+  console.log(`캡처된 이미지 데이터 길이: ${imageData.length}`);
+  
+  const capturedImage: CapturedImage = {
+    state: currentState, // currentStateRef에서 가져온 값 사용
+    imageData: imageData,
+    direction: direction
   };
+  
+  // 이미지 배열에 추가
+  setCapturedImages(prev => [...prev, capturedImage]);
+  
+  console.log('캡처 완료, 다음 상태로 이동 호출');
+  // 다음 상태로 이동
+  moveToNextState();
+};
 
   // 다음 상태로 이동
   const moveToNextState = (): void => {
@@ -930,7 +986,69 @@ const FaceRecognition: React.FC = () => {
 
           {/* 완료 화면 - 캡처된 이미지들 */}
           {detectionState === FaceDetectionState.COMPLETED && (
-            <CapturedImages capturedImages={capturedImages} />
+            <>
+              <CapturedImages capturedImages={capturedImages} />
+              
+              <div style={{ margin: '20px 0', width: '100%', maxWidth: '400px' }}>
+                <div style={{ marginBottom: '10px', textAlign: 'center' }}>
+                  <input
+                    type="text"
+                    value={userId}
+                    onChange={handleUserIdChange}
+                    placeholder="사용자 ID 입력"
+                    style={{
+                      padding: '10px',
+                      borderRadius: '5px',
+                      border: '1px solid #555',
+                      width: '100%',
+                      backgroundColor: '#333',
+                      color: 'white',
+                      fontSize: '16px',
+                    }}
+                  />
+                </div>
+                
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <Button onClick={handleRestartCapture}>다시 촬영하기</Button>
+                  <Button 
+                    onClick={handleRegisterFace} 
+                    disabled={registering || !userId.trim()}
+                    style={{ 
+                      backgroundColor: registering ? '#555' : '#4285F4',
+                      cursor: registering ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {registering ? '등록 중...' : '얼굴 등록하기'}
+                  </Button>
+                </div>
+
+                {apiError && (
+                  <div style={{ 
+                    marginTop: '10px', 
+                    padding: '10px', 
+                    borderRadius: '5px', 
+                    backgroundColor: 'rgba(255, 80, 80, 0.3)',
+                    color: '#ff5050',
+                    textAlign: 'center',
+                  }}>
+                    {apiError}
+                  </div>
+                )}
+
+                {apiResponse && (
+                  <div style={{ 
+                    marginTop: '10px', 
+                    padding: '10px', 
+                    borderRadius: '5px', 
+                    backgroundColor: 'rgba(80, 255, 80, 0.3)',
+                    color: '#50ff50',
+                    textAlign: 'center',
+                  }}>
+                    얼굴 등록 성공! 사용자 ID: {apiResponse.user_id}
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
           {/* 단계 표시기 */}
