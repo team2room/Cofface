@@ -1,4 +1,4 @@
-import MenuCard from '@/features/order/components/MenuCard'
+import MenuCard from '@/features/order/components/Menu/MenuCard'
 import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
 import { RecommendSectionProps } from '@/interfaces/OrderInterface'

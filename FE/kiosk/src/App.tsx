@@ -4,8 +4,7 @@ import Fonts from './styles/fonts'
 import AdminLoginPage from './pages/adminLogin/AdminLoginPage'
 import UserLoginPage from './pages/userLogin/UserLoginPage'
 import GlobalRippleEffect from './styles/RippleEffect'
-import MenuPage from './pages/order/MenuPage'
-import PlaceSelectPage from './pages/order/PlaceSelectPage'
+import OrderPage from './pages/order/OrderPage'
 
 function App() {
   return (
@@ -20,10 +19,7 @@ function App() {
         <Route path="/user" element={<UserLoginPage />} />
 
         {/* 메뉴 화면 */}
-        <Route path="/order" element={<MenuPage />} />
-
-        {/* 장소 선택 */}
-        <Route path="/place" element={<PlaceSelectPage />} />
+        <Route path="/order" element={<OrderPage />} />
       </Routes>
     </>
   )

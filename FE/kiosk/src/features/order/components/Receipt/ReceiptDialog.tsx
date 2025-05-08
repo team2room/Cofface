@@ -8,7 +8,6 @@ import { Text } from '@/styles/typography'
 import CustomButton from '@/components/CustomButton'
 import { RealOrderItem } from '@/interfaces/OrderInterface'
 import ReceiptItemList from './ReceiptItemList'
-import { useNavigate } from 'react-router-dom'
 
 const Content = tw.div`h-[1150px] bg-lightLight p-4 mt-4 mb-12 flex flex-col justify-between`
 const HeaderRow = tw.div`flex justify-between p-2 border-y-2 border-dark`
@@ -21,14 +20,14 @@ export const ColPrice = tw.div`w-1/3 text-right`
 interface ReceiptModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  onNext: () => void
 }
 
 export default function ReceiptModal({
   open,
   onOpenChange,
+  onNext,
 }: ReceiptModalProps) {
-  const navigate = useNavigate()
-
   const totalQuantity = dummyOrderItems.reduce(
     (sum, item) => sum + item.quantity,
     0,
@@ -118,7 +117,7 @@ export default function ReceiptModal({
             variant="main"
             onClick={() => {
               onOpenChange(false)
-              navigate('/place')
+              onNext()
             }}
           />
         </AlertDialogFooter>
