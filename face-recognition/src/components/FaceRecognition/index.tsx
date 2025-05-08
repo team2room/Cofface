@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import * as mp from '@mediapipe/face_mesh';
+import * as drawing from '@mediapipe/drawing_utils';
 import { calculateFaceRotation, checkFaceInCircle, isCorrectOrientation } from './utils/faceOrientation';
 import { BORDER_COLORS, STATE_MESSAGES, STATE_SUB_MESSAGES } from './utils/constants';
 import { useFaceMesh } from './hooks/useFaceMesh';
@@ -118,8 +119,16 @@ const FaceRecognition: React.FC = () => {
       const isFaceInCircle = checkFaceInCircle(landmarks);
       setFaceWithinBounds(isFaceInCircle);
 
-      // 얼굴 랜드마크 그리기 - MediaPipe 함수 사용
-      // drawing.drawConnectors() 등 그리기 코드...
+      // 얼굴 랜드마크 그리기 (간소화)
+      drawing.drawConnectors(canvasCtx, landmarks, mp.FACEMESH_TESSELATION, {
+        color: 'rgba(180, 180, 180, 0.5)',
+        lineWidth: 1,
+      });
+
+      drawing.drawConnectors(canvasCtx, landmarks, mp.FACEMESH_FACE_OVAL, {
+        color: '#E0E0E0',
+        lineWidth: 2,
+      });
 
       // 3D 방향 계산 (roll, pitch, yaw)
       const rotationValues = calculateFaceRotation(landmarks);
