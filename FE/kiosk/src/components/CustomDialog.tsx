@@ -21,6 +21,7 @@ interface CommonAlertDialogProps {
   onCancel?: () => void
   onConfirm?: () => void
   showKeypad?: boolean
+  hideConfirm?: boolean
 }
 
 export default function CustomDialog({
@@ -34,6 +35,7 @@ export default function CustomDialog({
   onCancel,
   onConfirm,
   showKeypad = false,
+  hideConfirm = false,
 }: CommonAlertDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -58,9 +60,15 @@ export default function CustomDialog({
           </AlertDialogDescription>
         )}
 
-        <AlertDialogFooter className="flex gap-3 justify-center">
+        <AlertDialogFooter className="w-[576px] mx-auto flex gap-8 justify-center">
           <CustomButton text={cancelText} variant="cancle" onClick={onCancel} />
-          <CustomButton text={confirmText} variant="main" onClick={onConfirm} />
+          {!hideConfirm && (
+            <CustomButton
+              text={confirmText}
+              variant="main"
+              onClick={onConfirm}
+            />
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

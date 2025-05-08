@@ -79,6 +79,7 @@ export default function StartScreen() {
       confirmText: modalState === 'success' ? '맞습니다' : '전화번호 로그인',
     }
   }
+
   return (
     <>
       <ImageWrapper>
