@@ -11,6 +11,10 @@
   -webkit-user-select: none;
 }
 
+button {
+  cursor: none;
+}
+
 body {
   font-family: 'Pretendard';
   overflow: hidden;

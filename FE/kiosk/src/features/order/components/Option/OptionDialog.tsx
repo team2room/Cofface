@@ -1,0 +1,136 @@
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogFooter,
+} from '@/components/ui/alert-dialog'
+import { useState } from 'react'
+import tw from 'twin.macro'
+import { Text } from '@/styles/typography'
+import CustomButton from '@/components/CustomButton'
+import { OptionModalProps } from '@/interfaces/OrderInterface'
+import RequiredOptionsSection from './RequiredOptionSection'
+import OptionalOptionsSection from './OptionalOptionSection'
+
+const FirstSection = tw.div`bg-lightLight p-8 mb-4`
+const InfoText = tw.div`flex flex-col items-start`
+const DefaultButton = tw.button`w-80 border border-main rounded-xl py-1 mx-auto shadow-md`
+const PriceRow = tw.div`border-y-2 border-dark p-3 flex justify-between my-6`
+
+export default function OptionModal({
+  open,
+  onOpenChange,
+  menu,
+}: OptionModalProps) {
+  const requiredOptions = menu.options.filter((opt) => opt.isRequired)
+  const optionalOptions = menu.options.filter((opt) => !opt.isRequired)
+
+  const [selectedOptions, setSelectedOptions] = useState<
+    Record<string, number | null>
+  >({})
+
+  const handleSelectOption = (category: string, index: number) => {
+    setSelectedOptions((prev) => ({
+      ...prev,
+      [category]: prev[category] === index ? null : index,
+    }))
+  }
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="w-[95%]">
+        <Text variant="title4" weight="extrabold" className="text-center my-4">
+          옵션을 선택해 주세요
+        </Text>
+
+        {/* 상품 정보 & 필수 옵션 선택 */}
+        <Text variant="body2" weight="bold">
+          필수 옵션
+        </Text>
+        <FirstSection>
+          <div className="flex flex-row items-center gap-6">
+            <img src="https://picsum.photos/200" alt="menu" className="w-80" />
+            <RequiredOptionsSection
+              requiredOptions={requiredOptions}
+              selectedOptions={selectedOptions}
+              handleSelectOption={handleSelectOption}
+            />
+          </div>
+
+          <InfoText>
+            <Text variant="body1" weight="bold" className="mt-4">
+              디카페인 카페모카
+            </Text>
+            <Text
+              variant="body2"
+              weight="bold"
+              color="darkGray"
+              className="mb-6"
+            >
+              4,500원
+            </Text>
+            <Text variant="caption1" weight="bold" color="littleDarkGray">
+              초코를 만나 풍부해진 디카페인 에스프레소와 고소한 우유, 부드러운
+              휘핑크림까지 더해 달콤하게 즐기는 커피
+            </Text>
+          </InfoText>
+        </FirstSection>
+
+        {/* 기본값 버튼 */}
+        <DefaultButton onClick={() => {}}>
+          <Text variant="body2" weight="bold" color="main">
+            기본값으로 설정
+          </Text>
+        </DefaultButton>
+
+        {/* 추가 옵션 */}
+        <Text variant="body2" weight="bold">
+          추가 옵션
+        </Text>
+        <OptionalOptionsSection
+          optionalOptions={optionalOptions}
+          selectedOptions={selectedOptions}
+          handleSelectOption={handleSelectOption}
+        />
+
+        {/* 금액 */}
+        <PriceRow>
+          <div>
+            <Text variant="body1" weight="semibold">
+              총 금액
+            </Text>
+            <Text
+              variant="caption1"
+              weight="semibold"
+              color="darkGray"
+              className="ml-2"
+            >
+              (제품가격 + 옵션가격)
+            </Text>
+          </div>
+          <div>
+            <Text variant="body1" weight="bold" color="main">
+              5,500
+            </Text>
+            <Text variant="body1" weight="semibold">
+              원
+            </Text>
+          </div>
+        </PriceRow>
+
+        {/* 하단 버튼 */}
+        <AlertDialogFooter className="h-20 flex gap-3 justify-center">
+          <CustomButton
+            text={'취소'}
+            variant="cancle"
+            onClick={() => onOpenChange(false)}
+          />
+          <CustomButton
+            text={'선택 완료'}
+            variant="main"
+            onClick={() => onOpenChange(false)}
+          />
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
