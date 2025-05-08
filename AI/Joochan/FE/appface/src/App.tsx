@@ -7,31 +7,9 @@ import {
   Link,
   Navigate,
 } from 'react-router-dom'
+
+import FaceVerification from './components/FaceVerification'
 import FaceRegistration from './components/FaceRegistration'
-// FaceVerification 컴포넌트가 아직 없는 경우를 위한 임시 컴포넌트
-const FaceVerification = ({
-  apiUrl,
-  onVerificationComplete,
-  autoStart,
-  timeout,
-}: {
-  apiUrl: string
-  onVerificationComplete: (
-    success: boolean,
-    userId?: string,
-    confidence?: number,
-  ) => void
-  autoStart?: boolean
-  timeout?: number
-}) => {
-  return (
-    <div>
-      <h2>얼굴 인증</h2>
-      <p>이 기능은 아직 구현 중입니다.</p>
-      <button onClick={() => onVerificationComplete(false)}>돌아가기</button>
-    </div>
-  )
-}
 
 import './App.css'
 

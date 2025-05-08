@@ -14,22 +14,6 @@ interface FaceRegistrationProps {
 // 얼굴 방향 정의
 type FaceDirection = 'front' | 'left' | 'right' | 'up' | 'down' | 'unknown'
 
-// 얼굴 각도 추정 기준
-// const ANGLE_THRESHOLDS = {
-//   YAW: {
-//     // 좌우 회전
-//     front: 15, // 중앙에서 ±15도는 정면으로 간주
-//     left: -35, // -35도 이하는 왼쪽으로 간주
-//     right: 35, // 35도 이상은 오른쪽으로 간주
-//   },
-//   PITCH: {
-//     // 상하 회전
-//     front: 15, // 중앙에서 ±15도는 정면으로 간주
-//     up: -30, // -30도 이하는 위쪽으로 간주
-//     down: 30, // 30도 이상은 아래쪽으로 간주
-//   },
-// }
-
 const FaceRegistration: React.FC<FaceRegistrationProps> = ({
   userId,
   apiUrl,
