@@ -176,7 +176,11 @@ export default function HomePage() {
             <Text variant="title2" weight="bold">
               {name}님 반가워요
             </Text>
-            <Settings onClick={() => {}} />
+            <Settings
+              onClick={() => {
+                navigate('/setting')
+              }}
+            />
           </HomeNav>
           {/* 등록 여부 */}
           {locked ? <HomeTitleLock /> : <HomeTitleUnlock />}

@@ -4,6 +4,8 @@ import LoginVerifyPage from './pages/login/LoginVerifyPage'
 import MainPage from './pages/login/MainPage'
 import { FaceRegisterPage } from './pages/register/FaceRegisterPage'
 import { PayRegisterPage } from './pages/register/PayRegisterPage'
+import { SettingPage } from './pages/setting/SettingPage'
+import { SettingPayPage } from './pages/setting/SettingPayPage'
 import Fonts from './styles/fonts'
 import { Route, Routes } from 'react-router-dom'
 
@@ -19,6 +21,9 @@ function App() {
 
         <Route path="/register/face" element={<FaceRegisterPage />} />
         <Route path="/register/pay" element={<PayRegisterPage />} />
+
+        <Route path="/setting" element={<SettingPage />} />
+        <Route path="/setting/pay" element={<SettingPayPage />} />
       </Routes>
     </>
   )

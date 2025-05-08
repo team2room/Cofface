@@ -7,11 +7,14 @@ import tw from 'twin.macro'
 const HeaderContainer = tw.div`
   flex
   p-6
+  z-10
   items-center
+  relative
 `
 
 const BackButton = tw.button`
-
+  absolute
+  left-6
 `
 
 const TitleContainer = tw.div`

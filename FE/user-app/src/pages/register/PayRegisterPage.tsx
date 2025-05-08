@@ -8,18 +8,26 @@ import {
   ExpiryDateInputField,
   SecurityCodeInputField,
   PasswordInputField,
+  InputGroup,
+  AgreementBox,
 } from '@/features/register/components/PayRegisterComponents'
 import { useNavigate } from 'react-router-dom'
+import RandomKeyPad from '@/features/register/components/PayRandomKeyPad'
+
+const HeaderWrapper = tw.div`
+  sticky top-0 z-10 bg-white w-full
+`
 
 const Container = tw.div`
-  w-full 
-  max-w-screen-sm 
-  mx-auto 
-  flex 
-  flex-col 
-  h-screen
-  pb-4
-  px-8
+  w-full max-w-screen-sm mx-auto flex flex-col min-h-screen
+`
+
+const ContentWrapper = tw.div`
+  flex flex-col px-6 flex-1 pb-6
+`
+
+const FormSection = tw.div`
+  flex-grow
 `
 
 const InputSection = tw.div`
@@ -30,9 +38,16 @@ const StepContainer = tw.div`
   w-full flex flex-col gap-2
 `
 
-const RegisterButton = tw.button`
-  bg-main hover:bg-littleDark text-white w-full p-2 mt-10 rounded-md
+const RegisterWrapper = tw.div`
+  w-full py-4 mt-auto
 `
+
+const RegisterButton = tw.button`
+  bg-littleDark hover:bg-hover text-white w-full p-2 mt-4 rounded-md
+`
+
+// 입력 필드 타입 정의
+type InputFieldType = 'cardNumber' | 'expiryDate' | 'securityCode' | 'password'
 
 export function PayRegisterPage() {
   const navigate = useNavigate()
@@ -43,10 +58,11 @@ export function PayRegisterPage() {
   const [securityCode, setSecurityCode] = useState('')
   const [password, setPassword] = useState('')
 
-  const [showExpiryStep, setShowExpiryStep] = useState(false)
-  const [showSecurityStep, setShowSecurityStep] = useState(false)
-  const [showPasswordStep, setShowPasswordStep] = useState(false)
-  const [showRegisterButton, setShowRegisterButton] = useState(false)
+  const [currentStep, setCurrentStep] = useState(1) // 1: 카드번호, 2: 유효기간/보안코드, 3: 비밀번호
+
+  // 키패드 관련 상태
+  const [showKeypad, setShowKeypad] = useState(false)
+  const [activeField, setActiveField] = useState<InputFieldType | null>(null)
 
   // 각 입력 필드에 대한 ref 생성
   const cardNumberInputRef = useRef<HTMLInputElement>(null)
@@ -54,76 +70,109 @@ export function PayRegisterPage() {
   const securityCodeInputRef = useRef<HTMLInputElement>(null)
   const passwordInputRef = useRef<HTMLInputElement>(null)
 
-  // 단계 전환 시 자동 포커스 처리를 위한 useEffect
+  // 단계 변경 시 포커스 처리
   useEffect(() => {
-    if (showExpiryStep && !showSecurityStep && expiryDateInputRef.current) {
-      expiryDateInputRef.current.focus()
+    if (currentStep === 1) {
+      openKeypad('cardNumber')
+    } else if (currentStep === 2 && !expiryDate.length) {
+      openKeypad('expiryDate')
+    } else if (currentStep === 3 && !password.length) {
+      openKeypad('password')
     }
-  }, [showExpiryStep])
+  }, [currentStep])
 
-  useEffect(() => {
-    if (showSecurityStep && !showPasswordStep && securityCodeInputRef.current) {
-      securityCodeInputRef.current.focus()
-    }
-  }, [showSecurityStep])
+  // 키패드 열기 함수
+  const openKeypad = (field: InputFieldType) => {
+    setActiveField(field)
+    setShowKeypad(true)
+  }
 
-  useEffect(() => {
-    if (showPasswordStep && passwordInputRef.current) {
-      passwordInputRef.current.focus()
-    }
-  }, [showPasswordStep])
+  // 키패드에서 숫자 입력 처리
+  const handleKeyPress = (key: string) => {
+    if (!activeField) return
 
-  // 초기 렌더링 시 카드번호 입력 필드에 포커스
-  useEffect(() => {
-    if (cardNumberInputRef.current) {
-      cardNumberInputRef.current.focus()
+    switch (activeField) {
+      case 'cardNumber':
+        if (cardNumber.length < 16) {
+          const newValue = cardNumber + key
+          setCardNumber(newValue)
+          if (newValue.length === 16) {
+            handleCardNumberComplete()
+          }
+        }
+        break
+      case 'expiryDate':
+        if (expiryDate.length < 4) {
+          const newValue = expiryDate + key
+          setExpiryDate(newValue)
+          if (newValue.length === 4) {
+            if (securityCode.length === 3) {
+              handleExpirySecurityComplete()
+            } else {
+              openKeypad('securityCode')
+            }
+          }
+        }
+        break
+      case 'securityCode':
+        if (securityCode.length < 3) {
+          const newValue = securityCode + key
+          setSecurityCode(newValue)
+          if (newValue.length === 3) {
+            if (expiryDate.length === 4) {
+              handleExpirySecurityComplete()
+            } else {
+              openKeypad('expiryDate')
+            }
+          }
+        }
+        break
+      case 'password':
+        if (password.length < 2) {
+          const newValue = password + key
+          setPassword(newValue)
+          if (newValue.length === 2) {
+            setShowKeypad(false)
+          }
+        }
+        break
     }
-  }, [])
+  }
+
+  // 키패드에서 삭제 버튼 처리
+  const handleDelete = () => {
+    if (!activeField) return
+
+    switch (activeField) {
+      case 'cardNumber':
+        setCardNumber((prev) => prev.slice(0, -1))
+        break
+      case 'expiryDate':
+        setExpiryDate((prev) => prev.slice(0, -1))
+        break
+      case 'securityCode':
+        setSecurityCode((prev) => prev.slice(0, -1))
+        break
+      case 'password':
+        setPassword((prev) => prev.slice(0, -1))
+        break
+    }
+  }
+
+  // 키패드 닫기
+  const handleCloseKeypad = () => {
+    setShowKeypad(false)
+    setActiveField(null)
+  }
 
   // 카드번호 완료 처리
   const handleCardNumberComplete = () => {
-    if (cardNumber.length === 16) {
-      setShowExpiryStep(true)
-      // 직접 포커스 설정
-      setTimeout(() => {
-        if (expiryDateInputRef.current) {
-          expiryDateInputRef.current.focus()
-        }
-      }, 50)
-    }
+    setCurrentStep(2)
   }
 
-  // 유효기간 완료 처리
-  const handleExpiryDateComplete = () => {
-    if (expiryDate.length === 4) {
-      setShowSecurityStep(true)
-      // 직접 포커스 설정
-      setTimeout(() => {
-        if (securityCodeInputRef.current) {
-          securityCodeInputRef.current.focus()
-        }
-      }, 50)
-    }
-  }
-
-  // 보안코드 완료 처리
-  const handleSecurityCodeComplete = () => {
-    if (securityCode.length === 3) {
-      setShowPasswordStep(true)
-      // 직접 포커스 설정
-      setTimeout(() => {
-        if (passwordInputRef.current) {
-          passwordInputRef.current.focus()
-        }
-      }, 50)
-    }
-  }
-
-  // 비밀번호 완료 처리
-  const handlePasswordComplete = () => {
-    if (password.length === 2) {
-      setShowRegisterButton(true)
-    }
+  // 유효기간 및 보안코드 완료 처리
+  const handleExpirySecurityComplete = () => {
+    setCurrentStep(3)
   }
 
   // 카드 등록 처리
@@ -140,73 +189,167 @@ export function PayRegisterPage() {
     // 실제 API 호출 코드가 여기에 들어갈 수 있음
   }
 
+  // 모든 필드가 입력되었는지 확인
+  const isFormComplete =
+    cardNumber.length === 16 &&
+    expiryDate.length === 4 &&
+    securityCode.length === 3 &&
+    password.length === 2
+
+  // 필드별 키패드 최대 길이 설정
+  const getMaxLength = () => {
+    switch (activeField) {
+      case 'cardNumber':
+        return 16
+      case 'expiryDate':
+        return 4
+      case 'securityCode':
+        return 3
+      case 'password':
+        return 2
+      default:
+        return 0
+    }
+  }
+
+  // 필드별 현재 입력 길이 가져오기
+  const getCurrentLength = () => {
+    switch (activeField) {
+      case 'cardNumber':
+        return cardNumber.length
+      case 'expiryDate':
+        return expiryDate.length
+      case 'securityCode':
+        return securityCode.length
+      case 'password':
+        return password.length
+      default:
+        return 0
+    }
+  }
+
+  // 필드별 키패드 타이틀 설정
+  const getKeypadTitle = () => {
+    switch (activeField) {
+      case 'cardNumber':
+        return '카드번호 입력'
+      case 'expiryDate':
+        return '유효기간 입력'
+      case 'securityCode':
+        return '보안코드 입력'
+      case 'password':
+        return '비밀번호 입력'
+      default:
+        return '보안키패드 작동중'
+    }
+  }
+
+  // 키패드에서 전체 삭제 버튼 처리
+  const handleAllDelete = () => {
+    if (!activeField) return
+
+    switch (activeField) {
+      case 'cardNumber':
+        setCardNumber('')
+        break
+      case 'expiryDate':
+        setExpiryDate('')
+        break
+      case 'securityCode':
+        setSecurityCode('')
+        break
+      case 'password':
+        setPassword('')
+        break
+    }
+  }
+
   return (
-    <>
-      <DetailHeader title="카드 등록하기" />
-      <Container>
-        <div className="text-center mb-6">
-          <Text variant="caption1" weight="medium" color="darkGray">
+    <Container>
+      <HeaderWrapper>
+        <DetailHeader
+          title="카드 등록하기"
+          onBack={() => {
+            navigate('/')
+          }}
+        />
+      </HeaderWrapper>
+      <ContentWrapper>
+        <div className="text-center justify-center pt-3 pb-1">
+          <Text variant="body1" weight="medium" color="darkGray">
             본인 명의의 카드만 등록 가능해요
           </Text>
         </div>
 
-        <PaymentForm>
-          <StepContainer>
-            {/* 비밀번호 입력 */}
-            {showPasswordStep && (
+        <FormSection>
+          <PaymentForm>
+            <StepContainer>
+              {/* 비밀번호 입력 (단계 3일 때 표시) */}
+              {currentStep >= 3 && (
+                <InputSection>
+                  <PasswordInputField
+                    value={password}
+                    inputRef={passwordInputRef}
+                    onFocus={() => openKeypad('password')}
+                  />
+                </InputSection>
+              )}
+              {/* 유효기간 및 보안코드 입력 */}
+              {currentStep >= 2 && (
+                <InputSection>
+                  <InputGroup>
+                    <div className="w-1/2">
+                      <ExpiryDateInputField
+                        value={expiryDate}
+                        inputRef={expiryDateInputRef}
+                        onFocus={() => openKeypad('expiryDate')}
+                      />
+                    </div>
+                    <div className="w-1/2">
+                      <SecurityCodeInputField
+                        value={securityCode}
+                        inputRef={securityCodeInputRef}
+                        onFocus={() => openKeypad('securityCode')}
+                      />
+                    </div>
+                  </InputGroup>
+                </InputSection>
+              )}
+              {/* 카드번호 입력 */}
               <InputSection>
-                <PasswordInputField
-                  value={password}
-                  onChange={setPassword}
-                  onComplete={handlePasswordComplete}
-                  inputRef={passwordInputRef}
+                <CardNumberInputField
+                  value={cardNumber}
+                  inputRef={cardNumberInputRef}
+                  onFocus={() => openKeypad('cardNumber')}
                 />
               </InputSection>
-            )}
+            </StepContainer>
+          </PaymentForm>
+        </FormSection>
 
-            {/* 보안코드 입력 */}
-            {showSecurityStep && (
-              <InputSection>
-                <SecurityCodeInputField
-                  value={securityCode}
-                  onChange={setSecurityCode}
-                  onComplete={handleSecurityCodeComplete}
-                  inputRef={securityCodeInputRef}
-                />
-              </InputSection>
-            )}
+        {/* 등록하기 버튼 - 페이지 하단에 위치 */}
+        {isFormComplete && (
+          <RegisterWrapper>
+            <AgreementBox />
+            <RegisterButton onClick={handleRegister}>
+              동의하고 등록 완료
+            </RegisterButton>
+          </RegisterWrapper>
+        )}
+      </ContentWrapper>
 
-            {/* 유효기간 입력 */}
-            {showExpiryStep && (
-              <InputSection>
-                <ExpiryDateInputField
-                  value={expiryDate}
-                  onChange={setExpiryDate}
-                  onComplete={handleExpiryDateComplete}
-                  inputRef={expiryDateInputRef}
-                />
-              </InputSection>
-            )}
-
-            {/* 카드번호 입력 */}
-            <InputSection>
-              <CardNumberInputField
-                value={cardNumber}
-                onChange={setCardNumber}
-                onComplete={handleCardNumberComplete}
-                inputRef={cardNumberInputRef}
-              />
-            </InputSection>
-
-            {/* 등록하기 버튼 */}
-            {showRegisterButton && (
-              <RegisterButton onClick={handleRegister}>
-                카드 등록하기
-              </RegisterButton>
-            )}
-          </StepContainer>
-        </PaymentForm>
-      </Container>
-    </>
+      {/* 보안 키패드 */}
+      {showKeypad && activeField && (
+        <RandomKeyPad
+          onKeyPress={handleKeyPress}
+          onDelete={handleDelete}
+          onClose={handleCloseKeypad}
+          onAllDelete={handleAllDelete}
+          maxLength={getMaxLength()}
+          currentLength={getCurrentLength()}
+          title={getKeypadTitle()}
+        />
+      )}
+    </Container>
   )
 }
