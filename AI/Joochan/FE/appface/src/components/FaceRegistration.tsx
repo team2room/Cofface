@@ -50,12 +50,18 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
   const [currentTargetDirection, setCurrentTargetDirection] =
     useState<FaceDirection>('front')
   const [captureCountdown, setCaptureCountdown] = useState<number>(0)
+  const isCapturingRef = useRef<boolean>(false)
 
   useEffect(() => {
     console.log(
       `[중요] 카운트다운 상태 변경: ${captureCountdown}, ref=${captureCountdownRef.current}`,
     )
   }, [captureCountdown])
+
+  useEffect(() => {
+    isCapturingRef.current = isCapturing
+    console.log(`isCapturing ref 업데이트: ${isCapturingRef.current}`)
+  }, [isCapturing])
 
   const currentDirectionRef = useRef<FaceDirection>('unknown')
   const captureCountdownRef = useRef<number>(0)
@@ -198,55 +204,6 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
     }
   }
 
-  const renderDirectionInfo = (
-    canvasCtx: CanvasRenderingContext2D,
-    horizontalOffset: number,
-    verticalOffset: number,
-  ) => {
-    // 방향 텍스트
-    canvasCtx.font = '20px Arial'
-    canvasCtx.fillStyle = 'red'
-    canvasCtx.fillText(`방향: ${currentDirection}`, 20, 30)
-
-    // 오프셋 값 표시
-    canvasCtx.font = '16px Arial'
-    canvasCtx.fillStyle = 'white'
-    canvasCtx.fillText(
-      `수평: ${horizontalOffset.toFixed(1)}, 수직: ${verticalOffset.toFixed(1)}`,
-      20,
-      60,
-    )
-
-    // 캡처 상태 표시
-    canvasCtx.fillStyle = 'yellow'
-    const capturedCount = Object.keys(capturedImages).length
-    const totalCount = requiredDirections.length
-    canvasCtx.fillText(
-      `캡처: ${capturedCount}/${totalCount} (${Object.keys(capturedImages).join(', ')})`,
-      20,
-      90,
-    )
-  }
-
-  // MediaPipe FaceMesh 초기화
-  const initFaceMesh = () => {
-    faceMeshRef.current = new facemesh.FaceMesh({
-      locateFile: (file) => {
-        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-      },
-    })
-
-    // 설정 수정 - 감도 높임
-    faceMeshRef.current.setOptions({
-      maxNumFaces: 1,
-      refineLandmarks: true,
-      minDetectionConfidence: 0.3, // 감도 낮춤 (기본값 0.5)
-      minTrackingConfidence: 0.3, // 감도 낮춤 (기본값 0.5)
-    })
-
-    faceMeshRef.current.onResults(onFaceMeshResults)
-  }
-
   // 카운트다운 상태와 ref 값을 함께 업데이트하는 헬퍼 함수
   const updateCountdown = (value: number) => {
     setCaptureCountdown(value)
@@ -260,11 +217,11 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
     )
     // 명시적으로 콘솔에 출력해서 확인
     console.table({
-      isCapturing,
-      currentDirection,
+      isCapturingRef,
+      currentDirectionRef,
       currentTargetDirection,
       captureCountdown: captureCountdownRef.current,
-      방향일치여부: currentDirection === currentTargetDirection,
+      방향일치여부: currentDirectionRef.current === currentTargetDirection,
     })
 
     updateCountdown(60)
@@ -305,10 +262,7 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
     if (results.multiFaceLandmarks.length > 0) {
       for (const landmarks of results.multiFaceLandmarks) {
         // 얼굴 특징점 좌표 반전
-        const flippedLandmarks = flipLandmarks(
-          landmarks,
-          canvasRef.current.width,
-        )
+        const flippedLandmarks = flipLandmarks(landmarks)
 
         // 반전된 랜드마크로 메시 그리기
         drawing.drawConnectors(
@@ -344,7 +298,6 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
         const chin = landmarks[152]
 
         const centerX = (leftEye.x + rightEye.x) / 2
-        const centerY = (foreHead.y + chin.y) / 2
 
         const horizontalOffset = (noseTip.x - centerX) * 100
         const normalizedNoseY = (noseTip.y - foreHead.y) / (chin.y - foreHead.y)
@@ -359,28 +312,29 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
         // 감지된 방향을 현재 방향으로 설정
         if (detectedDirection !== currentDirection) {
           setCurrentDirection(detectedDirection)
+          currentDirectionRef.current = detectedDirection
           console.log('방향 변경됨:', detectedDirection)
         }
 
         // 디버그 정보 표시 (반전된 화면에 맞게)
-        renderDirectionInfo(canvasCtx, horizontalOffset, verticalOffset)
+        // renderDirectionInfo(canvasCtx, horizontalOffset, verticalOffset)
 
         // 타겟 방향과 일치하는지 확인
-        if (isCapturing && results.multiFaceLandmarks.length > 0) {
+        if (isCapturingRef.current && results.multiFaceLandmarks.length > 0) {
           // 1. 감지된 방향이 목표 방향과 일치하는지 체크
           const isMatchingDirection =
-            detectedDirection === currentTargetDirection
+            currentDirectionRef.current === currentTargetDirectionRef.current
 
           console.log(
-            `현재상태: 방향=${currentDirection}, 목표=${currentTargetDirection}, ` +
-              `일치=${currentDirection === currentTargetDirection}, ` +
-              `카운트다운=${captureCountdown}, 캡처된방향=${Object.keys(capturedImages).join(',')}`,
+            `현재상태: 방향=${currentDirectionRef.current}, 목표=${currentTargetDirectionRef.current}, ` +
+              `일치=${isMatchingDirection}, ` +
+              `카운트다운=${captureCountdownRef.current}, 캡처된방향=${Object.keys(capturedImages).join(', ')}`,
           )
 
           // 2. 방향이 일치하고 카운트다운이 시작되지 않았으면 카운트다운 시작
           if (isMatchingDirection && captureCountdownRef.current === 0) {
             console.log(
-              `목표 방향(${currentTargetDirection}) 감지, 카운트다운 시작!`,
+              `목표 방향(${currentDirectionRef.current}) 감지, 카운트다운 시작!`,
             )
             startCountdown() // 수정된 함수 호출
           }
@@ -396,7 +350,7 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
         }
 
         // 현재 상태 표시
-        if (isCapturing) {
+        if (isCapturingRef.current) {
           // 현재 감지된 방향 표시
           canvasCtx.fillStyle = 'lightgreen'
           canvasCtx.fillText(`현재 방향: ${detectedDirection}`, 20, 120)
@@ -427,7 +381,6 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
 
   const flipLandmarks = (
     landmarks: facemesh.NormalizedLandmarkList,
-    width: number,
   ): facemesh.NormalizedLandmarkList => {
     return landmarks.map((landmark) => ({
       x: 1 - landmark.x, // x 좌표 반전
@@ -435,6 +388,8 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
       z: landmark.z, // z 좌표는 그대로
     }))
   }
+
+  const isHandlingCountdownRef = useRef<boolean>(false)
 
   useEffect(() => {
     let timerId: number | null = null
@@ -445,12 +400,16 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
 
       timerId = window.setInterval(() => {
         setCaptureCountdown((prev) => {
-          if (prev <= 1) {
+          if (prev === 1 && !isHandlingCountdownRef.current) {
             console.log(`카운트다운 완료`)
+            isHandlingCountdownRef.current = true
             if (timerId) clearInterval(timerId)
 
             // 별도 함수로 분리하여 캡처 로직 실행
-            handleCountdownComplete()
+            setTimeout(() => {
+              handleCountdownComplete()
+              isHandlingCountdownRef.current = false
+            }, 50)
             return 0
           }
           return prev - 1
@@ -468,7 +427,10 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
   // 카운트다운 완료 처리를 별도 함수로 분리
   const handleCountdownComplete = () => {
     // 캡처 실행 전에 방향이 일치하는지 최종 확인
-    if (isCapturing && currentDirectionRef.current === currentTargetDirection) {
+    if (
+      isCapturingRef.current &&
+      currentDirectionRef.current === currentTargetDirection
+    ) {
       console.log(
         `카운트다운 완료 후 방향 일치 확인: ${currentTargetDirection}`,
       )
@@ -484,36 +446,6 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
     } else {
       console.log('카운트다운 완료 시 방향 불일치, 캡처 취소')
     }
-  }
-
-  // 캡처 이미지 반전 처리 함수
-  const captureNonFlippedImage = (direction: FaceDirection) => {
-    if (!canvasRef.current) return
-
-    // 임시 캔버스 생성 (반전 없는 원본 이미지용)
-    const tempCanvas = document.createElement('canvas')
-    const tempCtx = tempCanvas.getContext('2d')
-
-    if (!tempCtx) return
-
-    // 원본 캔버스와 동일한 크기로 설정
-    tempCanvas.width = canvasRef.current.width
-    tempCanvas.height = canvasRef.current.height
-
-    // 반전되지 않은 원본 이미지 그리기
-    tempCtx.save()
-    tempCtx.scale(-1, 1) // 반전
-    tempCtx.drawImage(
-      canvasRef.current,
-      -tempCanvas.width,
-      0,
-      tempCanvas.width,
-      tempCanvas.height,
-    )
-    tempCtx.restore()
-
-    // 이미지 데이터 추출
-    return tempCanvas.toDataURL('image/jpeg', 0.9)
   }
 
   // 특정 방향의 이미지 캡처
@@ -538,9 +470,7 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
     }
 
     // 캔버스에서 이미지 데이터 추출
-    const imageData =
-      captureNonFlippedImage(direction) ||
-      canvasRef.current.toDataURL('image/jpeg', 0.9)
+    const imageData = canvasRef.current.toDataURL('image/jpeg', 0.9)
 
     // 이미지가 추출되었는지 확인
     if (!imageData) {
@@ -552,20 +482,40 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
 
     // 캡처된 이미지 저장
     setCapturedImages((prev) => {
+      if (prev[direction]) {
+        return prev
+      }
       const updated = { ...prev, [direction]: imageData }
       console.log(`캡처된 방향 업데이트: ${Object.keys(updated).join(', ')}`)
+
       return updated
     })
-
     // 진행 상황 메시지 업데이트
     setMessage(`${direction} 방향 캡처 완료!`)
-
-    // 다음 단계로 진행
-    processNextDirection(direction)
   }
 
+  useEffect(() => {
+    if (Object.keys(capturedImages).length > 0) {
+      // 마지막으로 캡처된 방향 확인
+      const lastDirection = Object.keys(capturedImages).pop() as FaceDirection
+      if (lastDirection) {
+        processNextDirection(lastDirection, capturedImages)
+      }
+    }
+  }, [capturedImages])
+
+  const currentTargetDirectionRef = useRef<FaceDirection>('front')
+
+  useEffect(() => {
+    currentTargetDirectionRef.current = currentTargetDirection
+    console.log(`목표 방향 ref 업데이트: ${currentTargetDirectionRef.current}`)
+  }, [currentTargetDirection])
+
   // 다음 방향 처리 로직을 별도 함수로 분리
-  const processNextDirection = (currentDirection: FaceDirection) => {
+  const processNextDirection = (
+    currentDirection: FaceDirection,
+    capturedImgs: Record<FaceDirection, string>,
+  ) => {
     const directionOrder: FaceDirection[] = [
       'front',
       'left',
@@ -573,25 +523,35 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
       'up',
       'down',
     ]
+    console.log(
+      `다음 방향 처리 시작: 현재=${currentDirection}, 캡처된방향=${Object.keys(capturedImgs).join(', ')}`,
+    )
 
     const nextDirectionIndex =
       directionOrder.findIndex((dir) => dir === currentDirection) + 1
+
+    resetCountdown()
 
     // 다음 타겟 방향 (순서대로)
     if (nextDirectionIndex < directionOrder.length) {
       const nextDirection = directionOrder[nextDirectionIndex]
       console.log(`다음 방향으로 진행: ${nextDirection}`)
 
-      // 상태 초기화
-      resetCountdown()
+      currentTargetDirectionRef.current = nextDirection
 
-      // 다음 방향으로 설정
       setTimeout(() => {
         setCurrentTargetDirection(nextDirection)
-        setMessage(
-          `다음은 ${nextDirection} 방향을 캡처해주세요. ${directionGuides[nextDirection]}`,
+        console.log(
+          `업데이트 후 목표 방향: 상태=${currentTargetDirection}, ref=${currentTargetDirectionRef.current}`,
         )
-      }, 1000)
+
+        // 다음 방향으로 설정
+        setTimeout(() => {
+          setMessage(
+            `다음은 ${nextDirection} 방향을 캡처해주세요. ${directionGuides[nextDirection]}`,
+          )
+        }, 100)
+      }, 500)
     } else {
       // 모든 방향 캡처 완료
       console.log('모든 방향 캡처 완료, 등록 진행')
@@ -602,8 +562,35 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
     }
   }
 
+  const isSubmittingRef = useRef<boolean>(false)
+
   // 서버에 등록 데이터 제출
   const submitRegistration = async () => {
+    const requiredDirections: FaceDirection[] = [
+      'front',
+      'left',
+      'right',
+      'up',
+      'down',
+    ]
+    const missingDirections = requiredDirections.filter(
+      (dir) => !capturedImages[dir],
+    )
+
+    if (missingDirections.length > 0) {
+      console.log(`누락된 방향이 있습니다: ${missingDirections.join(', ')}`)
+      setMessage(
+        `다음 방향이 누락되었습니다: ${missingDirections.join(', ')}. 다시 시도해주세요.`,
+      )
+      return
+    }
+
+    if (isSubmittingRef.current) {
+      console.log('이미 제출이 진행 중입니다.')
+      return
+    }
+    isSubmittingRef.current = true
+
     setIsProcessing(true)
     setMessage('서버에 얼굴 정보를 등록 중입니다...')
 
@@ -625,6 +612,7 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
       onComplete(false, '서버 연결 오류')
     } finally {
       setIsProcessing(false)
+      isSubmittingRef.current = false
     }
   }
 
@@ -787,16 +775,6 @@ const FaceRegistration: React.FC<FaceRegistrationProps> = ({
             )}
           </div>
         )}
-        <div className="debug-info">
-          <p>현재 방향: {currentDirection}</p>
-          <p>
-            방향 카운터:{' '}
-            {Object.entries(detectedDirectionCountRef.current)
-              .map(([dir, count]) => `${dir}: ${count.toFixed(1)}`)
-              .join(', ')}
-          </p>
-          <p>캡처된 방향: {Object.keys(capturedImages).join(', ')}</p>
-        </div>
       </div>
 
       <div className="controls">
