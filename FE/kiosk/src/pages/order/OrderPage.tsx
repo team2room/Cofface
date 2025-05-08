@@ -4,10 +4,11 @@ import tw from 'twin.macro'
 import MenuContent from '../../features/order/components/MenuContent'
 import PlaceSelectContent from '../../features/order/components/PlaceSelectContent'
 import PayContent from '@/features/order/components/PayContent'
+import CompleteContent from '@/features/order/components/CompleteContent'
 
 const Container = tw.div`flex flex-col min-h-screen bg-white px-7 my-4`
 
-type Step = 'menu' | 'place' | 'pay'
+type Step = 'menu' | 'place' | 'pay' | 'complete'
 
 export default function OrderPage() {
   const [step, setStep] = useState<Step>('menu')
@@ -19,6 +20,7 @@ export default function OrderPage() {
       {step === 'menu' && <MenuContent onNext={() => setStep('place')} />}
       {step === 'place' && <PlaceSelectContent onNext={() => setStep('pay')} />}
       {step === 'pay' && <PayContent />}
+      {step === 'complete' && <CompleteContent />}
     </Container>
   )
 }

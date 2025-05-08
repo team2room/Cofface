@@ -4,7 +4,7 @@ import { IoCloseCircle } from 'react-icons/io5'
 import { useState } from 'react'
 import styled from '@emotion/styled'
 import CustomDialog from '@/components/CustomDialog'
-import PayMethodButton from './pqy/PqyMethodButton'
+import PayMethodButton from './pay/PayMethodButton'
 import { usePayModal } from '../hooks/usePayModal'
 
 const Content = tw.div`w-full flex flex-col items-center justify-center flex-1 gap-12 mb-60`
