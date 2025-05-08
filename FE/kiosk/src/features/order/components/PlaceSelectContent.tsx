@@ -9,7 +9,7 @@ const ImageButton = tw.button`
 `
 const EmojiImage = tw.img`w-[328px] h-[328px]`
 
-export default function PlaceSelectContent() {
+export default function PlaceSelectContent({ onNext }: { onNext: () => void }) {
   return (
     <Content>
       <div className="my-20">
@@ -19,14 +19,14 @@ export default function PlaceSelectContent() {
       </div>
 
       <div className="flex flex-col gap-20 mb-60">
-        <ImageButton>
+        <ImageButton onClick={onNext}>
           <EmojiImage src="/매장.png" alt="매장" />
           <Text variant="title4" weight="extrabold" color="lightBlack">
             매장에서 먹고가기
           </Text>
         </ImageButton>
 
-        <ImageButton>
+        <ImageButton onClick={onNext}>
           <EmojiImage src="/포장.png" alt="포장" />
           <Text variant="title4" weight="extrabold" color="lightBlack">
             포장하기
