@@ -8,69 +8,108 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    Accept: 'application/json',
   },
+  // 큰 크기의 요청을 처리하기 위한 타임아웃 증가
+  timeout: 10000, // 10초
 });
 
 // 얼굴 등록 함수
-export const registerFace = async (userId: string, capturedImages: CapturedImage[]): Promise<any> => {
-    console.log('등록 시작: 사용자 ID', userId);
-    console.log('캡처된 이미지 수:', capturedImages.length);
-    console.log('캡처된 이미지 상태:', capturedImages.map(img => FaceDetectionState[img.state]));
-  
-    try {
+export const registerFace = async (
+  userId: string,
+  capturedImages: CapturedImage[]
+): Promise<any> => {
+  console.log('등록 시작: 사용자 ID', userId);
+  console.log('캡처된 이미지 수:', capturedImages.length);
+  console.log(
+    '캡처된 이미지 상태:',
+    capturedImages.map((img) => FaceDetectionState[img.state])
+  );
+
+  try {
     // 캡처된 이미지를 방향별로 매핑 (정수 키를 사용)
     const directionMap: { [key: number]: string } = {
-        1: 'front',  // FaceDetectionState.FRONT_FACE는 1
-        2: 'left',   // FaceDetectionState.LEFT_FACE는 2
-        3: 'right',  // FaceDetectionState.RIGHT_FACE는 3
-        4: 'up',     // FaceDetectionState.UP_FACE는 4
-        5: 'down',   // FaceDetectionState.DOWN_FACE는 5
+      1: 'front', // FaceDetectionState.FRONT_FACE는 1
+      2: 'left', // FaceDetectionState.LEFT_FACE는 2
+      3: 'right', // FaceDetectionState.RIGHT_FACE는 3
+      4: 'up', // FaceDetectionState.UP_FACE는 4
+      5: 'down', // FaceDetectionState.DOWN_FACE는 5
     };
     // API 요청 형식에 맞게 데이터 변환
     const faceImages: Record<string, string> = {};
-    
+
     capturedImages.forEach((img) => {
-        const direction = directionMap[img.state];
-        if (direction) {
-          // 이미지가 'data:image/jpeg;base64,' 형식인지 확인
-          if (img.imageData.startsWith('data:image/') && img.imageData.includes('base64,')) {
-            faceImages[direction] = img.imageData;
-          } else {
-            console.error(`${direction} 방향 이미지 형식이 잘못됨:`, img.imageData.substring(0, 50) + '...');
-          }
+      const direction = directionMap[img.state];
+      if (direction) {
+        // 이미지가 'data:image/jpeg;base64,' 형식인지 확인
+        if (
+          img.imageData.startsWith('data:image/') &&
+          img.imageData.includes('base64,')
+        ) {
+          faceImages[direction] = img.imageData;
+        } else {
+          console.error(
+            `${direction} 방향 이미지 형식이 잘못됨:`,
+            img.imageData.substring(0, 50) + '...'
+          );
         }
-      });
-  
-      // 모든 방향(5개)이 있는지 확인
-      const requiredDirections = ['front', 'left', 'right', 'up', 'down'];
-      const missingDirections = requiredDirections.filter(dir => !faceImages[dir]);
-      
-      if (missingDirections.length > 0) {
-        throw new Error(`다음 방향의 얼굴 이미지가 누락되었습니다: ${missingDirections.join(', ')}`);
       }
-  
-      // API 요청 전송
-      const response = await api.post('/register', {
-        user_id: userId,
-        face_images: faceImages,
-      });
-  
-      return response.data;
-    } catch (error) {
-      console.error('얼굴 등록 API 호출 중 오류 발생:', error);
-      throw error;
+    });
+
+    // 모든 방향(5개)이 있는지 확인
+    const requiredDirections = ['front', 'left', 'right', 'up', 'down'];
+    const missingDirections = requiredDirections.filter(
+      (dir) => !faceImages[dir]
+    );
+
+    if (missingDirections.length > 0) {
+      throw new Error(
+        `다음 방향의 얼굴 이미지가 누락되었습니다: ${missingDirections.join(
+          ', '
+        )}`
+      );
     }
-  };
+
+    // API 요청 전송
+    const response = await api.post('/register', {
+      user_id: userId,
+      face_images: faceImages,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('얼굴 등록 API 호출 중 오류 발생:', error);
+    throw error;
+  }
+};
 
 // 얼굴 인증 함수
 export const verifyFace = async (rgbImage: string): Promise<any> => {
   try {
-    const response = await api.post('/verify', {
-      rgb_image: rgbImage,
-    });
+    // Base64 문자열 처리
+    let base64Data = rgbImage;
+
+    // 프리픽스 제거 (data:image/jpeg;base64, 등)
+    if (base64Data.includes(';base64,')) {
+      base64Data = base64Data.split(';base64,')[1];
+    }
+
+    console.log('Base64 문자열 길이:', base64Data.length);
+
+    // 쿼리 파라미터로 요청 보내기
+    const response = await api.post(
+      `/verify?rgb_image=${encodeURIComponent(base64Data)}`
+    );
+
     return response.data;
   } catch (error) {
     console.error('얼굴 인증 API 호출 중 오류 발생:', error);
+
+    if (axios.isAxiosError(error) && error.response) {
+      console.error('서버 응답 데이터:', error.response.data);
+      console.error('서버 응답 상태:', error.response.status);
+    }
+
     throw error;
   }
 };
