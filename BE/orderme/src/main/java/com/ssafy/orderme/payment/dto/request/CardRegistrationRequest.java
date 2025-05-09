@@ -9,10 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PaymentInfo {
-    private Integer paymentInfoId;
-    private String userId;
+public class CardRegistrationRequest {
     private String cardNumber;
     private String cardExpiry;
-    private Boolean isDefault;  // 기본 결제 수단 여부
+    private String cardCvc;
+    private Boolean isDefault;
 }

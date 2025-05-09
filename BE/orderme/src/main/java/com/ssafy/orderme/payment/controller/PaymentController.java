@@ -158,5 +158,4 @@ public class PaymentController {
             return ResponseEntity.ok(ApiResponse.error(500, "결제 실패 처리 중 오류가 발생했습니다."));
         }
     }
-
 }

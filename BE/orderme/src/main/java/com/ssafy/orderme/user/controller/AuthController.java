@@ -203,7 +203,7 @@ public class AuthController {
         responseData.put("accessToken", accessToken);
         responseData.put("refreshToken", refreshToken);
         responseData.put("tokenType", "Bearer");
-        responseData.put("expiresIn", 86400); // 24시간
+        responseData.put("expiresIn", 86400 * 30); // 24시간
         responseData.put("admin", admin.toDto());
 
         return ResponseEntity.ok(ApiResponse.success("관리자 로그인이 완료되었습니다.",responseData));
