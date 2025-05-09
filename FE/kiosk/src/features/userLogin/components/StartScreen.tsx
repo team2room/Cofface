@@ -14,9 +14,9 @@ const ImageWrapper = tw.div`
 `
 
 // 풀 배경
-const FullImg = tw.img`
-  absolute top-0 left-0 w-full h-full object-cover
-`
+// const FullImg = tw.img`
+//   absolute top-0 left-0 w-full h-full object-cover
+// `
 
 // 중간 배경
 const MiddleImg = tw.img`
