@@ -10,9 +10,9 @@ import {
   PasswordInputField,
   InputGroup,
   AgreementBox,
-} from '@/features/register/components/PayRegisterComponents'
+} from '@/features/register/components/intro/PayRegisterComponents'
 import { useNavigate } from 'react-router-dom'
-import RandomKeyPad from '@/features/register/components/PayRandomKeyPad'
+import RandomKeyPad from '@/features/register/components/intro/PayRandomKeyPad'
 
 const HeaderWrapper = tw.div`
   sticky top-0 z-10 bg-white w-full
