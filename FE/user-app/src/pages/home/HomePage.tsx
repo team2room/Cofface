@@ -8,6 +8,7 @@ import { Settings } from 'iconoir-react'
 import tw from 'twin.macro'
 import styled from '@emotion/styled'
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const Container = tw.div`
   w-full
@@ -55,18 +56,24 @@ export default function HomePage() {
   const isScrollingRef = useRef(false)
   const touchStartY = useRef(0)
 
+  const navigate = useNavigate()
+
   const mainButtonProps: HomeMainButtonProps[] = [
     {
       title: '얼굴 등록',
       content: '얼굴 정보를 등록하고\n 오더미 키오스크에서 편리하게 주문해요',
       src: '/src/assets/phone.png',
-      onClick: () => {},
+      onClick: () => {
+        navigate('/register/face')
+      },
     },
     {
       title: '결제 정보 등록',
       content: '나의 결제 정보를 등록하고\n 오더미 키오스크에서 바로 결제해요',
       src: '/src/assets/wallet.png',
-      onClick: () => {},
+      onClick: () => {
+        navigate('/register/pay')
+      },
     },
   ]
 
@@ -169,7 +176,11 @@ export default function HomePage() {
             <Text variant="title2" weight="bold">
               {name}님 반가워요
             </Text>
-            <Settings onClick={() => {}} />
+            <Settings
+              onClick={() => {
+                navigate('/setting')
+              }}
+            />
           </HomeNav>
           {/* 등록 여부 */}
           {locked ? <HomeTitleLock /> : <HomeTitleUnlock />}
