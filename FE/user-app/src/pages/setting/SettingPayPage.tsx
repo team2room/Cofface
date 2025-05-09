@@ -2,6 +2,7 @@ import DetailHeader from '@/components/DetailHeader'
 import { colors } from '@/styles/colors'
 import { Text } from '@/styles/typography'
 import { PlusCircleSolid } from 'iconoir-react'
+import { useNavigate } from 'react-router-dom'
 import tw from 'twin.macro'
 
 const Container = tw.div`
@@ -10,11 +11,14 @@ const Container = tw.div`
 const HeaderWrapper = tw.div`
   sticky top-0 z-10 bg-white w-full
 `
+const NameWrapper = tw.div`
+  flex items-center justify-between px-2 py-2
+`
 const ContentContainer = tw.div`
   flex-1 overflow-auto px-4 pt-2
 `
 const CardWrapper = tw.div`
-  flex flex-col gap-2 mt-3
+  flex flex-col gap-2 mt-1
 `
 const CardItem = tw.div`
   border border-gray rounded-md p-2 flex items-center justify-between
@@ -24,15 +28,23 @@ const Badge = tw.div`
 `
 
 export function SettingPayPage() {
+  const navigate = useNavigate()
+
   return (
     <Container>
       <HeaderWrapper>
         <DetailHeader title="결제 수단 관리" />
       </HeaderWrapper>
       <ContentContainer>
-        <Text variant="body1" weight="bold" className="ml-2">
-          등록된 카드
-        </Text>
+        <NameWrapper>
+          <Text variant="body1" weight="bold">
+            등록된 카드
+          </Text>
+          {/* //TODO - 카드 삭제, 대표카드 설정 기능 추가해야 됨 */}
+          <Text variant="caption1" weight="semibold" color="dark">
+            카드 설정
+          </Text>
+        </NameWrapper>
         <CardWrapper>
           <CardItem>
             <div className="flex items-center gap-3">
@@ -52,7 +64,11 @@ export function SettingPayPage() {
               </Text>
             </Badge>
           </CardItem>
-          <CardItem>
+          <CardItem
+            onClick={() => {
+              navigate('/register/pay')
+            }}
+          >
             <div className="flex items-center gap-3">
               <PlusCircleSolid
                 width={22}

@@ -2,6 +2,7 @@ import HomePage from './pages/home/HomePage'
 import LoginConfirmPage from './pages/login/LoginConfirmPage'
 import LoginVerifyPage from './pages/login/LoginVerifyPage'
 import MainPage from './pages/login/MainPage'
+import { FaceRegisterCapturePage } from './pages/register/FaceRegisterCapturePage'
 import { FaceRegisterConfirmPage } from './pages/register/FaceRegisterConfirmPage'
 import { FaceRegisterPage } from './pages/register/FaceRegisterPage'
 import { PayRegisterPage } from './pages/register/PayRegisterPage'
@@ -21,7 +22,10 @@ function App() {
         <Route path="/login/confirm" element={<LoginConfirmPage />} />
 
         <Route path="/register/face" element={<FaceRegisterPage />} />
-        <Route path="/register/face/capture" />
+        <Route
+          path="/register/face/capture"
+          element={<FaceRegisterCapturePage />}
+        />
         <Route
           path="/register/face/confirm"
           element={<FaceRegisterConfirmPage />}

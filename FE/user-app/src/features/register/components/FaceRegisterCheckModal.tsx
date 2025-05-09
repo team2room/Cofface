@@ -2,6 +2,7 @@ import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer'
 import { Text } from '@/styles/typography'
 import tw from 'twin.macro'
 import { NavArrowDown } from 'iconoir-react'
+import { useNavigate } from 'react-router-dom'
 
 interface SelectDrawerProps {
   isOpen: boolean
@@ -33,6 +34,8 @@ export function FaceRegisterCheckModal({
   isOpen,
   onOpenChange,
 }: SelectDrawerProps) {
+  const navigate = useNavigate()
+
   return (
     <Drawer open={isOpen} onOpenChange={onOpenChange}>
       <DrawerContent className="px-6 pt-2">
@@ -75,7 +78,11 @@ export function FaceRegisterCheckModal({
             </CheckboxLabel>
             <NavArrowDown color="darkGray" />
           </ConsentItem>
-          <ConfirmButton onClick={() => {}}>
+          <ConfirmButton
+            onClick={() => {
+              navigate('/register/face/capture')
+            }}
+          >
             <Text variant="caption1" weight="medium" color="white">
               필수 동의하기
             </Text>
