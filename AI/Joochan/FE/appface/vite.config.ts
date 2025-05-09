@@ -15,10 +15,10 @@ export default defineConfig({
         enabled: true, // 개발환경에서 pwa 기능활성화
       },
       manifest: {
-        name: "keywi",
-        short_name: "키위",
+        name: "Order.Me",
+        short_name: "오더미",
         description:
-          "1:1 키보드 견적 서비스, 나만의 키보드를 맞추고 뽐내보세요.",
+          "안면인식 기반 맞춤 추천 서비스",
         start_url: ".",
         display: "standalone", // 네이티브앱처럼 화면 전체를 채움
         background_color: "#ffffff",

@@ -8,7 +8,7 @@ import {
   Navigate,
 } from 'react-router-dom'
 
-import FaceVerification from './components/FaceVerification'
+import FaceVerification from './components/face-verification/FaceVerification'
 import FaceRegistration from './components/FaceRegistration'
 
 import './App.css'
