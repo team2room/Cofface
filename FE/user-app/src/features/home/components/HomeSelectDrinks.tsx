@@ -3,6 +3,14 @@ import tw from 'twin.macro'
 import styled from '@emotion/styled'
 import { colors } from '@/styles/colors'
 import { Text } from '@/styles/typography'
+import iconStrawberry from '@/assets/icons/icon-strawberry.png'
+import iconCookie from '@/assets/icons/icon-cookie.png'
+import iconGreentea from '@/assets/icons/icon-greentea.png'
+import strawberry from '@/assets/drinks/strawberry.png'
+import cookie from '@/assets/drinks/cookie.png'
+import greentea from '@/assets/drinks/greentea.png'
+import imgIce from '@/assets/ice.png'
+import lock from '@/assets/lock.png'
 
 const Container = tw.div`
   flex flex-col items-center w-full relative
@@ -105,18 +113,18 @@ export function HomeSelectDrinks({ locked = false }: IsLockedProps) {
   const drinkOptions: DrinkOption[] = [
     {
       id: 'strawberry',
-      iconSrc: '/src/assets/icons/icon-strawberry.png',
-      imgSrc: '/src/assets/drinks/strawberry.png',
+      iconSrc: iconStrawberry,
+      imgSrc: strawberry,
     },
     {
       id: 'cookie',
-      iconSrc: '/src/assets/icons/icon-cookie.png',
-      imgSrc: '/src/assets/drinks/cookie.png',
+      iconSrc: iconCookie,
+      imgSrc: cookie,
     },
     {
       id: 'greentea',
-      iconSrc: '/src/assets/icons/icon-greentea.png',
-      imgSrc: '/src/assets/drinks/greentea.png',
+      iconSrc: iconGreentea,
+      imgSrc: greentea,
     },
   ]
 
@@ -192,7 +200,7 @@ export function HomeSelectDrinks({ locked = false }: IsLockedProps) {
             {iceInfo.map((ice) => (
               <IceImage
                 key={`${drink.id}-${ice.id}`}
-                src="/src/assets/ice.png"
+                src={imgIce}
                 alt={`${ice.visitCount}회 방문`}
                 visitLevel={ice.visitCount}
                 maxLevel={30}
@@ -222,7 +230,7 @@ export function HomeSelectDrinks({ locked = false }: IsLockedProps) {
             </Text>
           </LockMessage>
           <LockImage>
-            <img src="/src/assets/lock.png" alt="잠금" />
+            <img src={lock} alt="잠금" />
           </LockImage>
         </LockedOverlay>
       )}

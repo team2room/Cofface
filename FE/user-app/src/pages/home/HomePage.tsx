@@ -9,6 +9,9 @@ import tw from 'twin.macro'
 import styled from '@emotion/styled'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import phone from '@/assets/phone.png'
+import wallet from '@/assets/wallet.png'
+import scrollDown from '@/assets/scroll-down.gif'
 
 const Container = tw.div`
   w-full
@@ -62,7 +65,7 @@ export default function HomePage() {
     {
       title: '얼굴 등록',
       content: '얼굴 정보를 등록하고\n 오더미 키오스크에서 편리하게 주문해요',
-      src: '/src/assets/phone.png',
+      src: phone,
       onClick: () => {
         navigate('/register/face')
       },
@@ -70,7 +73,7 @@ export default function HomePage() {
     {
       title: '결제 정보 등록',
       content: '나의 결제 정보를 등록하고\n 오더미 키오스크에서 바로 결제해요',
-      src: '/src/assets/wallet.png',
+      src: wallet,
       onClick: () => {
         navigate('/register/pay')
       },
@@ -188,7 +191,7 @@ export default function HomePage() {
           <ScrollDown onClick={handleScrollDown}>
             <img
               className="w-16"
-              src="/src/assets/scroll-down.gif"
+              src={scrollDown}
               alt="스크롤 다운"
             />
           </ScrollDown>
@@ -197,7 +200,7 @@ export default function HomePage() {
           <ScrollUp onClick={handleScrollUp}>
             <img
               className="w-16"
-              src="/src/assets/scroll-down.gif"
+              src={scrollDown}
               alt="스크롤 업"
             />
           </ScrollUp>

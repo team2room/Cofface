@@ -5,6 +5,9 @@ import { FaceRegisterMainButtonProps } from '@/interfaces/RegisterInterfaces'
 import { Text } from '@/styles/typography'
 import { useEffect, useState } from 'react'
 import tw from 'twin.macro'
+import faceScan from '@/assets/face-scan.gif'
+import shield from '@/assets/shield.png'
+import phone from '@/assets/phone.png'
 
 const HeaderWrapper = tw.div`
   sticky top-0 z-10 bg-white w-full
@@ -47,17 +50,17 @@ export function FaceRegisterPage() {
   const buttonProps: FaceRegisterMainButtonProps[] = [
     {
       content: '결제 정보를 등록한다면\n 얼굴 인식 한 번에 결제할 수 있어요',
-      src: '/src/assets/face-scan.gif',
+      src: faceScan,
       onClick: () => {},
     },
     {
       content: '얼굴 정보는 보안 처리되어\n안전하게 저장해요',
-      src: '/src/assets/shield.png',
+      src: shield,
       onClick: () => {},
     },
     {
       content: '얼굴 등록하러 가볼까요?',
-      src: '/src/assets/phone.png',
+      src: phone,
       onClick: handleRegisterFace,
     },
   ]
