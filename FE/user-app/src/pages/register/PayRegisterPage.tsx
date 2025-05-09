@@ -185,7 +185,7 @@ export function PayRegisterPage() {
     })
 
     // 카드 등록 성공 후 이동할 페이지
-    navigate('/register/complete')
+    navigate('/setting/pay')
     // 실제 API 호출 코드가 여기에 들어갈 수 있음
   }
 
