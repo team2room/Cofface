@@ -42,14 +42,12 @@
             is_default as isDefault
         FROM payment_info
         WHERE user_id = #{userId}
-          AND is_delete = false
         ORDER BY is_default DESC, payment_info_id DESC
     </select>
 
     <!-- 카드 삭제 (소프트 딜리트) -->
     <update id="deleteCard">
-        UPDATE payment_info
-        SET is_delete = true
+        DELETE FROM payment_info
         WHERE payment_info_id = #{paymentInfoId}
           AND user_id = #{userId}
     </update>
@@ -60,7 +58,6 @@
         FROM payment_info
         WHERE payment_info_id = #{paymentInfoId}
           AND user_id = #{userId}
-          AND is_delete = false
     </select>
 
 </mapper>

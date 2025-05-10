@@ -5,7 +5,9 @@ import com.ssafy.orderme.payment.dto.response.CardCompanyResponse;
 import com.ssafy.orderme.payment.model.CardRegistrationRequest;
 import com.ssafy.orderme.payment.model.PaymentInfo;
 import com.ssafy.orderme.payment.service.AutoPaymentService;
+import com.ssafy.orderme.security.JwtTokenProvider;
 import com.ssafy.orderme.user.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,7 @@ public class AutoPaymentController {
 
     private final UserService userService;
     private final AutoPaymentService autoPaymentService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     // 카드사 정보 조회
     @GetMapping("/card-company-info")
@@ -41,12 +44,16 @@ public class AutoPaymentController {
     // 카드 등록
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<?>> registerCard(@RequestBody CardRegistrationRequest request,
-                                                       @AuthenticationPrincipal Principal principal) {
+                                                       HttpServletRequest httpRequest) {
         try {
+            // Header에서 직접 토큰 추출
+            String token = httpRequest.getHeader("Authorization").replace("Bearer ", "");
+            String userId = jwtTokenProvider.getUserId(token);
+
             // 카드 정보 변환
             PaymentInfo paymentInfo = PaymentInfo.builder()
                     .cardNumber(request.getCardNumber())
-                    .userId(principal.getName())
+                    .userId(userId)
                     .cardExpiry(request.getCardExpiry())
                     .isDefault(request.getIsDefault())
                     .build();
@@ -72,9 +79,12 @@ public class AutoPaymentController {
 
     // 유저의 카드 정보 조회
     @GetMapping("/cards")
-    public ResponseEntity<ApiResponse<?>> getCardList(@AuthenticationPrincipal Principal principal) {
+    public ResponseEntity<ApiResponse<?>> getCardList(HttpServletRequest httpRequest) {
         try {
-            List<PaymentInfo> cards = autoPaymentService.getCardList(principal.getName());
+            String token = httpRequest.getHeader("Authorization").replace("Bearer ", "");
+            String userId = jwtTokenProvider.getUserId(token);
+
+            List<PaymentInfo> cards = autoPaymentService.getCardList(userId);
             return ResponseEntity.ok(ApiResponse.success(cards));
         } catch (Exception e) {
             log.error("카드 목록 조회 실패", e);
@@ -87,9 +97,12 @@ public class AutoPaymentController {
     @DeleteMapping("/card")
     public ResponseEntity<ApiResponse<?>> deleteCard(
             @RequestParam Integer paymentInfoId,
-            @AuthenticationPrincipal Principal principal) {
+            HttpServletRequest httpRequest) {
         try {
-            boolean result = autoPaymentService.deleteCard(paymentInfoId, principal.getName());
+            String token = httpRequest.getHeader("Authorization").replace("Bearer ", "");
+            String userId = jwtTokenProvider.getUserId(token);
+
+            boolean result = autoPaymentService.deleteCard(paymentInfoId, userId);
             if (result) {
                 return ResponseEntity.ok(ApiResponse.success("카드가 성공적으로 삭제되었습니다."));
             } else {
