@@ -3,18 +3,149 @@ import axios from 'axios';
 import { CapturedImage, FaceDetectionState } from './types';
 
 // API 기본 설정
-const API_BASE_URL = 'http://localhost:8000'; // 백엔드 서버 주소
+const API_BASE_URL = 'http://localhost:8000';
+const WS_BASE_URL = 'ws://localhost:8000';
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
-  // 큰 크기의 요청을 처리하기 위한 타임아웃 증가
-  timeout: 10000, // 10초
+  timeout: 10000,
 });
 
-// 얼굴 등록 함수
+// 웹소켓 인증 클래스
+export class FaceVerificationWebSocket {
+  private ws: WebSocket | null = null;
+  private reconnectTimer: NodeJS.Timeout | null = null;
+  private reconnectAttempts: number = 0;
+  private maxReconnectAttempts: number = 5;
+  private pingTimer: NodeJS.Timeout | null = null;
+
+  constructor(
+    private onMessage: (data: any) => void,
+    private onError: (error: Event) => void,
+    private onClose: () => void,
+    private onOpen: () => void
+  ) {}
+
+  connect(): void {
+    try {
+      const wsUrl = `${WS_BASE_URL}/ws/verify`;
+      console.log('WebSocket 연결 시도:', wsUrl);
+
+      this.ws = new WebSocket(wsUrl);
+
+      this.ws.onopen = (event) => {
+        console.log('WebSocket 연결 성공');
+        this.reconnectAttempts = 0;
+        this.onOpen();
+
+        // 연결 유지를 위한 ping 시작
+        this.startPing();
+      };
+
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('WebSocket 메시지 수신:', data);
+          this.onMessage(data);
+        } catch (error) {
+          console.error('WebSocket 메시지 파싱 오류:', error);
+        }
+      };
+
+      this.ws.onerror = (event) => {
+        console.error('WebSocket 오류:', event);
+        this.onError(event);
+      };
+
+      this.ws.onclose = (event) => {
+        console.log('WebSocket 연결 종료:', event.code, event.reason);
+        this.onClose();
+
+        // ping 정지
+        this.stopPing();
+
+        // 자동 재연결 시도
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          this.reconnectAttempts++;
+          const delay = Math.min(
+            1000 * Math.pow(2, this.reconnectAttempts),
+            30000
+          );
+          console.log(
+            `${delay}ms 후 재연결 시도 (${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+          );
+
+          this.reconnectTimer = setTimeout(() => {
+            this.connect();
+          }, delay);
+        }
+      };
+    } catch (error) {
+      console.error('WebSocket 연결 중 오류:', error);
+      this.onError(error as Event);
+    }
+  }
+
+  disconnect(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    this.stopPing();
+
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+  }
+
+  sendVerifyRequest(rgbImage: string): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      const message = {
+        type: 'verify',
+        rgb_image: rgbImage,
+      };
+      this.ws.send(JSON.stringify(message));
+    } else {
+      console.error('WebSocket이 연결되지 않았습니다.');
+    }
+  }
+
+  sendPing(): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      const message = {
+        type: 'ping',
+        timestamp: new Date().toISOString(),
+      };
+      this.ws.send(JSON.stringify(message));
+    }
+  }
+
+  private startPing(): void {
+    if (this.pingTimer) {
+      clearInterval(this.pingTimer);
+    }
+
+    // 30초마다 ping 전송
+    this.pingTimer = setInterval(() => {
+      this.sendPing();
+    }, 30000);
+  }
+
+  private stopPing(): void {
+    if (this.pingTimer) {
+      clearInterval(this.pingTimer);
+      this.pingTimer = null;
+    }
+  }
+}
+
+// 기존 REST API 함수들
 export const registerFace = async (
   userId: string,
   capturedImages: CapturedImage[]
@@ -35,6 +166,7 @@ export const registerFace = async (
       4: 'up', // FaceDetectionState.UP_FACE는 4
       5: 'down', // FaceDetectionState.DOWN_FACE는 5
     };
+
     // API 요청 형식에 맞게 데이터 변환
     const faceImages: Record<string, string> = {};
 
@@ -83,7 +215,7 @@ export const registerFace = async (
   }
 };
 
-// 얼굴 인증 함수
+// REST 얼굴 인증 함수 (호환성을 위해 유지)
 export const verifyFace = async (rgbImage: string): Promise<any> => {
   try {
     // Base64 문자열 처리
@@ -123,4 +255,11 @@ export const checkServerHealth = async (): Promise<any> => {
     console.error('서버 상태 확인 중 오류 발생:', error);
     throw error;
   }
+};
+
+export default {
+  registerFace,
+  verifyFace,
+  checkServerHealth,
+  FaceVerificationWebSocket,
 };

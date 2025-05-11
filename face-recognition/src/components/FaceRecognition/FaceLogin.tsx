@@ -4,7 +4,7 @@ import * as mp from '@mediapipe/face_mesh';
 import * as cam from '@mediapipe/camera_utils';
 
 // API 기능 가져오기
-import { verifyFace, checkServerHealth } from './api';
+import { FaceVerificationWebSocket, checkServerHealth } from './api';
 
 // 스타일 컴포넌트 및 유틸리티 가져오기
 import {
@@ -28,7 +28,7 @@ import { RotationState } from './types';
 import { calculateFaceRotation, checkFaceInCircle } from './utils';
 
 const FaceLogin: React.FC = () => {
-  // 상태 관리
+  // 기존 상태들
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [verificationResult, setVerificationResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +45,12 @@ const FaceLogin: React.FC = () => {
   const [serverStatus, setServerStatus] = useState<any>(null);
   const [loadingError, setLoadingError] = useState<string | null>(null);
 
-  // 참조 객체
+  // 웹소켓 관련 상태 추가
+  const [wsConnected, setWsConnected] = useState<boolean>(false);
+  const [realTimeVerification, setRealTimeVerification] =
+    useState<boolean>(false);
+
+  // 참조 객체들
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const debugCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -54,6 +59,10 @@ const FaceLogin: React.FC = () => {
   const lastFrameRef = useRef<ImageData | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const hiddenCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // 웹소켓 참조 추가
+  const wsRef = useRef<FaceVerificationWebSocket | null>(null);
+  const verificationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // MediaPipe FaceMesh 모델 로드
   useEffect(() => {
@@ -122,6 +131,97 @@ const FaceLogin: React.FC = () => {
     };
   }, []);
 
+  // 웹소켓 초기화
+  const initializeWebSocket = () => {
+    const onMessage = (data: any) => {
+      console.log('WebSocket 메시지 수신:', data);
+
+      switch (data.type) {
+        case 'success':
+          setVerificationResult({
+            matched: true,
+            user_id: data.user_id,
+            confidence: data.confidence,
+            processing_time: data.processing_time,
+          });
+          setIsProcessing(false);
+
+          // 성공시 실시간 인증 중지
+          if (realTimeVerification) {
+            stopRealTimeVerification();
+          }
+          break;
+
+        case 'failure':
+          setVerificationResult({
+            matched: false,
+            user_id: null,
+            confidence: 0.0,
+            processing_time: data.processing_time,
+          });
+          break;
+
+        case 'error':
+          setError(data.message);
+          setIsProcessing(false);
+          break;
+
+        case 'pong':
+          // 연결 유지 확인
+          break;
+      }
+    };
+
+    const onError = (event: Event) => {
+      console.error('WebSocket 오류:', event);
+      setError('WebSocket 연결 오류가 발생했습니다.');
+      setWsConnected(false);
+    };
+
+    const onClose = () => {
+      console.log('WebSocket 연결 종료');
+      setWsConnected(false);
+      setRealTimeVerification(false);
+    };
+
+    const onOpen = () => {
+      console.log('WebSocket 연결 성공');
+      setWsConnected(true);
+
+      // 연결 유지를 위한 ping 시작
+      const pingInterval = setInterval(() => {
+        if (wsRef.current) {
+          wsRef.current.sendPing();
+        }
+      }, 30000);
+
+      // 컴포넌트 언마운트시 ping 중지
+      return () => clearInterval(pingInterval);
+    };
+
+    wsRef.current = new FaceVerificationWebSocket(
+      onMessage,
+      onError,
+      onClose,
+      onOpen
+    );
+    wsRef.current.connect();
+  };
+
+  // 컴포넌트 마운트시 웹소켓 초기화
+  useEffect(() => {
+    initializeWebSocket();
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.disconnect();
+      }
+      if (verificationIntervalRef.current) {
+        clearInterval(verificationIntervalRef.current);
+      }
+    };
+  }, []);
+
   // MediaPipe 결과 처리 함수
   const onResults = (results: mp.Results): void => {
     if (!canvasRef.current || !videoRef.current) return;
@@ -185,9 +285,6 @@ const FaceLogin: React.FC = () => {
 
       // 얼굴 랜드마크 그리기 (간소화)
       // 얼굴 주요 특징점 연결 (눈, 코, 입)
-      // MediaPipe FaceMesh의 랜드마크 인덱스 참조하여 직접 그리기
-
-      // 얼굴 윤곽선 그리기
       canvasCtx.strokeStyle = '#E0E0E0';
       canvasCtx.lineWidth = 2;
 
@@ -307,6 +404,19 @@ const FaceLogin: React.FC = () => {
     canvasCtx.stroke();
 
     canvasCtx.restore();
+
+    // 실시간 인증이 활성화되어 있고 얼굴이 적절한 위치에 있으면 자동 인증
+    if (
+      realTimeVerification &&
+      faceDetected &&
+      faceWithinBounds &&
+      lastFrameRef.current
+    ) {
+      // 성공한 경우 자동으로 멈추기
+      if (!verificationResult?.matched) {
+        sendVerificationFrame();
+      }
+    }
   };
 
   // 디버그 캔버스 업데이트 (3D 회전 시각화)
@@ -498,8 +608,62 @@ const FaceLogin: React.FC = () => {
     setBorderColor('#333');
   };
 
-  // 얼굴 인증 실행
-  const verifyFaceImage = async (): Promise<void> => {
+  // 실시간 인증 프레임 전송
+  const sendVerificationFrame = () => {
+    if (!wsRef.current || !lastFrameRef.current || !videoRef.current) return;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) return;
+
+    // 작은 크기로 캡처 (네트워크 효율성)
+    canvas.width = 160;
+    canvas.height = 120;
+
+    // 비디오에서 이미지 캡처
+    ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+
+    // 이미지 데이터 생성 (더 낮은 품질로 압축)
+    const imageData = canvas.toDataURL('image/jpeg', 0.5);
+
+    // 웹소켓으로 전송
+    wsRef.current.sendVerifyRequest(imageData);
+  };
+
+  // 실시간 인증 시작
+  const startRealTimeVerification = () => {
+    if (!wsConnected) {
+      setError('WebSocket이 연결되지 않았습니다.');
+      return;
+    }
+
+    setRealTimeVerification(true);
+    setVerificationResult(null);
+    setError(null);
+    setIsProcessing(true);
+
+    // 100ms마다 프레임 전송
+    verificationIntervalRef.current = setInterval(() => {
+      if (faceDetected && faceWithinBounds && !verificationResult?.matched) {
+        sendVerificationFrame();
+      }
+    }, 100);
+  };
+
+  // 실시간 인증 중지
+  const stopRealTimeVerification = () => {
+    setRealTimeVerification(false);
+    setIsProcessing(false);
+
+    if (verificationIntervalRef.current) {
+      clearInterval(verificationIntervalRef.current);
+      verificationIntervalRef.current = null;
+    }
+  };
+
+  // 단일 인증 실행
+  const verifySingleFace = async (): Promise<void> => {
     if (!lastFrameRef.current) {
       setError('얼굴 이미지가 캡처되지 않았습니다.');
       return;
@@ -514,7 +678,6 @@ const FaceLogin: React.FC = () => {
       setIsProcessing(true);
       setError(null);
 
-      // 매우 작은 크기로 비디오 프레임 캡처
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
 
@@ -524,27 +687,17 @@ const FaceLogin: React.FC = () => {
         );
       }
 
-      // 매우 작은 크기로 설정 (많이 축소)
-      canvas.width = 160; // 최소 크기로 설정
-      canvas.height = 120;
+      canvas.width = 120;
+      canvas.height = 80;
 
-      // 비디오에서 직접 이미지 그리기
       ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      const imageData = canvas.toDataURL('image/jpeg', 0.6);
 
-      // 매우 낮은 품질로 이미지 압축
-      const imageData = canvas.toDataURL('image/jpeg', 0.5); // 품질 50%로 낮춤
-
-      console.log(
-        '이미지 데이터 크기:',
-        Math.round(imageData.length / 1024),
-        'KB'
-      );
-
-      // API 호출
-      const result = await verifyFace(imageData);
-
-      setVerificationResult(result);
-      console.log('얼굴 인증 결과:', result);
+      if (wsRef.current && wsConnected) {
+        wsRef.current.sendVerifyRequest(imageData);
+      } else {
+        throw new Error('WebSocket이 연결되지 않았습니다.');
+      }
     } catch (error) {
       console.error('얼굴 인증 오류:', error);
       setError(
@@ -552,10 +705,10 @@ const FaceLogin: React.FC = () => {
           error instanceof Error ? error.message : String(error)
         }`
       );
-    } finally {
       setIsProcessing(false);
     }
   };
+
   return (
     <Container>
       <BackButton onClick={() => window.history.back()}>&lt;</BackButton>
@@ -566,7 +719,9 @@ const FaceLogin: React.FC = () => {
           ? '오류가 발생했습니다'
           : !modelsLoaded
           ? '모델 로딩 중...'
-          : '얼굴을 카메라에 위치시키고 인증 버튼을 눌러주세요.'}
+          : wsConnected
+          ? '얼굴을 카메라에 위치시켜주세요.'
+          : 'WebSocket 연결 중...'}
       </SubMessage>
 
       <ContentWrapper>
@@ -586,6 +741,7 @@ const FaceLogin: React.FC = () => {
               justifyContent: 'center',
               width: '100%',
               maxWidth: '400px',
+              flexDirection: 'column',
             }}
           >
             {!isCameraActive ? (
@@ -602,21 +758,56 @@ const FaceLogin: React.FC = () => {
               </Button>
             ) : (
               <>
-                <Button
-                  onClick={verifyFaceImage}
-                  disabled={isProcessing || !faceDetected}
-                  style={{ flex: 1 }}
-                >
-                  {isProcessing ? '인증 중...' : '얼굴로 로그인'}
-                </Button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <Button
+                    onClick={verifySingleFace}
+                    disabled={isProcessing || !faceDetected || !wsConnected}
+                    style={{ flex: 1 }}
+                  >
+                    {isProcessing ? '인증 중...' : '단일 인증'}
+                  </Button>
+                  <Button
+                    onClick={
+                      realTimeVerification
+                        ? stopRealTimeVerification
+                        : startRealTimeVerification
+                    }
+                    disabled={!faceDetected || !wsConnected}
+                    style={{
+                      flex: 1,
+                      backgroundColor: realTimeVerification
+                        ? '#ff5722'
+                        : '#2196f3',
+                    }}
+                  >
+                    {realTimeVerification ? '실시간 중지' : '실시간 인증'}
+                  </Button>
+                </div>
                 <Button
                   onClick={stopCamera}
-                  style={{ backgroundColor: '#555', flex: 1 }}
+                  style={{ backgroundColor: '#555', width: '100%' }}
                 >
                   카메라 끄기
                 </Button>
               </>
             )}
+          </div>
+
+          {/* WebSocket 연결 상태 표시 */}
+          <div
+            style={{
+              margin: '10px 0',
+              padding: '5px 10px',
+              borderRadius: '5px',
+              fontSize: '14px',
+              textAlign: 'center',
+              backgroundColor: wsConnected
+                ? 'rgba(0, 200, 83, 0.1)'
+                : 'rgba(255, 152, 0, 0.1)',
+              color: wsConnected ? '#00c853' : '#ff9800',
+            }}
+          >
+            WebSocket: {wsConnected ? '연결됨' : '연결 중...'}
           </div>
 
           {error && (
@@ -671,6 +862,23 @@ const FaceLogin: React.FC = () => {
               ) : (
                 <p>등록된 얼굴을 찾을 수 없습니다.</p>
               )}
+            </div>
+          )}
+
+          {/* 실시간 인증 상태 표시 */}
+          {realTimeVerification && (
+            <div
+              style={{
+                margin: '10px 0',
+                padding: '10px',
+                borderRadius: '5px',
+                fontSize: '14px',
+                textAlign: 'center',
+                backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                color: '#2196f3',
+              }}
+            >
+              실시간 인증 중... 얼굴을 카메라에 고정하세요.
             </div>
           )}
         </CameraColumn>
@@ -907,16 +1115,28 @@ const FaceLogin: React.FC = () => {
                 </div>
 
                 {serverStatus.gpu_available && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginBottom: '8px',
-                    }}
-                  >
-                    <span>GPU 모델:</span>
-                    <span>{serverStatus.gpu_name}</span>
-                  </div>
+                  <>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      <span>GPU 타입:</span>
+                      <span>{serverStatus.gpu_type}</span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      <span>GPU 모델:</span>
+                      <span>{serverStatus.gpu_name}</span>
+                    </div>
+                  </>
                 )}
               </>
             ) : (
@@ -946,7 +1166,7 @@ const FaceLogin: React.FC = () => {
                 margin: '0 0 10px 0',
               }}
             >
-              1. 카메라가 작동하면 얼굴이 원 안에 오도록 위치시키세요.
+              1. <strong>단일 인증</strong>: 버튼을 클릭하여 한 번만 인증합니다.
             </p>
             <p
               style={{
@@ -955,7 +1175,8 @@ const FaceLogin: React.FC = () => {
                 margin: '0 0 10px 0',
               }}
             >
-              2. 경계선이 초록색으로 변하면 인식 준비가 완료된 상태입니다.
+              2. <strong>실시간 인증</strong>: 실시간으로 얼굴을 인식하고 자동
+              인증합니다.
             </p>
             <p
               style={{
@@ -964,7 +1185,7 @@ const FaceLogin: React.FC = () => {
                 margin: '0 0 10px 0',
               }}
             >
-              3. '얼굴로 로그인' 버튼을 클릭하면 얼굴 인증이 진행됩니다.
+              3. 인증 성공시 사용자 ID와 신뢰도가 표시됩니다.
             </p>
             <p
               style={{
