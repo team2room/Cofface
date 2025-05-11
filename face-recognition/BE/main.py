@@ -12,6 +12,7 @@ import uuid
 from datetime import datetime
 import json
 import asyncio
+import pyrealsense2 as rs
 
 from insightface.app import FaceAnalysis
 from insightface.model_zoo import get_model
@@ -90,6 +91,97 @@ class ConnectionManager:
             await connection.send_text(message)
 
 
+# RealSense 깊이 카메라 클래스
+class RealSenseDepthCamera:
+    def __init__(self):
+        self.pipeline = None
+        self.config = None
+        self.is_running = False
+
+    def start(self):
+        try:
+            logger.info("RealSense 카메라 초기화 시도 중...")
+
+            # RealSense 파이프라인 설정
+            self.pipeline = rs.pipeline()
+            self.config = rs.config()
+
+            # RGB와 Depth 스트림 설정
+            self.config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+            self.config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+
+            # 파이프라인 시작
+            self.pipeline.start(self.config)
+            self.is_running = True
+            logger.info("RealSense 카메라 초기화 완료")
+
+            # 테스트용: 첫 프레임 확인
+            frames = self.pipeline.wait_for_frames(timeout_ms=1000)
+            if frames:
+                logger.info("첫 프레임 획득 성공")
+            else:
+                logger.warning("첫 프레임 획득 실패")
+
+        except RuntimeError as e:
+            logger.error(f"RealSense 런타임 오류: {e}")
+            self.is_running = False
+            if self.pipeline:
+                try:
+                    self.pipeline.stop()
+                except:
+                    pass
+        except Exception as e:
+            logger.error(f"RealSense 카메라 초기화 실패: {e}")
+            logger.error(f"오류 타입: {type(e)}")
+            self.is_running = False
+            if self.pipeline:
+                try:
+                    self.pipeline.stop()
+                except:
+                    pass
+
+    def get_frames(self):
+        if not self.is_running:
+            logger.debug("RealSense가 실행 중이지 않음")
+            return None, None
+
+        try:
+            # 프레임 획득 (타임아웃 설정)
+            frames = self.pipeline.wait_for_frames(timeout_ms=500)
+
+            # Depth 프레임과 Color 프레임 분리
+            depth_frame = frames.get_depth_frame()
+            color_frame = frames.get_color_frame()
+
+            if not depth_frame or not color_frame:
+                logger.debug("프레임 획득 실패 - 일부 프레임 누락")
+                return None, None
+
+            # 이미지로 변환
+            depth_image = np.asanyarray(depth_frame.get_data())
+            color_image = np.asanyarray(color_frame.get_data())
+
+            logger.debug(f"프레임 획득 성공 - Color: {color_image.shape}, Depth: {depth_image.shape}")
+            return color_image, depth_image
+
+        except RuntimeError as e:
+            logger.error(f"RealSense 프레임 획득 런타임 오류: {e}")
+            self.is_running = False
+            return None, None
+        except Exception as e:
+            logger.error(f"RealSense 프레임 획득 실패: {e}")
+            return None, None
+
+    def stop(self):
+        if self.pipeline and self.is_running:
+            try:
+                self.pipeline.stop()
+                self.is_running = False
+                logger.info("RealSense 카메라 종료")
+            except Exception as e:
+                logger.error(f"RealSense 종료 중 오류: {e}")
+
+
 manager = ConnectionManager()
 
 
@@ -164,10 +256,10 @@ class FaceRecognitionSystem:
 
             # Qdrant 벡터 DB 연결
             logger.info("Qdrant 연결 중...")
-            self.db_client = QdrantClient(host="localhost", port=6333)
-
-            # 컬렉션 존재 확인 및 생성
             try:
+                self.db_client = QdrantClient(host="localhost", port=6333)
+
+                # 컬렉션 존재 확인 및 생성
                 collections = self.db_client.get_collections().collections
                 collection_names = [collection.name for collection in collections]
 
@@ -183,8 +275,9 @@ class FaceRecognitionSystem:
                 else:
                     logger.info(f"컬렉션 '{COLLECTION_NAME}' 이미 존재함")
             except Exception as e:
-                logger.error(f"Qdrant 컬렉션 초기화 중 오류: {e}")
-                raise
+                logger.error(f"Qdrant 연결 중 오류: {e}")
+                logger.warning("Qdrant 없이 실행합니다. 얼굴 저장/검색 기능이 제한됩니다.")
+                self.db_client = None
 
             self.is_initialized = True
             logger.info("안면인식 시스템 초기화 완료")
@@ -255,15 +348,65 @@ def base64_to_image(base64_str):
         return None
 
 
+# 간단한 입체감 측정 함수
+def simple_liveness_check(color_image: np.ndarray, depth_image: np.ndarray, face_bbox: tuple) -> dict:
+    """
+    간단한 입체감 기반 라이브니스 검사
+    """
+    x1, y1, x2, y2 = face_bbox
+
+    # 얼굴 영역의 깊이 값 추출
+    face_depth = depth_image[y1:y2, x1:x2]
+
+    # 유효한 깊이 값만 필터링
+    valid_depths = face_depth[face_depth > 0]
+
+    if len(valid_depths) < 100:  # 최소한의 유효 깊이 포인트
+        return {
+            "is_live": False,
+            "reason": "유효한 깊이 데이터가 부족합니다",
+            "depth_variation": 0
+        }
+
+    # 깊이 값의 범위 계산
+    min_depth = np.min(valid_depths)
+    max_depth = np.max(valid_depths)
+    depth_variation = max_depth - min_depth
+
+    # 입체감 판정 (20mm 이상의 깊이 변화면 3D로 판단)
+    DEPTH_THRESHOLD = 20  # mm
+    is_live = depth_variation > DEPTH_THRESHOLD
+
+    return {
+        "is_live": is_live,
+        "depth_variation": int(depth_variation),
+        "reason": f"{'실제 얼굴' if is_live else '평면 이미지'}로 판단됨",
+        "confidence": min(depth_variation / 50, 1.0)  # 최대 50mm를 100% 신뢰도로 정규화
+    }
+
+
 # 시스템 인스턴스 생성
 face_system = FaceRecognitionSystem()
+realsense_camera = RealSenseDepthCamera()
 
 
 # 시스템 초기화 미들웨어
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 얼굴 인식 시스템 초기화
     await face_system.initialize()
+
+    # RealSense 카메라 시작
+    try:
+        realsense_camera.start()
+        logger.info("RealSense 카메라 초기화 완료")
+    except Exception as e:
+        logger.warning(f"RealSense 카메라 초기화 실패: {e}")
+
     yield
+
+    # 종료 시 RealSense 정리
+    realsense_camera.stop()
 
 
 # 앱 초기화
@@ -307,20 +450,21 @@ async def register_face(registration: FaceRegistrationRequest):
             raise HTTPException(status_code=400, detail=str(e))
 
         # Qdrant에 저장
-        face_system.db_client.upsert(
-            collection_name=COLLECTION_NAME,
-            points=[
-                models.PointStruct(
-                    id=str(uuid.uuid4()),
-                    vector=merged_embedding.tolist(),
-                    payload={
-                        "user_id": registration.user_id,
-                        "created_at": datetime.now().isoformat(),
-                        "face_angles": list(embeddings_dict.keys())
-                    }
-                )
-            ]
-        )
+        if face_system.db_client:
+            face_system.db_client.upsert(
+                collection_name=COLLECTION_NAME,
+                points=[
+                    models.PointStruct(
+                        id=str(uuid.uuid4()),
+                        vector=merged_embedding.tolist(),
+                        payload={
+                            "user_id": registration.user_id,
+                            "created_at": datetime.now().isoformat(),
+                            "face_angles": list(embeddings_dict.keys())
+                        }
+                    )
+                ]
+            )
 
         logger.info(f"사용자 ID {registration.user_id}의 얼굴 등록 완료")
         return {
@@ -350,44 +494,41 @@ async def verify_face(rgb_image: str, depth_image: Optional[str] = None):
         if embedding is None:
             raise HTTPException(status_code=400, detail="얼굴을 찾을 수 없음")
 
-        # 깊이 정보가 있으면 추가 분석 (선택사항)
-        if depth_image:
-            depth_img = base64_to_image(depth_image)
-            # 여기서 깊이 정보를 활용한 추가 검증 로직 구현 가능
-            # 예: 3D 얼굴 스푸핑 방지, 깊이 기반 마스크 탐지 등
-
         # 벡터 DB에서 검색
-        search_result = face_system.db_client.search(
-            collection_name=COLLECTION_NAME,
-            query_vector=embedding.tolist(),
-            limit=1,
-            score_threshold=SIMILARITY_THRESHOLD
-        )
-
-        processing_time = (datetime.now() - start_time).total_seconds()
-
-        if search_result and len(search_result) > 0:
-            # 매칭 성공
-            match = search_result[0]
-            user_id = match.payload.get("user_id")
-            confidence = 1.0 - match.score  # 코사인 거리를 신뢰도로 변환
-
-            logger.info(f"사용자 확인 성공: {user_id}, 신뢰도: {confidence:.4f}")
-            return VerificationResponse(
-                user_id=user_id,
-                confidence=confidence,
-                matched=True,
-                processing_time=processing_time
+        if face_system.db_client:
+            search_result = face_system.db_client.search(
+                collection_name=COLLECTION_NAME,
+                query_vector=embedding.tolist(),
+                limit=1,
+                score_threshold=SIMILARITY_THRESHOLD
             )
+
+            processing_time = (datetime.now() - start_time).total_seconds()
+
+            if search_result and len(search_result) > 0:
+                # 매칭 성공
+                match = search_result[0]
+                user_id = match.payload.get("user_id")
+                confidence = 1.0 - match.score  # 코사인 거리를 신뢰도로 변환
+
+                logger.info(f"사용자 확인 성공: {user_id}, 신뢰도: {confidence:.4f}")
+                return VerificationResponse(
+                    user_id=user_id,
+                    confidence=confidence,
+                    matched=True,
+                    processing_time=processing_time
+                )
+            else:
+                # 매칭 실패
+                logger.info("사용자 확인 실패: 매칭되는 얼굴 없음")
+                return VerificationResponse(
+                    user_id=None,
+                    confidence=0.0,
+                    matched=False,
+                    processing_time=processing_time
+                )
         else:
-            # 매칭 실패
-            logger.info("사용자 확인 실패: 매칭되는 얼굴 없음")
-            return VerificationResponse(
-                user_id=None,
-                confidence=0.0,
-                matched=False,
-                processing_time=processing_time
-            )
+            raise HTTPException(status_code=500, detail="Qdrant 연결이 없습니다")
 
     except Exception as e:
         logger.error(f"얼굴 확인 중 오류 발생: {e}")
@@ -401,7 +542,7 @@ async def websocket_verify(websocket: WebSocket):
     try:
         while True:
             try:
-                # 클라이언트로부터 데이터 수신
+                # 클라이언트로부터 RGB 이미지만 수신
                 data = await websocket.receive_json()
 
                 # 메시지 타입 확인
@@ -409,9 +550,9 @@ async def websocket_verify(websocket: WebSocket):
 
                 if message_type == "verify":
                     # 얼굴 인증 요청
-                    rgb_image = data.get("rgb_image")
+                    rgb_image_base64 = data.get("rgb_image")
 
-                    if not rgb_image:
+                    if not rgb_image_base64:
                         await manager.send_personal_message({
                             "type": "error",
                             "message": "RGB 이미지가 제공되지 않았습니다."
@@ -421,58 +562,111 @@ async def websocket_verify(websocket: WebSocket):
                     start_time = datetime.now()
 
                     try:
-                        # RGB 이미지에서 얼굴 검출 및 임베딩 추출
-                        rgb_img = base64_to_image(rgb_image)
-                        if rgb_img is None:
+                        # 웹에서 받은 RGB 이미지
+                        web_rgb_img = base64_to_image(rgb_image_base64)
+                        if web_rgb_img is None:
                             await manager.send_personal_message({
                                 "type": "error",
                                 "message": "RGB 이미지 디코딩 실패"
                             }, websocket)
                             continue
 
-                        # 얼굴 임베딩 추출
-                        embedding = extract_face_embedding(rgb_img, face_system.face_analyzer,
-                                                           face_system.face_recognizer)
-                        if embedding is None:
+                        # RealSense에서 현재 프레임 획득
+                        realsense_color, realsense_depth = realsense_camera.get_frames()
+
+                        # RealSense 사용 가능 여부 확인
+                        use_realsense = realsense_color is not None and realsense_depth is not None
+
+                        if not use_realsense:
+                            logger.warning("RealSense 데이터를 사용할 수 없습니다. 라이브니스 검사를 생략합니다.")
+
+                        # 얼굴 검출 (웹에서 받은 이미지로)
+                        faces = face_system.face_analyzer.get(web_rgb_img)
+                        if not faces:
                             await manager.send_personal_message({
                                 "type": "error",
                                 "message": "얼굴을 찾을 수 없음"
                             }, websocket)
                             continue
 
-                        # 벡터 DB에서 검색
-                        search_result = face_system.db_client.search(
-                            collection_name=COLLECTION_NAME,
-                            query_vector=embedding.tolist(),
-                            limit=1,
-                            score_threshold=SIMILARITY_THRESHOLD
+                        # 가장 큰 얼굴 선택
+                        largest_face = max(faces, key=lambda x: x.bbox[2] * x.bbox[3])
+                        face_bbox = (
+                            int(largest_face.bbox[0]),
+                            int(largest_face.bbox[1]),
+                            int(largest_face.bbox[2]),
+                            int(largest_face.bbox[3])
                         )
 
-                        processing_time = (datetime.now() - start_time).total_seconds()
+                        # 라이브니스 검사 (RealSense가 사용 가능한 경우에만)
+                        liveness_result = {"is_live": True, "confidence": 1.0}  # 기본값
 
-                        if search_result and len(search_result) > 0:
-                            # 매칭 성공
-                            match = search_result[0]
-                            user_id = match.payload.get("user_id")
-                            confidence = 1.0 - match.score  # 코사인 거리를 신뢰도로 변환
+                        if use_realsense:
+                            liveness_result = simple_liveness_check(
+                                realsense_color,
+                                realsense_depth,
+                                face_bbox
+                            )
 
-                            logger.info(f"실시간 사용자 확인 성공: {user_id}, 신뢰도: {confidence:.4f}")
-                            await manager.send_personal_message({
-                                "type": "success",
-                                "user_id": user_id,
-                                "confidence": confidence,
-                                "matched": True,
-                                "processing_time": processing_time
-                            }, websocket)
+                            # 라이브니스 실패 시
+                            if not liveness_result["is_live"]:
+                                await manager.send_personal_message({
+                                    "type": "error",
+                                    "message": f"라이브니스 검사 실패: {liveness_result['reason']}",
+                                    "liveness_result": liveness_result
+                                }, websocket)
+                                continue
+
+                        # 얼굴 임베딩 추출
+                        if face_system.face_recognizer is face_system.face_analyzer:
+                            embedding = largest_face.embedding
                         else:
-                            # 매칭 실패
-                            logger.info("실시간 사용자 확인 실패: 매칭되는 얼굴 없음")
+                            try:
+                                embedding = face_system.face_recognizer.get(web_rgb_img, largest_face)
+                            except:
+                                embedding = largest_face.embedding
+
+                        # 벡터 DB에서 검색
+                        if face_system.db_client:
+                            search_result = face_system.db_client.search(
+                                collection_name=COLLECTION_NAME,
+                                query_vector=embedding.tolist(),
+                                limit=1,
+                                score_threshold=SIMILARITY_THRESHOLD
+                            )
+
+                            processing_time = (datetime.now() - start_time).total_seconds()
+
+                            if search_result and len(search_result) > 0:
+                                # 매칭 성공
+                                match = search_result[0]
+                                user_id = match.payload.get("user_id")
+                                confidence = 1.0 - match.score  # 코사인 거리를 신뢰도로 변환
+
+                                logger.info(f"실시간 사용자 확인 성공: {user_id}, 신뢰도: {confidence:.4f}")
+                                await manager.send_personal_message({
+                                    "type": "success",
+                                    "user_id": user_id,
+                                    "confidence": confidence,
+                                    "matched": True,
+                                    "processing_time": processing_time,
+                                    "liveness_result": liveness_result
+                                }, websocket)
+                            else:
+                                # 매칭 실패
+                                logger.info("실시간 사용자 확인 실패: 매칭되는 얼굴 없음")
+                                await manager.send_personal_message({
+                                    "type": "failure",
+                                    "user_id": None,
+                                    "confidence": 0.0,
+                                    "matched": False,
+                                    "processing_time": processing_time,
+                                    "liveness_result": liveness_result
+                                }, websocket)
+                        else:
                             await manager.send_personal_message({
-                                "type": "failure",
-                                "user_id": None,
-                                "confidence": 0.0,
-                                "matched": False,
-                                "processing_time": processing_time
+                                "type": "error",
+                                "message": "Qdrant 연결이 없습니다"
                             }, websocket)
 
                     except Exception as e:
@@ -533,13 +727,127 @@ async def health_check():
             gpu_info["gpu_available"] = False
             gpu_info["gpu_type"] = "CPU"
 
+    # RealSense 상태 확인
+    realsense_info = {
+        "realsense_available": realsense_camera.is_running,
+        "realsense_status": "연결됨" if realsense_camera.is_running else "연결 안됨"
+    }
+
     return {
         "status": "healthy",
         "initialized": face_system.is_initialized,
         "timestamp": datetime.now().isoformat(),
-        **gpu_info
+        "db_connected": face_system.db_client is not None,
+        **gpu_info,
+        **realsense_info
     }
 
+
+@app.get("/test-realsense")
+async def test_realsense():
+    """RealSense 테스트 엔드포인트"""
+    try:
+        if not realsense_camera.is_running:
+            return {
+                "status": "error",
+                "message": "RealSense가 실행 중이지 않습니다",
+                "is_running": False
+            }
+
+        # 프레임 획득 시도
+        color, depth = realsense_camera.get_frames()
+
+        if color is None or depth is None:
+            return {
+                "status": "error",
+                "message": "프레임 획득 실패",
+                "is_running": realsense_camera.is_running
+            }
+
+        # 기본 통계 정보
+        return {
+            "status": "success",
+            "message": "RealSense 작동 중",
+            "is_running": True,
+            "color_shape": list(color.shape),
+            "depth_shape": list(depth.shape),
+            "depth_stats": {
+                "min": int(np.min(depth)),
+                "max": int(np.max(depth)),
+                "mean": int(np.mean(depth))
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"테스트 중 오류: {str(e)}",
+            "is_running": realsense_camera.is_running
+        }
+
+
+@app.websocket("/ws/realsense")
+async def websocket_realsense(websocket: WebSocket):
+    """RealSense 카메라 프레임을 실시간으로 전송"""
+    await manager.connect(websocket)
+
+    logger.info("RealSense 웹소켓 연결 시작")
+
+    # RealSense가 제대로 초기화되었는지 확인
+    if not realsense_camera.is_running:
+        logger.warning("RealSense 카메라가 실행 중이지 않습니다. 시작 시도 중...")
+        realsense_camera.start()
+
+    try:
+        while True:
+            try:
+                # RealSense에서 프레임 획득
+                color_frame, depth_frame = realsense_camera.get_frames()
+
+                if color_frame is None:
+                    await asyncio.sleep(0.1)
+                    continue
+
+                # 색상 이미지를 JPEG로 인코딩
+                _, buffer = cv2.imencode('.jpg', color_frame)
+                img_base64 = base64.b64encode(buffer).decode('utf-8')
+
+                # 깊이 이미지도 시각화하여 전송 (선택사항)
+                if depth_frame is not None:
+                    depth_colormap = cv2.applyColorMap(
+                        cv2.convertScaleAbs(depth_frame, alpha=0.03),
+                        cv2.COLORMAP_JET
+                    )
+                    _, depth_buffer = cv2.imencode('.jpg', depth_colormap)
+                    depth_base64 = base64.b64encode(depth_buffer).decode('utf-8')
+                else:
+                    depth_base64 = None
+
+                # 프레임 전송
+                message = {
+                    "type": "frame",
+                    "rgb_image": f"data:image/jpeg;base64,{img_base64}",
+                    "timestamp": datetime.now().isoformat()
+                }
+
+                if depth_base64:
+                    message["depth_image"] = f"data:image/jpeg;base64,{depth_base64}"
+
+                await manager.send_personal_message(message, websocket)
+
+                # FPS 제한 (15fps - 네트워크 부하 고려)
+                await asyncio.sleep(1 / 15)
+
+            except Exception as e:
+                logger.error(f"프레임 전송 중 오류: {e}")
+                logger.error(f"오류 타입: {type(e)}")
+                await asyncio.sleep(0.5)
+
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        logger.info("RealSense 웹소켓 연결 종료")
+    except Exception as e:
+        logger.error(f"RealSense 웹소켓 치명적 오류: {e}")
+        manager.disconnect(websocket)
 
 # 메인 실행
 if __name__ == "__main__":
