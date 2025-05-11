@@ -4,6 +4,7 @@ import CustomDialog from '@/components/CustomDialog'
 import { useState } from 'react'
 import { useLoginStore } from '@/stores/loginStore'
 import { useNavigate } from 'react-router-dom'
+import { usePhoneLogin } from '../hooks/usePhoneLogin'
 
 const TopLeftText = tw.div`
   absolute top-4 left-6 z-50
@@ -33,13 +34,14 @@ const Button = tw.button`
 
 export default function StartScreen() {
   const navigate = useNavigate()
+  const { login } = usePhoneLogin()
+
   type ModalState = 'waiting' | 'success' | 'failure' | 'phone'
   const [modalState, setModalState] = useState<ModalState>('waiting')
   const [showModal, setShowModal] = useState(false)
 
   const phoneNumber = useLoginStore((state) => state.phoneNumber)
   const resetPhoneNumber = useLoginStore((state) => state.resetPhoneNumber)
-  const VALID_PHONE = '01012345678'
 
   let modalContent
 
@@ -77,6 +79,19 @@ export default function StartScreen() {
       }[modalState],
       cancelText: modalState === 'success' ? '전화번호 로그인' : '취소',
       confirmText: modalState === 'success' ? '맞습니다' : '전화번호 로그인',
+    }
+  }
+
+  const handlePhoneLogin = async () => {
+    try {
+      await login(phoneNumber)
+      resetPhoneNumber()
+      setShowModal(false)
+      setModalState('waiting')
+      alert('전화번호가 일치합니다')
+      navigate('/order')
+    } catch (err) {
+      alert('일치하는 전화번호가 없습니다')
     }
   }
 
@@ -131,15 +146,7 @@ export default function StartScreen() {
         }}
         onConfirm={() => {
           if (modalState === 'phone') {
-            if (phoneNumber === VALID_PHONE) {
-              resetPhoneNumber()
-              setShowModal(false)
-              setModalState('waiting')
-              alert('전화번호가 일치합니다' + phoneNumber)
-              navigate('/order')
-            } else {
-              alert('전화번호가 일치하지 않습니다')
-            }
+            handlePhoneLogin()
           } else if (modalState === 'success') {
             setShowModal(false)
             navigate('/order')

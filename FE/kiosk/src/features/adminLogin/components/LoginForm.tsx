@@ -4,6 +4,8 @@ import { useState, useRef } from 'react'
 import Keyboard from 'react-simple-keyboard'
 import 'react-simple-keyboard/build/css/index.css'
 import { useNavigate } from 'react-router-dom'
+import { useAdminLogin } from '../hooks/useAdminLogin'
+import { useAdminStore } from '@/stores/adminStore'
 
 const Box = tw.div`
   w-full mt-5 h-80
@@ -25,17 +27,14 @@ const ErrorText = tw.div`
 `
 
 export default function LoginForm() {
+  const reset = useAdminStore((s) => s.reset)
+  const navigate = useNavigate()
+  const { login } = useAdminLogin()
+  const [errorMessage, setErrorMessage] = useState('')
   const [inputType, setInputType] = useState<'id' | 'password'>('id')
   const [form, setForm] = useState({ id: '', password: '' })
   const [layout, setLayout] = useState('default')
   const keyboardRef = useRef<any>(null)
-
-  const navigate = useNavigate()
-
-  // 임의 계정
-  const [errorMessage, setErrorMessage] = useState('')
-  const validId = 'qwer'
-  const validPassword = '1234'
 
   const handleShift = () => {
     const newLayoutName = layout === 'default' ? 'shift' : 'default'
@@ -56,20 +55,26 @@ export default function LoginForm() {
         ...prev,
         [inputType]: prev[inputType].slice(0, -1),
       }))
-    } else if (button === '{space}') {
-      handleInputChange(' ')
     } else if (button === '{shift}' || button === '{lock}') {
       handleShift()
+    } else if (
+      button === '{enter}' ||
+      button === '{tab}' ||
+      button === '{space}'
+    ) {
+      return
     } else {
       handleInputChange(button)
     }
   }
 
-  const handleLogin = () => {
-    if (form.id === validId && form.password === validPassword) {
+  const handleLogin = async () => {
+    reset()
+    try {
+      await login(form.id, form.password)
       setErrorMessage('')
       navigate('/user')
-    } else {
+    } catch (err) {
       setErrorMessage('아이디 또는 비밀번호가 틀렸습니다.')
     }
   }

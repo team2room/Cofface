@@ -1,41 +1,32 @@
 import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useLogout } from '@/features/userLogin/hooks/useLogout'
+import { useUserStore } from '@/stores/loginStore'
 
 const HeaderContainer = tw.div`w-full flex justify-between items-center my-4`
 const TimeBox = tw.div`flex w-[250px] justify-center border-b-2 border-gray`
 
 interface HeaderProps {
-  isMember: boolean
-  userName?: string
-  onTimeout?: () => void
+  remainingSeconds: number
 }
 
-export default function Header({ isMember, userName, onTimeout }: HeaderProps) {
+export default function Header({ remainingSeconds }: HeaderProps) {
   const navigate = useNavigate()
-  const [remainingSeconds, setRemainingSeconds] = useState(180)
+  const { logout } = useLogout()
+  const token = useUserStore((state) => state.token)
+  const userName = useUserStore((state) => state.user?.name)
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRemainingSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          onTimeout?.()
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [])
+  const handleHomeClick = async () => {
+    await logout(1)
+    navigate('/user')
+  }
 
   return (
     <HeaderContainer>
       <div>
         <Text variant="body2" weight="bold" color="darkGray">
-          {isMember ? `${userName}님, 반갑습니다😊` : '처음 오셨나요?😊'}
+          {token ? `${userName}님, 반갑습니다😊` : '처음 오셨나요?😊'}
         </Text>
       </div>
 
@@ -55,7 +46,7 @@ export default function Header({ isMember, userName, onTimeout }: HeaderProps) {
 
       <div
         className="flex items-center px-2 py-1 rounded-lg"
-        onClick={() => navigate('/user')}
+        onClick={handleHomeClick}
         style={{
           boxShadow: `1.462px 1.462px 4px 2px #f774a275`,
         }}
