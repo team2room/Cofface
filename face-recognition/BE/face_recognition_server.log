@@ -1,0 +1,613 @@
+2025-05-09 00:52:19,007 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-09 00:52:19,007 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-09 00:57:08,105 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-09 00:57:08,105 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-09 00:57:08,105 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-09 00:57:08,105 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-09 00:57:08,105 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-09 00:57:08,270 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-09 00:57:08,270 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-09 00:57:08,307 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-05-09 00:57:08,311 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-05-09 00:57:08,513 - httpx - INFO - HTTP Request: PUT http://localhost:6333/collections/face_vectors "HTTP/1.1 200 OK"
+2025-05-09 00:57:08,514 - face_recognition - INFO - 컬렉션 'face_vectors' 생성 완료
+2025-05-09 00:57:08,514 - face_recognition - INFO - 안면인식 시스템 초기화 완료
+2025-05-09 01:00:42,597 - face_recognition - INFO - 사용자 ID suhwan의 얼굴 등록 시작
+2025-05-09 01:00:43,749 - httpx - INFO - HTTP Request: PUT http://localhost:6333/collections/face_vectors/points?wait=true "HTTP/1.1 200 OK"
+2025-05-09 01:00:43,750 - face_recognition - INFO - 사용자 ID suhwan의 얼굴 등록 완료
+2025-05-09 01:45:30,596 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-09 01:45:30,596 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-09 01:45:31,015 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-09 01:45:31,015 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-09 01:45:31,015 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-09 01:45:31,015 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-09 01:45:31,015 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-09 01:45:31,172 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-09 01:45:31,172 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-09 01:45:31,213 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-05-09 01:45:31,219 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-05-09 01:45:31,220 - face_recognition - INFO - 컬렉션 'face_vectors' 이미 존재함
+2025-05-09 01:45:31,220 - face_recognition - INFO - 안면인식 시스템 초기화 완료
+2025-05-09 01:45:40,353 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-09 01:45:40,353 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-09 01:45:40,673 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-09 01:45:40,673 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-09 01:45:40,673 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-09 01:45:40,673 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-09 01:45:40,673 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-09 01:45:40,815 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-09 01:45:40,815 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-09 01:45:40,850 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-05-09 01:45:40,852 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-05-09 01:45:40,853 - face_recognition - INFO - 컬렉션 'face_vectors' 이미 존재함
+2025-05-09 01:45:40,853 - face_recognition - INFO - 안면인식 시스템 초기화 완료
+2025-05-09 01:54:10,816 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-09 01:54:10,816 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-09 01:54:11,140 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-09 01:54:11,140 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-09 01:54:11,140 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-09 01:54:11,140 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-09 01:54:11,140 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-09 01:54:11,267 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-09 01:54:11,267 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-09 01:54:11,305 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-05-09 01:54:11,307 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-05-09 01:54:11,307 - face_recognition - INFO - 컬렉션 'face_vectors' 이미 존재함
+2025-05-09 01:54:11,308 - face_recognition - INFO - 안면인식 시스템 초기화 완료
+2025-05-09 01:54:19,527 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-09 01:54:19,528 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-09 01:54:19,826 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-09 01:54:19,826 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-09 01:54:19,826 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-09 01:54:19,826 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-09 01:54:19,826 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-09 01:54:19,942 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-09 01:54:19,942 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-09 01:54:19,975 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-05-09 01:54:19,977 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-05-09 01:54:19,978 - face_recognition - INFO - 컬렉션 'face_vectors' 이미 존재함
+2025-05-09 01:54:19,978 - face_recognition - INFO - 안면인식 시스템 초기화 완료
+2025-05-09 01:56:30,403 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:56:30,403 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:56:33,334 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:56:33,335 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:56:34,141 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:56:34,142 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:56:34,722 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:56:34,723 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:56:35,442 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:56:35,443 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:56:36,134 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:56:36,134 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:56:36,776 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:56:36,776 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:57:00,969 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:57:00,970 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:57:01,625 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:57:01,626 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:57:30,102 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:57:30,102 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:57:31,400 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:57:31,401 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:57:31,649 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:57:31,649 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:57:31,898 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:57:31,899 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:57:32,138 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:57:32,138 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:57:32,389 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:57:32,389 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:57:32,664 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:57:32,664 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:57:32,856 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:57:32,856 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:57:33,166 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:57:33,167 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:57:33,534 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:57:33,535 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:59:48,216 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:48,217 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:59:49,477 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:49,477 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:59:50,558 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:50,559 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:59:51,609 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:51,609 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.3886
+2025-05-09 01:59:53,916 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:53,917 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:59:55,046 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:55,046 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:59:55,806 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:55,807 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:59:56,445 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:56,446 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:59:56,976 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:56,977 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:59:57,476 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:57,476 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:59:58,033 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:58,034 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:59:58,459 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:58,459 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:59:58,887 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:58,887 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:59:59,446 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:59,447 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 01:59:59,892 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 01:59:59,894 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 02:00:00,497 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:00:00,497 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 02:00:01,140 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:00:01,140 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 02:00:01,744 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:00:01,744 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 02:00:02,388 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:00:02,389 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 02:00:03,140 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:00:03,141 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 02:00:04,039 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:00:04,039 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.3738
+2025-05-09 02:00:04,999 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:00:04,999 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.3644
+2025-05-09 02:00:05,869 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:00:05,870 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.3514
+2025-05-09 02:00:06,645 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:00:06,646 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.3408
+2025-05-09 02:00:07,311 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:00:07,312 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.2933
+2025-05-09 02:18:35,667 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:18:35,668 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.2691
+2025-05-09 02:18:36,809 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:18:36,809 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.3226
+2025-05-09 02:18:37,670 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:18:37,670 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.3531
+2025-05-09 02:18:38,614 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:18:38,615 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.3804
+2025-05-09 02:18:39,532 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:18:39,532 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 02:18:40,482 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:18:40,482 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.3431
+2025-05-09 02:18:41,487 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:18:41,488 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.2750
+2025-05-09 02:18:42,681 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:18:42,682 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 02:18:43,804 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:18:43,804 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.3330
+2025-05-09 02:18:44,572 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:18:44,572 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.3118
+2025-05-09 02:18:46,001 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:18:46,001 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.3058
+2025-05-09 02:18:46,819 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:18:46,819 - face_recognition - INFO - 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-09 02:18:47,817 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:18:47,817 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.3523
+2025-05-09 02:18:48,667 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-09 02:18:48,667 - face_recognition - INFO - 사용자 확인 성공: suhwan, 신뢰도: 0.3288
+2025-05-11 16:50:23,040 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-11 16:50:23,053 - face_recognition - INFO - MPS (Metal Performance Shaders) 사용 가능
+2025-05-11 16:50:23,053 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-11 16:50:23,053 - face_recognition - INFO - GPU 디바이스: -1
+2025-05-11 16:50:23,551 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-11 16:50:23,640 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-11 16:50:23,640 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-11 16:50:23,640 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-11 16:50:23,641 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-11 16:50:23,884 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-11 16:50:23,884 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-11 16:50:23,923 - face_recognition - ERROR - Qdrant 컬렉션 초기화 중 오류: [Errno 61] Connection refused
+2025-05-11 16:50:23,924 - face_recognition - ERROR - 안면인식 시스템 초기화 중 오류 발생: [Errno 61] Connection refused
+2025-05-11 16:50:58,360 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-11 16:50:58,369 - face_recognition - INFO - MPS (Metal Performance Shaders) 사용 가능
+2025-05-11 16:50:58,369 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-11 16:50:58,369 - face_recognition - INFO - GPU 디바이스: -1
+2025-05-11 16:50:58,696 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-11 16:50:58,781 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-11 16:50:58,781 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-11 16:50:58,781 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-11 16:50:58,781 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-11 16:50:59,027 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-11 16:50:59,027 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-11 16:50:59,063 - face_recognition - ERROR - Qdrant 컬렉션 초기화 중 오류: [Errno 61] Connection refused
+2025-05-11 16:50:59,063 - face_recognition - ERROR - 안면인식 시스템 초기화 중 오류 발생: [Errno 61] Connection refused
+2025-05-11 16:51:57,529 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-11 16:51:57,541 - face_recognition - INFO - MPS (Metal Performance Shaders) 사용 가능
+2025-05-11 16:51:57,541 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-11 16:51:57,541 - face_recognition - INFO - GPU 디바이스: -1
+2025-05-11 16:51:58,008 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-11 16:51:58,101 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-11 16:51:58,101 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-11 16:51:58,101 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-11 16:51:58,101 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-11 16:51:58,305 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-11 16:51:58,305 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-11 16:51:58,349 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-05-11 16:51:58,351 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-05-11 16:51:58,352 - face_recognition - INFO - 컬렉션 'face_vectors' 이미 존재함
+2025-05-11 16:51:58,352 - face_recognition - INFO - 안면인식 시스템 초기화 완료
+2025-05-11 17:06:08,222 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=64495)
+2025-05-11 17:06:08,225 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:06:08,225 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:06:08,225 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=64495)
+2025-05-11 17:06:08,234 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=64499)
+2025-05-11 17:06:10,228 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=64509)
+2025-05-11 17:06:13,686 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:06:13,686 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:06:13,686 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=64499)
+2025-05-11 17:06:13,686 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:06:13,686 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:06:13,686 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=64509)
+2025-05-11 17:18:25,097 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51145)
+2025-05-11 17:18:25,102 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:18:25,102 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:18:25,102 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51145)
+2025-05-11 17:18:25,109 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51149)
+2025-05-11 17:18:27,107 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51160)
+2025-05-11 17:18:42,509 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:18:42,509 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:18:42,509 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51149)
+2025-05-11 17:18:42,509 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:18:42,509 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:18:42,509 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51160)
+2025-05-11 17:18:42,579 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51246)
+2025-05-11 17:18:42,585 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:18:42,585 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:18:42,585 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51246)
+2025-05-11 17:18:42,592 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51250)
+2025-05-11 17:18:44,595 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51261)
+2025-05-11 17:18:52,118 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:18:52,118 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:18:52,118 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51250)
+2025-05-11 17:18:52,118 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:18:52,118 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:18:52,118 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51261)
+2025-05-11 17:19:18,050 - face_recognition - INFO - 사용자 ID ssss의 얼굴 등록 시작
+2025-05-11 17:19:19,020 - httpx - INFO - HTTP Request: PUT http://localhost:6333/collections/face_vectors/points?wait=true "HTTP/1.1 200 OK"
+2025-05-11 17:19:19,021 - face_recognition - INFO - 사용자 ID ssss의 얼굴 등록 완료
+2025-05-11 17:19:27,562 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51457)
+2025-05-11 17:19:27,566 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:19:27,566 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:19:27,566 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51457)
+2025-05-11 17:19:27,573 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51461)
+2025-05-11 17:19:29,570 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51471)
+2025-05-11 17:19:32,420 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:32,421 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2834
+2025-05-11 17:19:32,656 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:32,656 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2712
+2025-05-11 17:19:32,880 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:32,880 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2600
+2025-05-11 17:19:33,073 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:33,074 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2748
+2025-05-11 17:19:33,270 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:33,270 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2533
+2025-05-11 17:19:33,473 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:33,473 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2754
+2025-05-11 17:19:33,681 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:33,681 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2683
+2025-05-11 17:19:33,893 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:33,894 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2557
+2025-05-11 17:19:34,091 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:34,092 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2294
+2025-05-11 17:19:34,347 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:34,347 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2777
+2025-05-11 17:19:34,528 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:34,528 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2626
+2025-05-11 17:19:34,528 - face_recognition - ERROR - 실시간 얼굴 확인 중 오류 발생: 
+2025-05-11 17:19:34,528 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: Cannot call "send" once a close message has been sent.
+2025-05-11 17:19:34,529 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Cannot call "send" once a close message has been sent.
+2025-05-11 17:19:34,529 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51461)
+2025-05-11 17:19:34,529 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:19:34,530 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:19:34,530 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51471)
+2025-05-11 17:19:34,531 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51505)
+2025-05-11 17:19:34,531 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51507)
+2025-05-11 17:19:34,531 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1006, None)
+2025-05-11 17:19:34,531 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51505)
+2025-05-11 17:19:34,531 - face_recognition - INFO - WebSocket 연결이 클라이언트에 의해 종료됨
+2025-05-11 17:19:35,494 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:19:35,494 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:19:35,494 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51507)
+2025-05-11 17:19:52,938 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51600)
+2025-05-11 17:19:52,943 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:19:52,943 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:19:52,943 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51600)
+2025-05-11 17:19:52,950 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51604)
+2025-05-11 17:19:54,947 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51614)
+2025-05-11 17:19:56,391 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:56,392 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2502
+2025-05-11 17:19:56,595 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:56,596 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2459
+2025-05-11 17:19:56,797 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:56,798 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2274
+2025-05-11 17:19:57,017 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:57,018 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2167
+2025-05-11 17:19:57,233 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:57,234 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2605
+2025-05-11 17:19:57,430 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:57,430 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2545
+2025-05-11 17:19:57,631 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:57,631 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2657
+2025-05-11 17:19:57,840 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:57,841 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2224
+2025-05-11 17:19:58,060 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:58,060 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2355
+2025-05-11 17:19:58,276 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:58,277 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2277
+2025-05-11 17:19:58,465 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:58,466 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2817
+2025-05-11 17:19:58,673 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:58,674 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2897
+2025-05-11 17:19:58,894 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:58,894 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3284
+2025-05-11 17:19:59,122 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:59,123 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3001
+2025-05-11 17:19:59,325 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:59,326 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3076
+2025-05-11 17:19:59,532 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:59,533 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2795
+2025-05-11 17:19:59,759 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:59,760 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2922
+2025-05-11 17:19:59,960 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:19:59,960 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2623
+2025-05-11 17:20:00,178 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:00,178 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3022
+2025-05-11 17:20:00,382 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:00,382 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2938
+2025-05-11 17:20:00,586 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:00,586 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3337
+2025-05-11 17:20:00,804 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:00,805 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3468
+2025-05-11 17:20:01,024 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:01,024 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:01,226 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:01,227 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3807
+2025-05-11 17:20:01,432 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:01,432 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3279
+2025-05-11 17:20:01,649 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:01,649 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3084
+2025-05-11 17:20:01,845 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:01,845 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3407
+2025-05-11 17:20:02,029 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:02,029 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3289
+2025-05-11 17:20:02,225 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:02,225 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3288
+2025-05-11 17:20:02,416 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:02,417 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3756
+2025-05-11 17:20:02,605 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:02,605 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3146
+2025-05-11 17:20:02,805 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:02,805 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2919
+2025-05-11 17:20:02,994 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:02,994 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3325
+2025-05-11 17:20:03,179 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:03,179 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3400
+2025-05-11 17:20:03,383 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:03,383 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:03,573 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:03,573 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:03,766 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:03,767 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:03,964 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:03,964 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:04,176 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:04,176 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:04,366 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:04,366 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:04,568 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:04,568 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:04,752 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:04,752 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:04,960 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:04,960 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:05,168 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:05,169 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:05,400 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:05,400 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:05,608 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:05,608 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:05,815 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:05,815 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:06,025 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:06,026 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:06,237 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:06,237 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:10,097 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:10,098 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:10,332 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:10,333 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:10,541 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:10,542 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:20:10,744 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:10,744 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3294
+2025-05-11 17:20:10,952 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:10,953 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3468
+2025-05-11 17:20:11,165 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:11,166 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3314
+2025-05-11 17:20:11,359 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:11,359 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2914
+2025-05-11 17:20:11,559 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:11,560 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3008
+2025-05-11 17:20:11,764 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:11,765 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3106
+2025-05-11 17:20:11,971 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:11,972 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2571
+2025-05-11 17:20:12,176 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:12,177 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2663
+2025-05-11 17:20:12,374 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:12,374 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3040
+2025-05-11 17:20:12,576 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:12,576 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2377
+2025-05-11 17:20:12,791 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:12,792 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2719
+2025-05-11 17:20:13,099 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:13,100 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2319
+2025-05-11 17:20:13,280 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:20:13,281 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.2674
+2025-05-11 17:20:13,281 - face_recognition - ERROR - 실시간 얼굴 확인 중 오류 발생: 
+2025-05-11 17:20:13,281 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: Cannot call "send" once a close message has been sent.
+2025-05-11 17:20:13,281 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Cannot call "send" once a close message has been sent.
+2025-05-11 17:20:13,281 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51604)
+2025-05-11 17:20:13,283 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:20:13,283 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:20:13,283 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51614)
+2025-05-11 17:20:13,284 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51759)
+2025-05-11 17:20:13,284 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51761)
+2025-05-11 17:20:13,285 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1006, None)
+2025-05-11 17:20:13,285 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51759)
+2025-05-11 17:20:13,285 - face_recognition - INFO - WebSocket 연결이 클라이언트에 의해 종료됨
+2025-05-11 17:20:15,076 - face_recognition - INFO - WebSocket 연결 생성: Address(host='127.0.0.1', port=51775)
+2025-05-11 17:24:32,679 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:32,681 - face_recognition - INFO - 실시간 사용자 확인 실패: 매칭되는 얼굴 없음
+2025-05-11 17:24:36,125 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:36,126 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3307
+2025-05-11 17:24:36,348 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:36,348 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3617
+2025-05-11 17:24:36,560 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:36,560 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3448
+2025-05-11 17:24:36,771 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:36,771 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3417
+2025-05-11 17:24:36,979 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:36,979 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3572
+2025-05-11 17:24:37,197 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:37,197 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3846
+2025-05-11 17:24:37,418 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:37,419 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3587
+2025-05-11 17:24:37,624 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:37,624 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3905
+2025-05-11 17:24:37,833 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:37,833 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3800
+2025-05-11 17:24:38,055 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:38,056 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3775
+2025-05-11 17:24:38,294 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:38,294 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3803
+2025-05-11 17:24:38,526 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:38,527 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3625
+2025-05-11 17:24:38,730 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:38,731 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3969
+2025-05-11 17:24:38,999 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:39,000 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3667
+2025-05-11 17:24:39,197 - httpx - INFO - HTTP Request: POST http://localhost:6333/collections/face_vectors/points/search "HTTP/1.1 200 OK"
+2025-05-11 17:24:39,197 - face_recognition - INFO - 실시간 사용자 확인 성공: ssss, 신뢰도: 0.3595
+2025-05-11 17:24:39,198 - face_recognition - ERROR - 실시간 얼굴 확인 중 오류 발생: 
+2025-05-11 17:24:39,198 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: Cannot call "send" once a close message has been sent.
+2025-05-11 17:24:39,198 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Cannot call "send" once a close message has been sent.
+2025-05-11 17:24:39,198 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51761)
+2025-05-11 17:24:39,198 - face_recognition - ERROR - WebSocket 메시지 처리 중 오류: (1001, '')
+2025-05-11 17:24:39,198 - face_recognition - ERROR - WebSocket 연결 중 치명적 오류: Unexpected ASGI message 'websocket.send', after sending 'websocket.close' or response already completed.
+2025-05-11 17:24:39,198 - face_recognition - INFO - WebSocket 연결 종료: Address(host='127.0.0.1', port=51775)
+2025-05-11 18:02:26,161 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-11 18:02:26,177 - face_recognition - INFO - MPS (Metal Performance Shaders) 사용 가능
+2025-05-11 18:02:26,177 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-11 18:02:26,177 - face_recognition - INFO - GPU 디바이스: -1
+2025-05-11 18:02:26,573 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-11 18:02:26,670 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-11 18:02:26,670 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-11 18:02:26,670 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-11 18:02:26,670 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-11 18:02:26,889 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-11 18:02:26,889 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-11 18:02:26,934 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-05-11 18:02:26,943 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-05-11 18:02:26,944 - face_recognition - INFO - 컬렉션 'face_vectors' 이미 존재함
+2025-05-11 18:02:26,944 - face_recognition - INFO - 안면인식 시스템 초기화 완료
+2025-05-11 18:02:41,996 - face_recognition - ERROR - RealSense 카메라 초기화 실패: No device connected
+2025-05-11 18:02:41,996 - face_recognition - INFO - RealSense 카메라 초기화 완료
+2025-05-11 18:02:47,168 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-11 18:02:47,182 - face_recognition - INFO - MPS (Metal Performance Shaders) 사용 가능
+2025-05-11 18:02:47,182 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-11 18:02:47,183 - face_recognition - INFO - GPU 디바이스: -1
+2025-05-11 18:02:47,632 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-11 18:02:47,731 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-11 18:02:47,731 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-11 18:02:47,731 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-11 18:02:47,731 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-11 18:02:47,991 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-11 18:02:47,991 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-11 18:02:48,033 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-05-11 18:02:48,035 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-05-11 18:02:48,035 - face_recognition - INFO - 컬렉션 'face_vectors' 이미 존재함
+2025-05-11 18:02:48,035 - face_recognition - INFO - 안면인식 시스템 초기화 완료
+2025-05-11 18:03:03,164 - face_recognition - ERROR - RealSense 카메라 초기화 실패: No device connected
+2025-05-11 18:03:03,164 - face_recognition - INFO - RealSense 카메라 초기화 완료
+2025-05-11 18:03:05,652 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-11 18:03:05,660 - face_recognition - INFO - MPS (Metal Performance Shaders) 사용 가능
+2025-05-11 18:03:05,660 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-11 18:03:05,660 - face_recognition - INFO - GPU 디바이스: -1
+2025-05-11 18:03:05,948 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-11 18:03:06,032 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-11 18:03:06,032 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-11 18:03:06,032 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-11 18:03:06,032 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-11 18:03:06,222 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-11 18:03:06,223 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-11 18:03:06,259 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-05-11 18:03:06,262 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-05-11 18:03:06,263 - face_recognition - INFO - 컬렉션 'face_vectors' 이미 존재함
+2025-05-11 18:03:06,263 - face_recognition - INFO - 안면인식 시스템 초기화 완료
+2025-05-11 18:03:21,343 - face_recognition - ERROR - RealSense 카메라 초기화 실패: No device connected
+2025-05-11 18:03:21,344 - face_recognition - INFO - RealSense 카메라 초기화 완료
+2025-05-11 18:04:20,779 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-11 18:04:20,788 - face_recognition - INFO - MPS (Metal Performance Shaders) 사용 가능
+2025-05-11 18:04:20,788 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-11 18:04:20,788 - face_recognition - INFO - GPU 디바이스: -1
+2025-05-11 18:04:21,131 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-11 18:04:21,218 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-11 18:04:21,218 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-11 18:04:21,218 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-11 18:04:21,218 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-11 18:04:21,429 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-11 18:04:21,429 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-11 18:04:21,468 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-05-11 18:04:21,475 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-05-11 18:04:21,476 - face_recognition - INFO - 컬렉션 'face_vectors' 이미 존재함
+2025-05-11 18:04:21,476 - face_recognition - INFO - 안면인식 시스템 초기화 완료
+2025-05-11 18:04:36,567 - face_recognition - ERROR - RealSense 카메라 초기화 실패: No device connected
+2025-05-11 18:04:36,568 - face_recognition - INFO - RealSense 카메라 초기화 완료
+2025-05-11 18:04:57,620 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-11 18:04:57,630 - face_recognition - INFO - MPS (Metal Performance Shaders) 사용 가능
+2025-05-11 18:04:57,630 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-11 18:04:57,630 - face_recognition - INFO - GPU 디바이스: -1
+2025-05-11 18:04:57,970 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-11 18:04:58,055 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-11 18:04:58,055 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-11 18:04:58,056 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-11 18:04:58,056 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-11 18:04:58,310 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-11 18:04:58,310 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-11 18:04:58,349 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-05-11 18:04:58,352 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-05-11 18:04:58,353 - face_recognition - INFO - 컬렉션 'face_vectors' 이미 존재함
+2025-05-11 18:04:58,353 - face_recognition - INFO - 안면인식 시스템 초기화 완료
+2025-05-11 18:05:13,442 - face_recognition - ERROR - RealSense 카메라 초기화 실패: No device connected
+2025-05-11 18:05:13,442 - face_recognition - INFO - RealSense 카메라 초기화 완료
+2025-05-11 18:06:51,115 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-11 18:06:51,124 - face_recognition - INFO - MPS (Metal Performance Shaders) 사용 가능
+2025-05-11 18:06:51,124 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-11 18:06:51,124 - face_recognition - INFO - GPU 디바이스: -1
+2025-05-11 18:06:51,458 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-11 18:06:51,544 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-11 18:06:51,544 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-11 18:06:51,544 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-11 18:06:51,544 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-11 18:06:51,748 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-11 18:06:51,748 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-11 18:06:51,795 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-05-11 18:06:51,798 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-05-11 18:06:51,799 - face_recognition - INFO - 컬렉션 'face_vectors' 이미 존재함
+2025-05-11 18:06:51,799 - face_recognition - INFO - 안면인식 시스템 초기화 완료
+2025-05-11 18:07:06,850 - face_recognition - ERROR - RealSense 카메라 초기화 실패: No device connected
+2025-05-11 18:07:06,851 - face_recognition - INFO - RealSense 카메라 초기화 완료
+2025-05-11 18:07:25,075 - face_recognition - INFO - 안면인식 시스템 초기화 시작...
+2025-05-11 18:07:25,085 - face_recognition - INFO - MPS (Metal Performance Shaders) 사용 가능
+2025-05-11 18:07:25,085 - face_recognition - INFO - 모델 디렉토리: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface
+2025-05-11 18:07:25,085 - face_recognition - INFO - GPU 디바이스: -1
+2025-05-11 18:07:25,397 - face_recognition - INFO - FaceAnalysis 모델 준비 중...
+2025-05-11 18:07:25,484 - face_recognition - INFO - FaceAnalysis 모델 준비 완료
+2025-05-11 18:07:25,484 - face_recognition - INFO - ArcFace 모델 로드 중...
+2025-05-11 18:07:25,484 - face_recognition - INFO - 모델 디렉토리가 존재하지 않습니다: /Users/isu/Desktop/study/ssafyProject/PythonProject/models/insightface/buffalo_l
+2025-05-11 18:07:25,484 - face_recognition - INFO - FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.
+2025-05-11 18:07:25,707 - face_recognition - INFO - ArcFace 모델 로드 성공
+2025-05-11 18:07:25,707 - face_recognition - INFO - Qdrant 연결 중...
+2025-05-11 18:07:25,744 - httpx - INFO - HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-05-11 18:07:25,747 - httpx - INFO - HTTP Request: GET http://localhost:6333/collections "HTTP/1.1 200 OK"
+2025-05-11 18:07:25,747 - face_recognition - INFO - 컬렉션 'face_vectors' 이미 존재함
+2025-05-11 18:07:25,747 - face_recognition - INFO - 안면인식 시스템 초기화 완료
