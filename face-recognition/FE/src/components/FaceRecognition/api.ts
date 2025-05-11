@@ -3,8 +3,17 @@ import axios from 'axios';
 import { CapturedImage, FaceDetectionState } from './types';
 
 // API 기본 설정
-const API_BASE_URL = 'http://localhost:8000';
-const WS_BASE_URL = 'ws://localhost:8000';
+const isDevelopment =
+  process.env.NODE_ENV === 'development' ||
+  window.location.hostname === 'localhost';
+
+const API_BASE_URL = isDevelopment
+  ? 'http://localhost:8000'
+  : 'https://face.poloceleste.site';
+
+const WS_BASE_URL = isDevelopment
+  ? 'ws://localhost:8000'
+  : 'wss://face.poloceleste.site';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -33,7 +42,13 @@ export class FaceVerificationWebSocket {
   connect(): void {
     try {
       const wsUrl = `${WS_BASE_URL}/ws/verify`;
-      console.log('WebSocket 연결 시도:', wsUrl);
+      console.log('환경 정보:', {
+        environment: process.env.NODE_ENV,
+        hostname: window.location.hostname,
+        apiUrl: API_BASE_URL,
+        wsUrl: WS_BASE_URL,
+        connecting: wsUrl,
+      });
 
       this.ws = new WebSocket(wsUrl);
 
@@ -57,7 +72,12 @@ export class FaceVerificationWebSocket {
       };
 
       this.ws.onerror = (event) => {
-        console.error('WebSocket 오류:', event);
+        console.error('WebSocket 상세 오류:', {
+          event,
+          readyState: this.ws?.readyState,
+          url: this.ws?.url,
+          protocol: this.ws?.protocol,
+        });
         this.onError(event);
       };
 

@@ -1,7 +1,6 @@
 // FaceLogin.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import * as mp from '@mediapipe/face_mesh';
-import * as cam from '@mediapipe/camera_utils';
 
 // API 기능 가져오기
 import { FaceVerificationWebSocket, checkServerHealth } from './api';
@@ -18,7 +17,6 @@ import {
   Button,
   FaceCircle,
   VideoContainer,
-  Video,
   Canvas,
   GuideLine,
 } from './styles';
@@ -33,7 +31,6 @@ const FaceLogin: React.FC = () => {
   const [verificationResult, setVerificationResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [modelsLoaded, setModelsLoaded] = useState<boolean>(false);
-  const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
   const [faceDetected, setFaceDetected] = useState<boolean>(false);
   const [faceWithinBounds, setFaceWithinBounds] = useState<boolean>(false);
   const [borderColor, setBorderColor] = useState<string>('#333');
@@ -45,23 +42,23 @@ const FaceLogin: React.FC = () => {
   const [serverStatus, setServerStatus] = useState<any>(null);
   const [loadingError, setLoadingError] = useState<string | null>(null);
 
-  // 웹소켓 관련 상태 추가
+  // 웹소켓 관련 상태
   const [wsConnected, setWsConnected] = useState<boolean>(false);
   const [realTimeVerification, setRealTimeVerification] =
     useState<boolean>(false);
 
+  // RealSense 관련 상태
+  const [realsenseConnected, setRealsenseConnected] = useState<boolean>(false);
+  const [currentFrame, setCurrentFrame] = useState<string | null>(null);
+
   // 참조 객체들
-  const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const debugCanvasRef = useRef<HTMLCanvasElement>(null);
   const faceMeshRef = useRef<mp.FaceMesh | null>(null);
-  const cameraRef = useRef<cam.Camera | null>(null);
-  const lastFrameRef = useRef<ImageData | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const hiddenCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // 웹소켓 참조 추가
+  // 웹소켓 참조
   const wsRef = useRef<FaceVerificationWebSocket | null>(null);
+  const realsenseWsRef = useRef<WebSocket | null>(null);
   const verificationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // MediaPipe FaceMesh 모델 로드
@@ -115,23 +112,117 @@ const FaceLogin: React.FC = () => {
       }
     };
 
+    const connectToRealSense = () => {
+      console.log('=== RealSense 연결 시작 ===');
+
+      const WS_BASE_URL =
+        window.location.hostname === 'localhost'
+          ? 'ws://localhost:8000'
+          : 'wss://face.poloceleste.site';
+
+      console.log('RealSense 연결 URL:', `${WS_BASE_URL}/ws/realsense`);
+
+      const ws = new WebSocket(`${WS_BASE_URL}/ws/realsense`);
+
+      ws.onopen = () => {
+        console.log('✅ RealSense 웹소켓 연결 성공!');
+        setRealsenseConnected(true);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          console.log('📨 RealSense 메시지 수신:', typeof event.data);
+          const data = JSON.parse(event.data);
+          console.log('메시지 타입:', data.type);
+
+          if (data.type === 'frame') {
+            console.log(
+              '📸 프레임 수신! RGB 이미지 길이:',
+              data.rgb_image?.length
+            );
+            setCurrentFrame(data.rgb_image);
+            console.log('currentFrame 상태 업데이트 완료');
+          }
+        } catch (error) {
+          console.error('❌ RealSense 메시지 파싱 오류:', error);
+          console.log('원본 메시지:', event.data);
+        }
+      };
+
+      ws.onclose = () => {
+        console.log('❌ RealSense 웹소켓 연결 종료');
+        setRealsenseConnected(false);
+        setTimeout(() => {
+          console.log('5초 후 재연결 시도...');
+          connectToRealSense();
+        }, 5000);
+      };
+
+      ws.onerror = (error) => {
+        console.error('❌ RealSense 웹소켓 오류:', error);
+        console.log('WebSocket 상태:', ws.readyState);
+      };
+
+      realsenseWsRef.current = ws;
+    };
+
     loadMediaPipeModels();
     checkServerStatus();
 
     return () => {
-      if (cameraRef.current) {
-        cameraRef.current.stop();
-      }
       if (faceMeshRef.current) {
         faceMeshRef.current.close();
-      }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
 
-  // 웹소켓 초기화
+  // RealSense 웹소켓 연결
+  const connectToRealSense = () => {
+    const WS_BASE_URL =
+      window.location.hostname === 'localhost'
+        ? 'ws://localhost:8000'
+        : 'wss://face.poloceleste.site';
+
+    const ws = new WebSocket(`${WS_BASE_URL}/ws/realsense`);
+
+    ws.onopen = () => {
+      console.log('RealSense 웹소켓 연결 성공');
+      setRealsenseConnected(true);
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'frame') {
+          // 받은 프레임을 화면에 표시
+          setCurrentFrame(data.rgb_image);
+
+          // 실시간 인증이 활성화되어 있으면 인증 요청
+          if (realTimeVerification && faceDetected && wsRef.current) {
+            wsRef.current.sendVerifyRequest(data.rgb_image);
+          }
+        }
+      } catch (error) {
+        console.error('RealSense 메시지 파싱 오류:', error);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log('RealSense 웹소켓 연결 종료');
+      setRealsenseConnected(false);
+      // 재연결 시도
+      setTimeout(connectToRealSense, 1000);
+    };
+
+    ws.onerror = (error) => {
+      console.error('RealSense 웹소켓 오류:', error);
+    };
+
+    realsenseWsRef.current = ws;
+  };
+
+  // 인증 웹소켓 초기화
   const initializeWebSocket = () => {
     const onMessage = (data: any) => {
       console.log('WebSocket 메시지 수신:', data);
@@ -143,6 +234,7 @@ const FaceLogin: React.FC = () => {
             user_id: data.user_id,
             confidence: data.confidence,
             processing_time: data.processing_time,
+            liveness_result: data.liveness_result,
           });
           setIsProcessing(false);
 
@@ -158,16 +250,22 @@ const FaceLogin: React.FC = () => {
             user_id: null,
             confidence: 0.0,
             processing_time: data.processing_time,
+            liveness_result: data.liveness_result,
           });
           break;
 
         case 'error':
           setError(data.message);
           setIsProcessing(false);
+          if (data.liveness_result) {
+            setVerificationResult({
+              matched: false,
+              liveness_result: data.liveness_result,
+            });
+          }
           break;
 
         case 'pong':
-          // 연결 유지 확인
           break;
       }
     };
@@ -187,16 +285,6 @@ const FaceLogin: React.FC = () => {
     const onOpen = () => {
       console.log('WebSocket 연결 성공');
       setWsConnected(true);
-
-      // 연결 유지를 위한 ping 시작
-      const pingInterval = setInterval(() => {
-        if (wsRef.current) {
-          wsRef.current.sendPing();
-        }
-      }, 30000);
-
-      // 컴포넌트 언마운트시 ping 중지
-      return () => clearInterval(pingInterval);
     };
 
     wsRef.current = new FaceVerificationWebSocket(
@@ -208,13 +296,29 @@ const FaceLogin: React.FC = () => {
     wsRef.current.connect();
   };
 
-  // 컴포넌트 마운트시 웹소켓 초기화
+  // 컴포넌트 마운트 시 연결들 초기화
   useEffect(() => {
+    connectToRealSense();
     initializeWebSocket();
+
+    // 캔버스 크기 설정
+    if (canvasRef.current) {
+      canvasRef.current.width = 640;
+      canvasRef.current.height = 480;
+    }
+
+    // 디버그 캔버스 크기 설정
+    if (debugCanvasRef.current) {
+      debugCanvasRef.current.width = 300;
+      debugCanvasRef.current.height = 180;
+    }
 
     return () => {
       if (wsRef.current) {
         wsRef.current.disconnect();
+      }
+      if (realsenseWsRef.current) {
+        realsenseWsRef.current.close();
       }
       if (verificationIntervalRef.current) {
         clearInterval(verificationIntervalRef.current);
@@ -222,57 +326,73 @@ const FaceLogin: React.FC = () => {
     };
   }, []);
 
+  // RealSense 프레임으로 얼굴 분석
+  useEffect(() => {
+    console.log('=== RealSense 프레임 처리 시도 ===');
+    console.log('currentFrame 존재:', !!currentFrame);
+    console.log('faceMesh 존재:', !!faceMeshRef.current);
+
+    if (!currentFrame || !faceMeshRef.current) {
+      console.log('프레임 또는 faceMesh 없음 - 처리 건너뜀');
+      return;
+    }
+
+    const mesh = faceMeshRef.current;
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = async () => {
+      console.log('✅ 이미지 로드 성공:', {
+        width: img.width,
+        height: img.height,
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        console.log('MediaPipe로 이미지 전송 중...');
+        try {
+          await mesh.send({ image: canvas });
+          console.log('✅ MediaPipe 전송 성공');
+        } catch (error) {
+          console.error('❌ MediaPipe 전송 실패:', error);
+        }
+      }
+    };
+
+    img.onerror = (error) => {
+      console.error('❌ 이미지 로드 실패:', error);
+    };
+
+    console.log('이미지 로드 시작...');
+    img.src = currentFrame;
+  }, [currentFrame]);
+
   // MediaPipe 결과 처리 함수
   const onResults = (results: mp.Results): void => {
-    if (!canvasRef.current || !videoRef.current) return;
+    console.log('=== MediaPipe 결과 수신 ===');
+    console.log('얼굴 랜드마크 개수:', results.multiFaceLandmarks?.length || 0);
+
+    if (!canvasRef.current) return;
 
     const canvasElement = canvasRef.current;
     const canvasCtx = canvasElement.getContext('2d');
 
     if (!canvasCtx) return;
 
-    // 최근 프레임 저장 (인증용)
-    if (results.image) {
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = results.image.width;
-      tempCanvas.height = results.image.height;
-      const tempCtx = tempCanvas.getContext('2d');
-      if (tempCtx) {
-        tempCtx.drawImage(
-          results.image,
-          0,
-          0,
-          tempCanvas.width,
-          tempCanvas.height
-        );
-        const imageData = tempCtx.getImageData(
-          0,
-          0,
-          tempCanvas.width,
-          tempCanvas.height
-        );
-        lastFrameRef.current = imageData;
-      }
-    }
-
     // 캔버스 지우기
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-
-    // 비디오를 캔버스에 그리기
-    canvasCtx.drawImage(
-      results.image,
-      0,
-      0,
-      canvasElement.width,
-      canvasElement.height
-    );
 
     // 얼굴이 감지되었는지 확인
     if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
       const landmarks = results.multiFaceLandmarks[0];
 
-      // 이전 상태가 false였으면 로그 출력
       if (!faceDetected) {
         console.log('얼굴 감지 시작됨');
       }
@@ -283,13 +403,11 @@ const FaceLogin: React.FC = () => {
       const isFaceInCircle = checkFaceInCircle(landmarks);
       setFaceWithinBounds(isFaceInCircle);
 
-      // 얼굴 랜드마크 그리기 (간소화)
-      // 얼굴 주요 특징점 연결 (눈, 코, 입)
+      // 얼굴 랜드마크 그리기
       canvasCtx.strokeStyle = '#E0E0E0';
       canvasCtx.lineWidth = 2;
 
       // 눈 그리기
-      // 왼쪽 눈
       canvasCtx.beginPath();
       [33, 133, 160, 159, 158, 144, 145, 153, 33].forEach((index, i) => {
         const point = landmarks[index];
@@ -346,7 +464,7 @@ const FaceLogin: React.FC = () => {
       });
       canvasCtx.stroke();
 
-      // 3D 방향 계산 (roll, pitch, yaw)
+      // 3D 방향 계산
       const rotationValues = calculateFaceRotation(landmarks);
       setRotation(rotationValues);
 
@@ -360,7 +478,6 @@ const FaceLogin: React.FC = () => {
         setBorderColor('#FFC107'); // 얼굴이 원 밖에 있음 (노란색)
       }
     } else {
-      // 이전 상태가 true였으면 로그 출력
       if (faceDetected) {
         console.log('얼굴 감지 중단됨');
       }
@@ -387,7 +504,7 @@ const FaceLogin: React.FC = () => {
       );
     }
 
-    // 가이드라인 그리기 (얼굴 원 위치 표시)
+    // 가이드라인 그리기
     canvasCtx.strokeStyle = faceWithinBounds
       ? 'rgba(0, 200, 83, 0.5)'
       : 'rgba(255, 171, 0, 0.5)';
@@ -397,29 +514,16 @@ const FaceLogin: React.FC = () => {
     canvasCtx.arc(
       canvasElement.width / 2,
       canvasElement.height / 2,
-      canvasElement.width * 0.25, // 얼굴 크기 기준
+      canvasElement.width * 0.25,
       0,
       2 * Math.PI
     );
     canvasCtx.stroke();
 
     canvasCtx.restore();
-
-    // 실시간 인증이 활성화되어 있고 얼굴이 적절한 위치에 있으면 자동 인증
-    if (
-      realTimeVerification &&
-      faceDetected &&
-      faceWithinBounds &&
-      lastFrameRef.current
-    ) {
-      // 성공한 경우 자동으로 멈추기
-      if (!verificationResult?.matched) {
-        sendVerificationFrame();
-      }
-    }
   };
 
-  // 디버그 캔버스 업데이트 (3D 회전 시각화)
+  // 디버그 캔버스 업데이트
   const updateDebugCanvas = (rotationValues: RotationState): void => {
     if (!debugCanvasRef.current) return;
 
@@ -441,23 +545,23 @@ const FaceLogin: React.FC = () => {
     ctx.textAlign = 'center';
     ctx.fillText('Face Rotation Debug', canvas.width / 2, 15);
 
-    // 각도 값 표시 (roll, pitch, yaw) - 정수로 표시
+    // 각도 값 표시
     ctx.font = '12px monospace';
     ctx.textAlign = 'left';
 
-    // Roll (Z축 회전)
+    // Roll
     ctx.fillStyle = '#FF8080';
     ctx.fillText(`Roll: ${rotationValues.roll}°`, 10, 35);
     const rollStatus = Math.abs(rotationValues.roll) < 15 ? 'OK' : 'NG';
     ctx.fillText(rollStatus, canvas.width - 30, 35);
 
-    // Pitch (X축 회전)
+    // Pitch
     ctx.fillStyle = '#80FF80';
     ctx.fillText(`Pitch: ${rotationValues.pitch}°`, 10, 55);
     const pitchStatus = Math.abs(rotationValues.pitch) < 15 ? 'OK' : 'NG';
     ctx.fillText(pitchStatus, canvas.width - 30, 55);
 
-    // Yaw (Y축 회전)
+    // Yaw
     ctx.fillStyle = '#8080FF';
     ctx.fillText(`Yaw: ${rotationValues.yaw}°`, 10, 75);
     const yawStatus = Math.abs(rotationValues.yaw) < 15 ? 'OK' : 'NG';
@@ -468,19 +572,14 @@ const FaceLogin: React.FC = () => {
     const centerY = 135;
     const radius = 35;
 
-    // 얼굴 타원 그리기
     ctx.save();
     ctx.translate(centerX, centerY);
-
-    // Roll 회전 (z축 회전)
     ctx.rotate((rotationValues.roll * Math.PI) / 180);
 
-    // Yaw에 따른 타원 스케일링
     const yawFactor = Math.cos((rotationValues.yaw * Math.PI) / 180);
-    // Pitch에 따른 타원 스케일링
     const pitchFactor = Math.cos((rotationValues.pitch * Math.PI) / 180);
 
-    // 얼굴 윤곽 그리기
+    // 얼굴 윤곽
     ctx.beginPath();
     ctx.ellipse(
       0,
@@ -495,26 +594,22 @@ const FaceLogin: React.FC = () => {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // 코 그리기 (방향 표시)
-    const noseLength = 15;
+    // 코
     ctx.beginPath();
     ctx.moveTo(0, -5);
-    const noseEndX =
-      noseLength * Math.sin((rotationValues.yaw * Math.PI) / 180);
-    const noseEndY =
-      noseLength * Math.sin((rotationValues.pitch * Math.PI) / 180);
+    const noseEndX = 15 * Math.sin((rotationValues.yaw * Math.PI) / 180);
+    const noseEndY = 15 * Math.sin((rotationValues.pitch * Math.PI) / 180);
     ctx.lineTo(noseEndX, noseEndY);
     ctx.strokeStyle = '#FFFF00';
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // 눈 그리기
+    // 눈
     const eyeOffsetX = 15 * yawFactor;
     const eyeOffsetY = -10 * pitchFactor;
     const eyeWidth = 8 * yawFactor;
     const eyeHeight = 5 * pitchFactor;
 
-    // 왼쪽 눈
     ctx.beginPath();
     ctx.ellipse(
       -eyeOffsetX,
@@ -528,17 +623,22 @@ const FaceLogin: React.FC = () => {
     ctx.fillStyle = '#80FFFF';
     ctx.fill();
 
-    // 오른쪽 눈
     ctx.beginPath();
     ctx.ellipse(eyeOffsetX, eyeOffsetY, eyeWidth, eyeHeight, 0, 0, 2 * Math.PI);
     ctx.fillStyle = '#80FFFF';
     ctx.fill();
 
-    // 입 그리기
-    const mouthWidth = 20 * yawFactor;
-    const mouthHeight = 5 * pitchFactor;
+    // 입
     ctx.beginPath();
-    ctx.ellipse(0, 15 * pitchFactor, mouthWidth, mouthHeight, 0, 0, Math.PI);
+    ctx.ellipse(
+      0,
+      15 * pitchFactor,
+      20 * yawFactor,
+      5 * pitchFactor,
+      0,
+      0,
+      Math.PI
+    );
     ctx.strokeStyle = '#FF8080';
     ctx.lineWidth = 2;
     ctx.stroke();
@@ -546,95 +646,10 @@ const FaceLogin: React.FC = () => {
     ctx.restore();
   };
 
-  // 카메라 시작
-  const startCamera = async (): Promise<void> => {
-    if (!modelsLoaded || !faceMeshRef.current || !videoRef.current) {
-      console.warn('모델이나 비디오 엘리먼트가 준비되지 않았습니다');
-      return;
-    }
-
-    try {
-      // 이전 상태 초기화
-      setError(null);
-      setVerificationResult(null);
-
-      // 캔버스 크기 설정
-      if (canvasRef.current) {
-        canvasRef.current.width = 640;
-        canvasRef.current.height = 480;
-      }
-
-      // 디버그 캔버스 크기 설정
-      if (debugCanvasRef.current) {
-        debugCanvasRef.current.width = 300;
-        debugCanvasRef.current.height = 180;
-      }
-
-      // MediaPipe 카메라 설정
-      cameraRef.current = new cam.Camera(videoRef.current, {
-        onFrame: async () => {
-          if (faceMeshRef.current && videoRef.current) {
-            await faceMeshRef.current.send({ image: videoRef.current });
-          }
-        },
-        width: 640,
-        height: 480,
-        facingMode: 'user',
-      });
-
-      // 카메라 시작
-      await cameraRef.current.start();
-      setIsCameraActive(true);
-      console.log('카메라 초기화 완료');
-    } catch (error) {
-      console.error('카메라 접근 오류:', error);
-      setError(
-        `카메라 접근 오류: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-    }
-  };
-
-  // 카메라 중지
-  const stopCamera = (): void => {
-    if (cameraRef.current) {
-      cameraRef.current.stop();
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-    }
-    setIsCameraActive(false);
-    setBorderColor('#333');
-  };
-
-  // 실시간 인증 프레임 전송
-  const sendVerificationFrame = () => {
-    if (!wsRef.current || !lastFrameRef.current || !videoRef.current) return;
-
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) return;
-
-    // 작은 크기로 캡처 (네트워크 효율성)
-    canvas.width = 160;
-    canvas.height = 120;
-
-    // 비디오에서 이미지 캡처
-    ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-
-    // 이미지 데이터 생성 (더 낮은 품질로 압축)
-    const imageData = canvas.toDataURL('image/jpeg', 0.5);
-
-    // 웹소켓으로 전송
-    wsRef.current.sendVerifyRequest(imageData);
-  };
-
   // 실시간 인증 시작
   const startRealTimeVerification = () => {
-    if (!wsConnected) {
-      setError('WebSocket이 연결되지 않았습니다.');
+    if (!wsConnected || !realsenseConnected) {
+      setError('인증 시스템이 준비되지 않았습니다.');
       return;
     }
 
@@ -643,34 +658,24 @@ const FaceLogin: React.FC = () => {
     setError(null);
     setIsProcessing(true);
 
-    // 100ms마다 프레임 전송
-    verificationIntervalRef.current = setInterval(() => {
-      if (faceDetected && faceWithinBounds && !verificationResult?.matched) {
-        sendVerificationFrame();
-      }
-    }, 100);
+    // 실시간 프레임은 RealSense 웹소켓에서 받음
   };
 
   // 실시간 인증 중지
   const stopRealTimeVerification = () => {
     setRealTimeVerification(false);
     setIsProcessing(false);
-
-    if (verificationIntervalRef.current) {
-      clearInterval(verificationIntervalRef.current);
-      verificationIntervalRef.current = null;
-    }
   };
 
   // 단일 인증 실행
   const verifySingleFace = async (): Promise<void> => {
-    if (!lastFrameRef.current) {
-      setError('얼굴 이미지가 캡처되지 않았습니다.');
+    if (!faceDetected) {
+      setError('얼굴이 감지되지 않았습니다. 카메라에 얼굴을 위치시키세요.');
       return;
     }
 
-    if (!faceDetected) {
-      setError('얼굴이 감지되지 않았습니다. 카메라에 얼굴을 위치시키세요.');
+    if (!currentFrame) {
+      setError('현재 프레임이 없습니다.');
       return;
     }
 
@@ -678,23 +683,9 @@ const FaceLogin: React.FC = () => {
       setIsProcessing(true);
       setError(null);
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      if (!ctx || !videoRef.current) {
-        throw new Error(
-          '캔버스 컨텍스트 또는 비디오 요소를 가져올 수 없습니다.'
-        );
-      }
-
-      canvas.width = 120;
-      canvas.height = 80;
-
-      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-      const imageData = canvas.toDataURL('image/jpeg', 0.6);
-
+      // 현재 RealSense 프레임으로 인증
       if (wsRef.current && wsConnected) {
-        wsRef.current.sendVerifyRequest(imageData);
+        wsRef.current.sendVerifyRequest(currentFrame);
       } else {
         throw new Error('WebSocket이 연결되지 않았습니다.');
       }
@@ -719,16 +710,28 @@ const FaceLogin: React.FC = () => {
           ? '오류가 발생했습니다'
           : !modelsLoaded
           ? '모델 로딩 중...'
-          : wsConnected
-          ? '얼굴을 카메라에 위치시켜주세요.'
-          : 'WebSocket 연결 중...'}
+          : !realsenseConnected
+          ? 'RealSense 카메라 연결 중...'
+          : '얼굴을 카메라에 위치시켜주세요.'}
       </SubMessage>
 
       <ContentWrapper>
         <CameraColumn>
           <FaceCircle borderColor={borderColor}>
             <VideoContainer>
-              <Video ref={videoRef} autoPlay playsInline muted />
+              {/* RealSense 프레임 표시 */}
+              {currentFrame && (
+                <img
+                  src={currentFrame}
+                  alt='RealSense Feed'
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transform: 'scaleX(-1)',
+                  }}
+                />
+              )}
               <Canvas ref={canvasRef} width={640} height={480} />
               <GuideLine />
             </VideoContainer>
@@ -744,56 +747,54 @@ const FaceLogin: React.FC = () => {
               flexDirection: 'column',
             }}
           >
-            {!isCameraActive ? (
-              <Button
-                onClick={startCamera}
-                disabled={!modelsLoaded || !!loadingError}
-                style={{ width: '100%' }}
-              >
-                {loadingError
-                  ? '다시 시도하기'
-                  : modelsLoaded
-                  ? '카메라 켜기'
-                  : '모델 로딩 중...'}
-              </Button>
-            ) : (
-              <>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <Button
-                    onClick={verifySingleFace}
-                    disabled={isProcessing || !faceDetected || !wsConnected}
-                    style={{ flex: 1 }}
-                  >
-                    {isProcessing ? '인증 중...' : '단일 인증'}
-                  </Button>
-                  <Button
-                    onClick={
-                      realTimeVerification
-                        ? stopRealTimeVerification
-                        : startRealTimeVerification
-                    }
-                    disabled={!faceDetected || !wsConnected}
-                    style={{
-                      flex: 1,
-                      backgroundColor: realTimeVerification
-                        ? '#ff5722'
-                        : '#2196f3',
-                    }}
-                  >
-                    {realTimeVerification ? '실시간 중지' : '실시간 인증'}
-                  </Button>
-                </div>
+            {realsenseConnected ? (
+              <div style={{ display: 'flex', gap: '10px' }}>
                 <Button
-                  onClick={stopCamera}
-                  style={{ backgroundColor: '#555', width: '100%' }}
+                  onClick={verifySingleFace}
+                  disabled={isProcessing || !faceDetected || !wsConnected}
+                  style={{ flex: 1 }}
                 >
-                  카메라 끄기
+                  {isProcessing ? '인증 중...' : '단일 인증'}
                 </Button>
-              </>
+                <Button
+                  onClick={
+                    realTimeVerification
+                      ? stopRealTimeVerification
+                      : startRealTimeVerification
+                  }
+                  disabled={!faceDetected || !wsConnected}
+                  style={{
+                    flex: 1,
+                    backgroundColor: realTimeVerification
+                      ? '#ff5722'
+                      : '#2196f3',
+                  }}
+                >
+                  {realTimeVerification ? '실시간 중지' : '실시간 인증'}
+                </Button>
+              </div>
+            ) : (
+              <Button disabled>RealSense 연결 중...</Button>
             )}
           </div>
 
-          {/* WebSocket 연결 상태 표시 */}
+          {/* 연결 상태 표시 */}
+          <div
+            style={{
+              margin: '10px 0',
+              padding: '5px 10px',
+              borderRadius: '5px',
+              fontSize: '14px',
+              textAlign: 'center',
+              backgroundColor: realsenseConnected
+                ? 'rgba(0, 200, 83, 0.1)'
+                : 'rgba(255, 152, 0, 0.1)',
+              color: realsenseConnected ? '#00c853' : '#ff9800',
+            }}
+          >
+            RealSense: {realsenseConnected ? '연결됨' : '연결 중...'}
+          </div>
+
           <div
             style={{
               margin: '10px 0',
@@ -856,16 +857,37 @@ const FaceLogin: React.FC = () => {
                   </p>
                   <p>
                     <strong>처리 시간:</strong>{' '}
-                    {verificationResult.processing_time.toFixed(3)}초
+                    {verificationResult.processing_time?.toFixed(3)}초
                   </p>
+                  {verificationResult.liveness_result && (
+                    <p>
+                      <strong>라이브니스 검사:</strong>{' '}
+                      {verificationResult.liveness_result.is_live
+                        ? '통과'
+                        : '실패'}
+                      (깊이 변화:{' '}
+                      {verificationResult.liveness_result.depth_variation}mm)
+                    </p>
+                  )}
                 </>
               ) : (
-                <p>등록된 얼굴을 찾을 수 없습니다.</p>
+                <>
+                  <p>등록된 얼굴을 찾을 수 없습니다.</p>
+                  {verificationResult.liveness_result && (
+                    <p style={{ fontSize: '14px', marginTop: '10px' }}>
+                      <strong>라이브니스 검사 결과:</strong>
+                      <br />
+                      {verificationResult.liveness_result.reason}
+                      <br />
+                      (깊이 변화:{' '}
+                      {verificationResult.liveness_result.depth_variation}mm)
+                    </p>
+                  )}
+                </>
               )}
             </div>
           )}
 
-          {/* 실시간 인증 상태 표시 */}
           {realTimeVerification && (
             <div
               style={{
@@ -1110,6 +1132,17 @@ const FaceLogin: React.FC = () => {
                     marginBottom: '8px',
                   }}
                 >
+                  <span>DB 연결:</span>
+                  <span>{serverStatus.db_connected ? '✓' : '✗'}</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '8px',
+                  }}
+                >
                   <span>GPU 사용 가능:</span>
                   <span>{serverStatus.gpu_available ? '✓' : '✗'}</span>
                 </div>
@@ -1138,6 +1171,17 @@ const FaceLogin: React.FC = () => {
                     </div>
                   </>
                 )}
+
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: '8px',
+                  }}
+                >
+                  <span>RealSense 상태:</span>
+                  <span>{serverStatus.realsense_available ? '✓' : '✗'}</span>
+                </div>
               </>
             ) : (
               <div style={{ textAlign: 'center', color: '#f44336' }}>
@@ -1194,7 +1238,17 @@ const FaceLogin: React.FC = () => {
                 margin: '0 0 10px 0',
               }}
             >
-              4. 얼굴 등록이 되어 있지 않다면 먼저 얼굴 등록을 진행해주세요.
+              4. 백엔드에서 RealSense를 통한 라이브니스 검사가 자동으로
+              수행됩니다.
+            </p>
+            <p
+              style={{
+                fontSize: '14px',
+                lineHeight: '1.5',
+                margin: '0 0 10px 0',
+              }}
+            >
+              5. 얼굴 등록이 되어 있지 않다면 먼저 얼굴 등록을 진행해주세요.
             </p>
 
             <div style={{ marginTop: '15px', textAlign: 'center' }}>
