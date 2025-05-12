@@ -58,7 +58,7 @@ public class OrderController {
     @GetMapping("/recent")
     public ResponseEntity<ApiResponse<?>> getRecentOrders(
             HttpServletRequest httpRequest,
-            @RequestParam(defaultValue = "5") int limit) {
+            @RequestParam(defaultValue = "10") int limit) {
         try {
             String token = httpRequest.getHeader("Authorization").replace("Bearer ", "");
             String userId = jwtTokenProvider.getUserId(token);
