@@ -1,10 +1,10 @@
 import MenuCard from '@/features/order/components/Menu/MenuCard'
 import tw from 'twin.macro'
 import styled from '@emotion/styled'
-import { MenuItem } from '@/interfaces/OrderInterface'
 import { useState } from 'react'
 import { useDragScroll } from '@/hooks/useDragScroll'
 import { Text } from '@/styles/typography'
+import { MenuItem } from '@/interfaces/OrderInterface'
 
 const Wrapper = tw.div`w-full`
 const Tabs = tw.div`grid grid-cols-4 gap-4 my-8`

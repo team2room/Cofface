@@ -22,7 +22,7 @@ export default function OrderPage() {
 
   const [step, setStep] = useState<Step>('menu')
 
-  const [remainingSeconds, setRemainingSeconds] = useState(10)
+  const [remainingSeconds, setRemainingSeconds] = useState(120)
   const [showTimeoutModal, setShowTimeoutModal] = useState(false)
   const [logoutCountdown, setLogoutCountdown] = useState(5)
 
@@ -82,7 +82,7 @@ export default function OrderPage() {
 
   const handleExtendClick = async () => {
     await extend(1)
-    setRemainingSeconds(10)
+    setRemainingSeconds(120)
     startTimer()
     setShowTimeoutModal(false)
   }

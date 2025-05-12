@@ -1,7 +1,12 @@
 export interface MenuItem {
-  name: string
+  menuId: number
+  menuName: string
   price: number
-  image?: string
+  categoryId: number
+  categoryName: string
+  isSoldOut: boolean
+  imageUrl: string
+  description: string
 }
 
 export interface MenuCardProps {

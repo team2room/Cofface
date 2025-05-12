@@ -19,8 +19,8 @@ export default function MenuCard({ item, boxShadowColor }: MenuCardProps) {
           boxShadow: `1.462px 1.462px 4px 2px ${boxShadowColor}`,
         }}
       >
-        {item.image ? (
-          <Image src={item.image} alt={item.name} />
+        {item.imageUrl ? (
+          <Image src={item.imageUrl} alt={item.menuName} />
         ) : (
           <Image src="https://picsum.photos/200" alt="없음" />
         )}
@@ -29,7 +29,7 @@ export default function MenuCard({ item, boxShadowColor }: MenuCardProps) {
           variant="caption1"
           className="flex items-center justify-center text-center mb-2 h-16"
         >
-          {item.name}
+          {item.menuName}
         </Text>
         <Text variant="body4" weight="semibold">
           {item.price.toLocaleString()}원
