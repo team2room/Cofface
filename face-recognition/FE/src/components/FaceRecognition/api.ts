@@ -7,13 +7,18 @@ const isDevelopment =
   process.env.NODE_ENV === 'development' ||
   window.location.hostname === 'localhost';
 
+// API 엔드포인트 URL
 const API_BASE_URL = isDevelopment
   ? 'http://localhost:8000'
   : 'https://face.poloceleste.site';
 
+// 웹소켓 URL - HTTP는 ws://, HTTPS는 wss:// 사용
 const WS_BASE_URL = isDevelopment
   ? 'ws://localhost:8000'
   : 'wss://face.poloceleste.site';
+
+console.log('API 기본 URL:', API_BASE_URL);
+console.log('웹소켓 기본 URL:', WS_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -42,13 +47,7 @@ export class FaceVerificationWebSocket {
   connect(): void {
     try {
       const wsUrl = `${WS_BASE_URL}/ws/verify`;
-      console.log('환경 정보:', {
-        environment: process.env.NODE_ENV,
-        hostname: window.location.hostname,
-        apiUrl: API_BASE_URL,
-        wsUrl: WS_BASE_URL,
-        connecting: wsUrl,
-      });
+      console.log('WebSocket 연결 URL:', wsUrl);
 
       this.ws = new WebSocket(wsUrl);
 
@@ -165,6 +164,86 @@ export class FaceVerificationWebSocket {
   }
 }
 
+// RealSense 프레임 수신 클래스
+export class RealSenseWebSocket {
+  private ws: WebSocket | null = null;
+  private reconnectTimer: NodeJS.Timeout | null = null;
+  private reconnectAttempts: number = 0;
+  private maxReconnectAttempts: number = 5;
+
+  constructor(
+    private onFrame: (data: any) => void,
+    private onError: (error: Event) => void,
+    private onClose: () => void,
+    private onOpen: () => void
+  ) {}
+
+  connect(): void {
+    try {
+      const wsUrl = `${WS_BASE_URL}/ws/realsense`;
+      console.log('RealSense 연결 URL:', wsUrl);
+
+      this.ws = new WebSocket(wsUrl);
+
+      this.ws.onopen = (event) => {
+        console.log('RealSense WebSocket 연결 성공');
+        this.reconnectAttempts = 0;
+        this.onOpen();
+      };
+
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          this.onFrame(data);
+        } catch (error) {
+          console.error('RealSense 메시지 파싱 오류:', error);
+        }
+      };
+
+      this.ws.onerror = (event) => {
+        console.error('RealSense WebSocket 오류:', event);
+        this.onError(event);
+      };
+
+      this.ws.onclose = (event) => {
+        console.log('RealSense WebSocket 연결 종료:', event.code, event.reason);
+        this.onClose();
+
+        // 자동 재연결 시도
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          this.reconnectAttempts++;
+          const delay = Math.min(
+            1000 * Math.pow(2, this.reconnectAttempts),
+            30000
+          );
+          console.log(
+            `${delay}ms 후 RealSense 재연결 시도 (${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+          );
+
+          this.reconnectTimer = setTimeout(() => {
+            this.connect();
+          }, delay);
+        }
+      };
+    } catch (error) {
+      console.error('RealSense WebSocket 연결 중 오류:', error);
+      this.onError(error as Event);
+    }
+  }
+
+  disconnect(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+  }
+}
+
 // 기존 REST API 함수들
 export const registerFace = async (
   userId: string,
@@ -235,23 +314,13 @@ export const registerFace = async (
   }
 };
 
-// REST 얼굴 인증 함수 (호환성을 위해 유지)
+// REST 얼굴 인증 함수 - 실시간 인식을 위한 최적화
 export const verifyFace = async (rgbImage: string): Promise<any> => {
   try {
-    // Base64 문자열 처리
-    let base64Data = rgbImage;
-
-    // 프리픽스 제거 (data:image/jpeg;base64, 등)
-    if (base64Data.includes(';base64,')) {
-      base64Data = base64Data.split(';base64,')[1];
-    }
-
-    console.log('Base64 문자열 길이:', base64Data.length);
-
-    // 쿼리 파라미터로 요청 보내기
-    const response = await api.post(
-      `/verify?rgb_image=${encodeURIComponent(base64Data)}`
-    );
+    // 요청 본문에 이미지 데이터 포함
+    const response = await api.post('/verify', {
+      rgb_image: rgbImage
+    });
 
     return response.data;
   } catch (error) {
@@ -262,6 +331,17 @@ export const verifyFace = async (rgbImage: string): Promise<any> => {
       console.error('서버 응답 상태:', error.response.status);
     }
 
+    throw error;
+  }
+};
+
+// RealSense 상태 확인 함수
+export const checkRealSenseStatus = async (): Promise<any> => {
+  try {
+    const response = await api.get('/test-realsense');
+    return response.data;
+  } catch (error) {
+    console.error('RealSense 상태 확인 중 오류 발생:', error);
     throw error;
   }
 };
@@ -281,5 +361,7 @@ export default {
   registerFace,
   verifyFace,
   checkServerHealth,
+  checkRealSenseStatus,
   FaceVerificationWebSocket,
+  RealSenseWebSocket
 };
