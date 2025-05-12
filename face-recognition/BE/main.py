@@ -415,68 +415,98 @@ def simple_liveness_check(depth_image: np.ndarray, face_bbox: tuple) -> dict:
     """
     x1, y1, x2, y2 = face_bbox
 
-    # 유효한 좌표로 변환
     height, width = depth_image.shape
     x1 = max(0, min(x1, width - 1))
     y1 = max(0, min(y1, height - 1))
     x2 = max(0, min(x2, width - 1))
     y2 = max(0, min(y2, height - 1))
 
-    # 좌표가 뒤집힌 경우 수정
     if x1 > x2:
         x1, x2 = x2, x1
     if y1 > y2:
         y1, y2 = y2, y1
 
-    # 영역이 너무 작으면 유효하지 않음
     if (x2 - x1) < 10 or (y2 - y1) < 10:
         return {
-            "is_live": False,  # Python bool 타입 사용
+            "is_live": False,
             "reason": "얼굴 영역이 너무 작습니다",
             "depth_variation": 0,
             "confidence": 0
         }
 
-    # 얼굴 영역의 깊이 값 추출
     face_depth = depth_image[y1:y2, x1:x2]
-
-    # 유효한 깊이 값만 필터링
     valid_depths = face_depth[face_depth > 0]
 
-    if len(valid_depths) < 100:  # 최소한의 유효 깊이 포인트
+    if len(valid_depths) < 100:
         return {
-            "is_live": False,  # Python bool 타입 사용
+            "is_live": False,
             "reason": "유효한 깊이 데이터가 부족합니다",
             "depth_variation": 0,
             "confidence": 0
         }
 
-    # 깊이 값의 범위 계산
-    min_depth = float(np.min(valid_depths))  # float로 변환
-    max_depth = float(np.max(valid_depths))  # float로 변환
-    depth_variation = float(max_depth - min_depth)  # float로 변환
+    min_depth = float(np.min(valid_depths))
+    max_depth = float(np.max(valid_depths))
+    depth_variation = float(max_depth - min_depth)
+    mean_depth = float(np.mean(valid_depths))
+    std_depth = float(np.std(valid_depths))
 
-    # 통계 계산
-    mean_depth = float(np.mean(valid_depths))  # float로 변환
-    std_depth = float(np.std(valid_depths))  # float로 변환
+    # 사용자 지정 기준
+    if mean_depth < 500:
+        return {
+            "is_live": False,
+            "depth_variation": depth_variation,
+            "min_depth": min_depth,
+            "max_depth": max_depth,
+            "mean_depth": mean_depth,
+            "std_depth": std_depth,
+            "reason": "너무 가까운 평면 이미지로 판단됨 (mean_depth < 500mm)",
+            "confidence": 0.0
+        }
 
-    # 입체감 판정 (15mm 이상의 깊이 변화면 3D로 판단)
-    DEPTH_THRESHOLD = 15  # mm
-    is_live = bool(depth_variation > DEPTH_THRESHOLD)  # bool로 변환
+    if mean_depth >= 1000:
+        return {
+            "is_live": True,
+            "depth_variation": depth_variation,
+            "min_depth": min_depth,
+            "max_depth": max_depth,
+            "mean_depth": mean_depth,
+            "std_depth": std_depth,
+            "reason": "충분한 거리의 실제 얼굴로 판단됨 (mean_depth ≥ 1000mm)",
+            "confidence": 1.0
+        }
 
-    # 신뢰도 계산 (깊이 변화를 기준으로)
-    confidence = float(min(depth_variation / 50, 1.0))  # float로 변환
+    # 기존 기준 (depth variation 기반)
+    MAX_DEPTH_THRESHOLD = 100  # mm
+    MIN_DEPTH_THRESHOLD = 15   # mm
+
+    is_live = (depth_variation >= MIN_DEPTH_THRESHOLD) and (depth_variation <= MAX_DEPTH_THRESHOLD)
+
+    confidence = 0.0
+    if is_live:
+        if depth_variation < 50:
+            confidence = float(depth_variation / 50)
+        else:
+            confidence = float(1.0 - ((depth_variation - 50) / 50))
+
+    reason = "실제 얼굴로 판단됨"
+    if not is_live:
+        if depth_variation < MIN_DEPTH_THRESHOLD:
+            reason = "평면 이미지로 판단됨 (깊이 변화 부족)"
+        elif depth_variation > MAX_DEPTH_THRESHOLD:
+            reason = "비정상적인 깊이 변화 감지됨 (과도한 깊이 변화)"
 
     return {
-        "is_live": is_live,  # Python bool 타입
+        "is_live": is_live,
         "depth_variation": depth_variation,
         "min_depth": min_depth,
         "max_depth": max_depth,
         "mean_depth": mean_depth,
         "std_depth": std_depth,
-        "reason": "실제 얼굴로 판단됨" if is_live else "평면 이미지로 판단됨",
+        "reason": reason,
         "confidence": confidence
     }
+
 
 
 # 시스템 인스턴스 생성
