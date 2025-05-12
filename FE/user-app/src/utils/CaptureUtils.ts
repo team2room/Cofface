@@ -209,9 +209,9 @@ export const getMessage = (
     case FaceDetectionState.FRONT_FACE:
       return '정면을 바라봐주세요'
     case FaceDetectionState.LEFT_FACE:
-      return '고개를 왼쪽으로 돌려주세요'
-    case FaceDetectionState.RIGHT_FACE:
       return '고개를 오른쪽으로 돌려주세요'
+    case FaceDetectionState.RIGHT_FACE:
+      return '고개를 왼쪽으로 돌려주세요'
     case FaceDetectionState.UP_FACE:
       return '고개를 들어 위를 바라봐주세요'
     case FaceDetectionState.DOWN_FACE:
@@ -223,33 +223,25 @@ export const getMessage = (
   }
 }
 
-export const getSubMessage = (
-  detectionState: FaceDetectionState,
-  loadingError: string | null,
-): string => {
-  if (loadingError) {
-    return '페이지를 새로고침하거나 다시 시도해주세요'
-  }
-
-  switch (detectionState) {
-    case FaceDetectionState.FRONT_FACE:
-      return '얼굴이 원 안에 위치하도록 해주세요'
-    case FaceDetectionState.LEFT_FACE:
-      return '왼쪽으로 약 30도 정도 돌려주세요'
-    case FaceDetectionState.RIGHT_FACE:
-      return '오른쪽으로 약 30도 정도 돌려주세요'
-    case FaceDetectionState.UP_FACE:
-      return '위쪽으로 약 10도 정도 올려주세요'
-    case FaceDetectionState.DOWN_FACE:
-      return '아래쪽으로 약 10도 정도 내려주세요'
-    case FaceDetectionState.COMPLETED:
-      return '모든 방향에서 얼굴이 캡처되었습니다'
+// 상태에 따른 경계선 색상 메시지 - 더 친절한 안내로 수정
+export const getBorderStatusMessage = (borderColor: string): string => {
+  switch (borderColor) {
+    case '#ff3d00':
+      return '얼굴이 감지되지 않았습니다. 카메라에 얼굴을 비춰주세요.'
+    case '#FFC107':
+      return '얼굴을 타원형 안에 맞춰주세요. 약간 더 가까이 이동해보세요.'
+    case '#FFAB00':
+      return '위치는 좋아요! 안내에 따라 고개를 천천히 돌려주세요.'
+    case '#00c853':
+      return '완벽해요! 잠시 그대로 유지해 주세요. 곧 촬영됩니다.'
+    case '#4285F4':
+      return '촬영 중입니다. 현재 자세를 유지해주세요.'
     default:
-      return ''
+      return '얼굴을 타원형 안에 맞춰주세요.'
   }
 }
 
-// 현재 단계 표시 텍스트
+// 현재 단계 표시 텍스트 - 친절한 설명 추가
 export const getStageText = (detectionState: FaceDetectionState): string => {
   switch (detectionState) {
     case FaceDetectionState.INIT:
@@ -257,33 +249,15 @@ export const getStageText = (detectionState: FaceDetectionState): string => {
     case FaceDetectionState.FRONT_FACE:
       return '정면 촬영 중 (1/5)'
     case FaceDetectionState.LEFT_FACE:
-      return '왼쪽 촬영 중 (2/5)'
+      return '왼쪽 촬영 중 (2/5) - 천천히 오른쪽으로 고개를 돌려주세요'
     case FaceDetectionState.RIGHT_FACE:
-      return '오른쪽 촬영 중 (3/5)'
+      return '오른쪽 촬영 중 (3/5) - 천천히 왼쪽으로 고개를 돌려주세요'
     case FaceDetectionState.UP_FACE:
-      return '위쪽 촬영 중 (4/5)'
+      return '위쪽 촬영 중 (4/5) - 살짝 위쪽을 바라봐주세요'
     case FaceDetectionState.DOWN_FACE:
-      return '아래쪽 촬영 중 (5/5)'
+      return '아래쪽 촬영 중 (5/5) - 살짝 아래쪽을 바라봐주세요'
     case FaceDetectionState.COMPLETED:
       return '촬영 완료'
-    default:
-      return ''
-  }
-}
-
-// 상태에 따른 경계선 색상 메시지
-export const getBorderStatusMessage = (borderColor: string): string => {
-  switch (borderColor) {
-    case '#ff3d00':
-      return '얼굴이 감지되지 않았습니다'
-    case '#FFC107':
-      return '얼굴이 원 안에 들어오도록 위치하세요'
-    case '#FFAB00':
-      return '안내에 따라 고개를 천천히 돌려주세요'
-    case '#00c853':
-      return '위치와 방향이 정확합니다. 촬영 준비 완료'
-    case '#4285F4':
-      return '카운트다운 중입니다. 자세를 유지하세요'
     default:
       return ''
   }
@@ -307,36 +281,93 @@ export const getStateLabel = (state: FaceDetectionState): string => {
   }
 }
 
-// 타원형 안에 얼굴이 있는지 확인하는 함수
-export const checkFaceInOval = (landmarks: any[]): boolean => {
-  // 얼굴 랜드마크에서 주요 점 추출
+// 타원형 패스에 맞게 얼굴이 적절히 위치하는지 확인하는 함수
+export const checkFaceInCustomOval = (landmarks: any[]): boolean => {
+  // 주요 얼굴 랜드마크 추출
+  const leftEye = landmarks[33] // 왼쪽 눈
+  const rightEye = landmarks[263] // 오른쪽 눈
   const nose = landmarks[4] // 코 끝
-  const leftCheek = landmarks[234] // 왼쪽 볼
-  const rightCheek = landmarks[454] // 오른쪽 볼
   const chin = landmarks[152] // 턱 끝
   const forehead = landmarks[10] // 이마 위
+  const leftCheek = landmarks[234] // 왼쪽 볼
+  const rightCheek = landmarks[454] // 오른쪽 볼
+  const leftJaw = landmarks[58] // 왼쪽 턱선
+  const rightJaw = landmarks[288] // 오른쪽 턱선
 
-  // 화면 중앙 좌표 (0.5, 0.5)
+  // 화면 중앙 좌표
   const centerX = 0.5
-  const centerY = 0.5
+  const centerY = 0.47 // 타원형이 살짝 아래로 치우쳐 있으므로 중심점 조정
 
-  // 타원형 크기 매개변수 (이 값을 조정하여 타원의 크기 변경)
-  const a = 0.2 // 가로 반경
-  const b = 0.25 // 세로 반경 (약간 더 길게)
+  // 얼굴 크기 계산
+  const faceWidth = Math.abs(leftJaw.x - rightJaw.x)
+  const faceHeight = Math.abs(forehead.y - chin.y)
 
-  // 주요 점들이 타원 안에 있는지 확인
-  const points = [nose, leftCheek, rightCheek, chin, forehead]
+  // 얼굴 중심 계산
+  const faceCenter = {
+    x: (leftEye.x + rightEye.x) / 2,
+    y: (forehead.y + chin.y) / 2,
+  }
 
-  // 모든 점이 타원 안에 있으면 true 반환
-  return points.every((point) => {
+  // 타원의 크기 (뷰포트 기준)
+  const ovalWidth = 0.45 // 가로 반경
+  const ovalHeight = 0.6 // 세로 반경
+
+  // 주요 얼굴 포인트가 타원 안에 있는지 확인
+  const points = [
+    leftEye,
+    rightEye,
+    nose,
+    forehead,
+    chin,
+    leftCheek,
+    rightCheek,
+  ]
+
+  // 얼굴 특징점이 타원 안에 있는지 확인
+  const allPointsInside = points.every((point) => {
+    // 정확한 타원 계산보다는 포인트별 맞춤형 계산
+    // 사용자 정의 타원은 위아래가 비대칭하므로 y 위치에 따라 다른 계산 적용
     const dx = point.x - centerX
     const dy = point.y - centerY
 
-    // 타원 방정식: (x/a)² + (y/b)² <= 1
-    // y축으로 약간 더 늘어난 타원 (아래쪽이 좀 더 좁음)
-    // 아래쪽(y > centerY)에서는 b 값을 약간 줄여서 타원을 더 좁게 함
-    const adjustedB = point.y > centerY ? b * 0.9 : b
+    // 위쪽과 아래쪽에 대해 다른 타원 계수 적용
+    let horizontalRadius = ovalWidth
+    let verticalRadius = ovalHeight
 
-    return (dx * dx) / (a * a) + (dy * dy) / (adjustedB * adjustedB) <= 1
+    // 위쪽(이마)은 좁고, 아래쪽(턱)은 더 좁다
+    if (point.y < centerY - 0.1) {
+      // 이마/눈 부분
+      horizontalRadius *= 0.9
+    } else if (point.y > centerY + 0.15) {
+      // 턱 부분
+      horizontalRadius *= 0.8
+      verticalRadius *= 0.9
+    }
+
+    // 타원 방정식: (x/a)² + (y/b)² <= 1
+    return (
+      (dx * dx) / (horizontalRadius * horizontalRadius) +
+        (dy * dy) / (verticalRadius * verticalRadius) <=
+      1
+    )
   })
+
+  // 얼굴 크기가 타원에 적절한지 확인
+  // 가로는 타원 가로의 70-90% 사이여야 함
+  const widthRatio = faceWidth / ovalWidth
+  const isWidthGood = widthRatio >= 0.5 && widthRatio <= 1.0
+
+  // 세로는 타원 세로의 75-90% 사이여야 함
+  const heightRatio = faceHeight / ovalHeight
+  const isHeightGood = heightRatio >= 0.75 && heightRatio <= 1.2
+
+  console.log(widthRatio, heightRatio)
+
+  // 얼굴 중심이 타원 중심에 가까운지 확인
+  const centerDistanceX = Math.abs(faceCenter.x - centerX)
+  const centerDistanceY = Math.abs(faceCenter.y - centerY)
+  const isCentered = centerDistanceX < 0.05 && centerDistanceY < 0.07
+
+  // 모든 조건을 충족해야 함
+  return allPointsInside && isWidthGood && isHeightGood && isCentered
 }

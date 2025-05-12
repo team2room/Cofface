@@ -8,10 +8,9 @@ import ActionButton from '@/features/register/components/capture/ActionButton'
 import {
   CaptureContainer,
   Message,
-  SubMessage,
 } from '@/features/register/components/capture/styles'
 import { FaceDetectionState } from '@/interfaces/RegisterInterfaces'
-import { getMessage, getSubMessage } from '@/utils/CaptureUtils'
+import { getMessage } from '@/utils/CaptureUtils'
 import { useFaceDetection } from '@/features/register/hooks/useFaceDetection'
 import { Text } from '@/styles/typography'
 
@@ -44,7 +43,6 @@ export function FaceRegisterCapturePage() {
     handleStartCamera,
     handleRestartCapture,
     handleComplete,
-    renderGuidelines,
   } = useFaceDetection()
 
   return (
@@ -65,11 +63,6 @@ export function FaceRegisterCapturePage() {
               {getMessage(detectionState, loadingError, modelsLoaded)}
             </Text>
           </Message>
-          <SubMessage>
-            <Text variant="caption2" weight="medium" color="white">
-              {getSubMessage(detectionState, loadingError)}
-            </Text>
-          </SubMessage>
 
           {detectionState !== FaceDetectionState.COMPLETED && (
             <CameraView
@@ -79,7 +72,6 @@ export function FaceRegisterCapturePage() {
               timerProgress={timerProgress}
               videoRef={videoRef}
               canvasRef={canvasRef}
-              renderGuidelines={renderGuidelines}
             />
           )}
 

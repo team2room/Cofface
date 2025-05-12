@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as mp from '@mediapipe/face_mesh'
 import * as cam from '@mediapipe/camera_utils'
-import * as drawing from '@mediapipe/drawing_utils'
 import {
   CapturedImage,
   FaceDetectionState,
@@ -10,12 +9,10 @@ import {
 } from '@/interfaces/RegisterInterfaces'
 import {
   calculateFaceRotation,
-  checkFaceInCircle,
+  checkFaceInCustomOval,
   getBorderStatusMessage,
   isCorrectOrientation,
 } from '@/utils/CaptureUtils'
-
-import FaceGuidelines from '@/features/register/components/capture/FaceGuidelines'
 
 // 얼굴 인식 로직
 export function useFaceDetection() {
@@ -215,11 +212,12 @@ export function useFaceDetection() {
       setFaceDetected(faceDetectedNow)
 
       // 얼굴이 원 안에 있는지 확인
-      const isFaceInCircle = checkFaceInCircle(landmarks)
-      setFaceWithinBounds(isFaceInCircle)
+      // const isFaceInCircle = checkFaceInCircle(landmarks)
+      // setFaceWithinBounds(isFaceInCircle)
 
-      // 얼굴 랜드마크 그리기 제거 (숨김)
-      // drawing.drawConnectors 함수 호출 제거
+      // 얼굴이 타원 안에 적절하게 위치하는지 확인 (새로운 함수 사용)
+      const isFaceInOval = checkFaceInCustomOval(landmarks)
+      setFaceWithinBounds(isFaceInOval)
 
       // 3D 방향 계산 (roll, pitch, yaw)
       const rotationValues = calculateFaceRotation(landmarks)
@@ -233,7 +231,7 @@ export function useFaceDetection() {
 
       // 타이머가 진행 중일 때 방향 및 위치 확인
       if (timerInProgressRef.current) {
-        const isFaceCorrectlyPositioned = isFaceInCircle && isDirectionCorrect
+        const isFaceCorrectlyPositioned = isFaceInOval && isDirectionCorrect
 
         // 타이머가 진행 중인데 위치나 방향이 잘못된 경우
         if (!isFaceCorrectlyPositioned) {
@@ -254,9 +252,9 @@ export function useFaceDetection() {
       // 경계선 색상 설정
       if (stateTimer > 0) {
         setBorderColor('#4285F4') // 타이머 작동 중 (파란색)
-      } else if (isDirectionCorrect && isFaceInCircle) {
+      } else if (isDirectionCorrect && isFaceInOval) {
         setBorderColor('#00c853') // 올바른 방향 (초록색)
-      } else if (isFaceInCircle) {
+      } else if (isFaceInOval) {
         setBorderColor('#FFAB00') // 얼굴은 원 안에 있지만 방향이 맞지 않음 (주황색)
       } else {
         setBorderColor('#FFC107') // 얼굴이 원 밖에 있음 (노란색)
@@ -266,7 +264,7 @@ export function useFaceDetection() {
       if (currentState > FaceDetectionState.INIT) {
         checkFaceOrientation(
           rotationValues,
-          isFaceInCircle,
+          isFaceInOval,
           faceDetectedNow,
           currentState,
         )
@@ -630,11 +628,6 @@ export function useFaceDetection() {
     })
   }
 
-  // 안내 가이드라인 렌더링
-  const renderGuidelines = (): JSX.Element | null => {
-    return <FaceGuidelines detectionState={detectionState} />
-  }
-
   return {
     // 상태
     detectionState,
@@ -654,6 +647,5 @@ export function useFaceDetection() {
     handleStartCamera,
     handleRestartCapture,
     handleComplete,
-    renderGuidelines,
   }
 }

@@ -41,7 +41,6 @@ export interface CameraViewProps {
   timerProgress: number
   videoRef: React.RefObject<HTMLVideoElement>
   canvasRef: React.RefObject<HTMLCanvasElement>
-  renderGuidelines: () => JSX.Element | null
 }
 
 export interface CapturedImagesProps {

@@ -16,10 +16,6 @@ export const Message = tw.div`
   text-center mb-2
 `
 
-export const SubMessage = tw.div`
-  text-base text-center mb-4 text-gray
-`
-
 // 카메라 뷰 스타일
 export const FaceCircle = styled.div`
   ${tw`relative w-[280px] h-[280px] mb-6 rounded-full overflow-hidden mt-6`}

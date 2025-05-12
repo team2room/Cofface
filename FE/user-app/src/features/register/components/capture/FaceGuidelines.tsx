@@ -22,7 +22,9 @@ const OvalPath = ({ rotate = '' }) => (
   />
 )
 
-export function FaceGuidelines({ detectionState }: FaceGuidelinesProps) {
+export default function FaceGuidelines({
+  detectionState,
+}: FaceGuidelinesProps) {
   switch (detectionState) {
     case FaceDetectionState.FRONT_FACE:
       return (
