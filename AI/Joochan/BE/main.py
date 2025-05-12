@@ -31,7 +31,7 @@ logger = logging.getLogger("face_recognition")
 VECTOR_DIMENSION = 512  # InsightFace 임베딩 차원
 COLLECTION_NAME = "face_vectors"
 REQUIRED_FACE_DIRECTIONS = ["front", "left", "right", "up", "down"]
-SIMILARITY_THRESHOLD = 0.6  # 유사도 임계값
+SIMILARITY_THRESHOLD = 0.7  # 유사도 임계값
 
 
 # 데이터 모델
@@ -170,20 +170,41 @@ def extract_face_embedding(image, face_analyzer, face_recognizer):
 
 # 여러 각도의 얼굴 임베딩 통합
 def merge_embeddings(embeddings_dict):
-    """여러 각도의 얼굴 임베딩을 하나로 통합"""
+    """여러 각도의 얼굴 임베딩을 하나로 통합 - 정면 가중치 증가"""
     if not all(angle in embeddings_dict for angle in REQUIRED_FACE_DIRECTIONS):
         missing = [angle for angle in REQUIRED_FACE_DIRECTIONS if angle not in embeddings_dict]
         raise ValueError(f"누락된 얼굴 각도가 있습니다: {missing}")
 
-    # 모든 임베딩을 평균화하여 통합
-    all_embeddings = np.array(list(embeddings_dict.values()))
-    merged_embedding = np.mean(all_embeddings, axis=0)
-
+    # 각 각도별 가중치 설정
+    weights = {
+        'front': 3.0,    # 정면에 3배 가중치
+        'left': 1.0,
+        'right': 1.0,
+        'up': 1.0,
+        'down': 1.0
+    }
+    
+    # 가중치가 적용된 임베딩 리스트 생성
+    weighted_embeddings = []
+    for angle, embedding in embeddings_dict.items():
+        # 가중치만큼 해당 임베딩 복제하여 추가
+        weight = weights.get(angle, 1.0)
+        repeats = int(weight)  # 정수 부분
+        weighted_embeddings.extend([embedding] * repeats)
+        
+        # 소수점 가중치 처리 (확률적으로 추가)
+        fraction = weight - repeats
+        if fraction > 0 and np.random.random() < fraction:
+            weighted_embeddings.append(embedding)
+    
+    # 가중치 적용된 임베딩 평균 계산
+    merged_embedding = np.mean(weighted_embeddings, axis=0)
+    
     # 정규화
     norm = np.linalg.norm(merged_embedding)
     if norm > 0:
         merged_embedding = merged_embedding / norm
-
+    
     return merged_embedding
 
 
@@ -324,7 +345,7 @@ async def verify_face(request: VerificationRequest):
             adjusted_confidence = (0.6 - match.score) / 0.6 * 100
             adjusted_confidence = max(0, min(100, adjusted_confidence))
             
-            logger.info(f"사용자 확인 성공: {user_id}, 원본 신뢰도: {raw_confidence:.4f}, 조정 신뢰도: {adjusted_confidence:.2f}%")
+            logger.info(f"사용자 확인 성공: {user_id}, 신뢰도: {raw_confidence:.4f}, 코사인 거리: {match.score:.2f}") # {adjusted_confidence:.2f}%")
             return VerificationResponse(
                 user_id=user_id,
                 confidence=adjusted_confidence / 100,  # 0~1 범위로 변환
@@ -380,7 +401,7 @@ async def verify_embedding(request: EmbeddingVerificationRequest):
             adjusted_confidence = (0.6 - match.score) / 0.6 * 100
             adjusted_confidence = max(0, min(100, adjusted_confidence))
             
-            logger.info(f"사용자 확인 성공: {user_id}, 원본 신뢰도: {raw_confidence:.4f}, 조정 신뢰도: {adjusted_confidence:.2f}%, 라이브니스: {request.liveness}, 거리: {request.distance:.2f}m")
+            logger.info(f"사용자 확인 성공: {user_id}, 원본 신뢰도: {raw_confidence:.4f}, 코사인 거리: {match.score:.2f}, 라이브니스: {request.liveness}, 거리: {request.distance:.2f}m")
             return VerificationResponse(
                 user_id=user_id,
                 confidence=adjusted_confidence / 100,  # 0~1 범위로 변환

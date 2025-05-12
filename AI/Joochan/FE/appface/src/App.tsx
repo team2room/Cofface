@@ -11,15 +11,8 @@ import {
 import FaceVerification from './components/face-verification/FaceVerification'
 import FaceRegistration from './components/FaceRegistration'
 
-import './App.css'
-
 // 환경 변수에서 API URL 가져오기 또는 기본값 설정
-// process 변수 관련 오류 해결
-const API_URL =
-  (typeof process !== 'undefined' &&
-    process.env &&
-    process.env.REACT_APP_API_URL) ||
-  'http://localhost:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 // 사용자 정보 인터페이스
 interface User {
@@ -136,30 +129,39 @@ const App: React.FC = () => {
     }
 
     return (
-      <div className="login-container">
-        <h2>로그인</h2>
+      <div className="w-full max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold mb-6 text-center">로그인</h2>
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>사용자 ID</label>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-medium mb-2">
+              사용자 ID
+            </label>
             <input
               type="text"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
               placeholder="사용자 ID를 입력하세요"
               required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
-          <div className="form-group">
-            <label>이름</label>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-medium mb-2">
+              이름
+            </label>
             <input
               type="text"
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
               placeholder="이름을 입력하세요"
               required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
-          <button type="submit" className="btn-primary">
+          <button
+            type="submit"
+            className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition duration-300"
+          >
             로그인
           </button>
         </form>
@@ -169,24 +171,39 @@ const App: React.FC = () => {
 
   // 홈 화면
   const Home = () => (
-    <div className="home-container">
-      <h1>안면인식 시스템</h1>
-      <p>안면인식 기반 결제 시스템에 오신 것을 환영합니다.</p>
+    <div className="w-full max-w-md mx-auto px-4 py-6 text-center">
+      <h1 className="text-3xl md:text-4xl font-bold mb-4 text-green-600">
+        안면인식 시스템
+      </h1>
+      <p className="text-gray-700 mb-8">
+        안면인식 기반 결제 시스템에 오신 것을 환영합니다.
+      </p>
 
       {isLoggedIn ? (
-        <div className="user-options">
-          <h2>{currentUser?.name}님, 환영합니다!</h2>
-          <p>다음 중 원하는 작업을 선택하세요:</p>
-          <div className="button-group">
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-bold mb-4">
+            {currentUser?.name}님, 환영합니다!
+          </h2>
+          <p className="mb-4">다음 중 원하는 작업을 선택하세요:</p>
+          <div className="flex flex-col sm:flex-row justify-center gap-3">
             {!currentUser?.isRegistered && (
-              <Link to="/register" className="btn-primary">
+              <Link
+                to="/register"
+                className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition duration-300"
+              >
                 얼굴 등록
               </Link>
             )}
-            <Link to="/verify" className="btn-primary">
+            <Link
+              to="/verify"
+              className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md transition duration-300"
+            >
               얼굴 인증
             </Link>
-            <button onClick={handleLogout} className="btn-secondary">
+            <button
+              onClick={handleLogout}
+              className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition duration-300"
+            >
               로그아웃
             </button>
           </div>
@@ -199,35 +216,73 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <div className="app-container">
+      <div className="flex flex-col min-h-screen bg-gray-100">
         {/* 헤더 */}
-        <header className="app-header">
-          <div className="logo">
-            <Link to="/">얼굴인식 시스템</Link>
-          </div>
-          <div className="nav-links">
-            <Link to="/">홈</Link>
-            {isLoggedIn && (
-              <>
-                {!currentUser?.isRegistered && (
-                  <Link to="/register">얼굴 등록</Link>
+        <header className="bg-white shadow-sm p-4">
+          <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-4 md:mb-0">
+              <Link to="/" className="text-xl font-bold text-green-600">
+                얼굴인식 시스템
+              </Link>
+            </div>
+            <div className="flex items-center flex-wrap gap-4">
+              <div className="flex gap-4">
+                <Link
+                  to="/"
+                  className="text-gray-700 hover:text-green-600 transition"
+                >
+                  홈
+                </Link>
+                {isLoggedIn && (
+                  <>
+                    {!currentUser?.isRegistered && (
+                      <Link
+                        to="/register"
+                        className="text-gray-700 hover:text-green-600 transition"
+                      >
+                        얼굴 등록
+                      </Link>
+                    )}
+                    <Link
+                      to="/verify"
+                      className="text-gray-700 hover:text-green-600 transition"
+                    >
+                      얼굴 인증
+                    </Link>
+                  </>
                 )}
-                <Link to="/verify">얼굴 인증</Link>
-              </>
-            )}
-          </div>
-          <div className="server-status">
-            서버 상태:
-            <span className={`status-indicator ${serverStatus}`}></span>
+              </div>
+              <div className="flex items-center text-sm">
+                서버 상태:
+                <span
+                  className={`inline-block w-2.5 h-2.5 rounded-full ml-2 ${
+                    serverStatus === 'online'
+                      ? 'bg-green-500'
+                      : serverStatus === 'offline'
+                        ? 'bg-red-500'
+                        : 'bg-yellow-500'
+                  }`}
+                ></span>
+              </div>
+            </div>
           </div>
         </header>
 
         {/* 알림 메시지 */}
         {notification.show && (
-          <div className={`notification ${notification.type}`}>
+          <div
+            className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center justify-between min-w-64 max-w-xs sm:max-w-md animate-slideIn
+              ${
+                notification.type === 'success'
+                  ? 'bg-green-500 text-white'
+                  : notification.type === 'error'
+                    ? 'bg-red-500 text-white'
+                    : 'bg-blue-500 text-white'
+              }`}
+          >
             {notification.message}
             <button
-              className="close-btn"
+              className="ml-4 text-white text-xl"
               onClick={() =>
                 setNotification((prev) => ({ ...prev, show: false }))
               }
@@ -238,7 +293,7 @@ const App: React.FC = () => {
         )}
 
         {/* 메인 컨텐츠 */}
-        <main className="app-content">
+        <main className="flex-1 p-4 max-w-4xl w-full mx-auto">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route
@@ -268,11 +323,6 @@ const App: React.FC = () => {
             />
           </Routes>
         </main>
-
-        {/* 푸터 */}
-        <footer className="app-footer">
-          <p>&copy; 2025 안면인식 결제 시스템. All rights reserved.</p>
-        </footer>
       </div>
     </Router>
   )

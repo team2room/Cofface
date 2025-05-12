@@ -1150,12 +1150,12 @@ class RealSenseFaceLiveness:
                     #             (0, 255, 0) if is_live else (0, 0, 255), 
                     #             2)
 
-                    # 성별과 나이 텍스트 표시
-                    label = f"{gender_str}, {age:.0f}세"
-                    cv2.putText(display_image, label, 
-                            (int(bbox[0]), int(bbox[1] - 10)), 
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, 
-                            (0, 255, 0) if is_live else (0, 0, 255), 2)
+                    # # 성별과 나이 텍스트 표시
+                    # label = f"{gender_str}, {age:.0f}세"
+                    # cv2.putText(display_image, label, 
+                    #         (int(bbox[0]), int(bbox[1] - 10)), 
+                    #         cv2.FONT_HERSHEY_SIMPLEX, 0.5, 
+                    #         (0, 255, 0) if is_live else (0, 0, 255), 2)
 
                 process_time += time.time() - process_start
                 frame_count += 1
