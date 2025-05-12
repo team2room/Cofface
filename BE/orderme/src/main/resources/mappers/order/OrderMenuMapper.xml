@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.orderme.order.mapper.OrderMenuMapper">
+    <!-- 주문 ID로 주문 메뉴 목록 조회 -->
+    <select id="findByOrderId" resultType="com.ssafy.orderme.order.model.OrderMenu">
+        SELECT
+            order_menu_id as orderMenuId,
+            order_id as orderId,
+            menu_id as menuId,
+            menu_name as menuName,
+            menu_price as menuPrice,
+            quantity,
+            total_price as totalPrice,
+            is_deleted as isDeleted,
+            deleted_at as deletedAt
+        FROM ordermenu
+        WHERE order_id = #{orderId}
+          AND is_deleted = 0
+        ORDER BY order_menu_id
+    </select>
+
+    <!-- 주문 메뉴 추가 -->
+    <insert id="insertOrderMenu" parameterType="com.ssafy.orderme.order.model.OrderMenu"
+            useGeneratedKeys="true" keyProperty="orderMenuId">
+        INSERT INTO ordermenu (
+            order_id,
+            menu_id,
+            menu_name,
+            menu_price,
+            quantity,
+            total_price,
+            is_deleted
+        ) VALUES (
+                     #{orderId},
+                     #{menuId},
+                     #{menuName},
+                     #{menuPrice},
+                     #{quantity},
+                     #{totalPrice},
+                     #{isDeleted}
+                 )
+    </insert>
+</mapper>

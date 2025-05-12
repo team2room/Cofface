@@ -1,25 +1,168 @@
 package com.ssafy.orderme.payment.service;
 
+import com.ssafy.orderme.kiosk.mapper.MenuMapper;
+import com.ssafy.orderme.kiosk.model.*;
+import com.ssafy.orderme.order.mapper.*;
+import com.ssafy.orderme.order.model.*;
+import com.ssafy.orderme.payment.dto.request.AutoPaymentRequest;
+import com.ssafy.orderme.payment.dto.request.MenuOrderRequest;
+import com.ssafy.orderme.payment.dto.request.OptionOrderRequest;
 import com.ssafy.orderme.payment.dto.response.CardCompanyResponse;
 import com.ssafy.orderme.payment.mapper.OrderMapper;
 import com.ssafy.orderme.payment.mapper.PaymentInfoMapper;
 import com.ssafy.orderme.payment.mapper.PaymentMapper;
 import com.ssafy.orderme.payment.model.CardInfo;
+import com.ssafy.orderme.payment.model.Order;
+import com.ssafy.orderme.payment.model.Payment;
 import com.ssafy.orderme.payment.model.PaymentInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AutoPaymentService {
     public final CardService cardService;
+
     public final PaymentInfoMapper paymentInfoMapper;
     public final OrderMapper orderMapper;
+    public final PaymentMapper paymentMapper;
+    public final MenuMapper menuMapper;
+    public final OrderMenuMapper orderMenuMapper;
+    public final OptionItemMapper optionItemMapper;
+    public final OrderOptionMapper orderOptionMapper;
+    public final StampHistoryMapper stampHistoryMapper;
+    public final StampMapper stampMapper;
+    public final StampPolicyMapper stampPolicyMapper;
+
+    /**
+     * 자동 결제 처리
+     */
+    @Transactional
+    public Payment processAutoPayment(AutoPaymentRequest request, String userId) {
+        // 1. 사용자의 결제 정보 가져오기
+        PaymentInfo paymentInfo;
+        if (request.getPaymentInfoId() != null) {
+            // 지정된 결제 정보 가져오기
+            paymentInfo = paymentInfoMapper.findById(request.getPaymentInfoId());
+            if (paymentInfo == null || !paymentInfo.getUserId().equals(userId)) {
+                throw new IllegalArgumentException("유효하지 않은 결제 정보입니다.");
+            }
+        } else {
+            // 기본 결제 정보 가져오기
+            paymentInfo = paymentInfoMapper.findDefaultByUserId(userId);
+            if (paymentInfo == null) {
+                throw new IllegalArgumentException("등록된 결제 정보가 없습니다.");
+            }
+        }
+
+        // 2. 주문 생성
+        Order order = Order.builder()
+                .userId(userId)
+                .kioskId(request.getKioskId())
+                .totalAmount(request.getTotalAmount())
+                .orderDate(LocalDateTime.now())
+                .isStampUsed(request.getIsStampUsed() != null ? request.getIsStampUsed() : false)
+                .orderStatus("ACCEPTED") // 자동 결제는 바로 승인 상태로 설정
+                .isTakeout(request.getIsTakeout() != null ? request.getIsTakeout() : false)
+                .isGuest(false) // 등록된 사용자이므로 게스트 아님
+                .isDelete(false)
+                .build();
+
+        orderMapper.insertOrder(order);
+
+        // 3. 주문 메뉴 추가
+        insertOrderMenus(order.getOrderId(), request.getMenuOrders());
+
+        // 4. 스탬프 처리
+        if (request.getIsStampUsed() != null && request.getIsStampUsed()) {
+            handleStampUsage(userId, request.getKioskId(), order.getOrderId());
+        } else {
+            // 스탬프 적립
+            addStamps(userId, request.getKioskId(), order.getOrderId());
+        }
+
+        // 5. 결제 처리 (실제 결제 로직은 외부 결제 시스템과 연동 필요)
+        Payment payment = Payment.builder()
+                .orderId(order.getOrderId())
+                .amount(request.getTotalAmount().doubleValue())
+                .paymentType("CARD") // 카드 결제
+                .status("DONE") // 결제 완료
+                .paymentDate(LocalDateTime.now())
+                .paymentKey("AUTO-" + UUID.randomUUID().toString()) // 자동 결제용 키 생성
+                .build();
+
+        paymentMapper.insertPayment(payment);
+
+        return payment;
+    }
+
+    /**
+     * 주문 메뉴 추가
+     */
+    private void insertOrderMenus(Integer orderId, List<MenuOrderRequest> menuOrders) {
+        for (MenuOrderRequest menuOrder : menuOrders) {
+            // 메뉴 정보 가져오기 (메뉴 정보 Mapper 필요)
+            Menu menu = menuMapper.findById(menuOrder.getMenuId());
+            if (menu == null || menu.getIsDeleted()) {
+                throw new IllegalArgumentException("유효하지 않은 메뉴입니다: " + menuOrder.getMenuId());
+            }
+
+            // 메뉴 가격 계산 (옵션 포함)
+            BigDecimal menuPrice = menu.getPrice();
+            BigDecimal totalPrice = menuPrice.multiply(BigDecimal.valueOf(menuOrder.getQuantity()));
+
+            // 주문 메뉴 생성
+            OrderMenu orderMenu = OrderMenu.builder()
+                    .orderId(orderId)
+                    .menuId(menu.getMenuId())
+                    .menuName(menu.getMenuName())
+                    .menuPrice(menuPrice.intValue())
+                    .quantity(menuOrder.getQuantity())
+                    .totalPrice(totalPrice.intValue())
+                    .isDeleted(false)
+                    .build();
+
+            orderMenuMapper.insertOrderMenu(orderMenu);
+
+            // 옵션이 있는 경우 처리
+            if (menuOrder.getOptions() != null && !menuOrder.getOptions().isEmpty()) {
+                insertOrderOptions(orderMenu.getOrderMenuId(), menuOrder.getOptions());
+            }
+        }
+    }
+
+    /**
+     * 주문 옵션 추가
+     */
+    private void insertOrderOptions(Integer orderMenuId, List<OptionOrderRequest> options) {
+        for (OptionOrderRequest option : options) {
+            // 옵션 항목 정보 가져오기 (옵션 항목 Mapper 필요)
+            OptionItem optionItem = optionItemMapper.findById(option.getOptionItemId());
+            if (optionItem == null || optionItem.getIsDeleted()) {
+                throw new IllegalArgumentException("유효하지 않은 옵션입니다: " + option.getOptionItemId());
+            }
+
+            // 주문 옵션 생성
+            OrderOption orderOption = OrderOption.builder()
+                    .orderMenuId(orderMenuId)
+                    .optionItemId(optionItem.getItemId())
+                    .optionName(optionItem.getOptionName())
+                    .optionPrice(optionItem.getAdditionalPrice())
+                    .quantity(option.getQuantity())
+                    .isDeleted(false)
+                    .build();
+
+            orderOptionMapper.insertOrderOption(orderOption);
+        }
+    }
 
     /**
      * 카드번호로 카드사 정보 조회
@@ -41,6 +184,77 @@ public class AutoPaymentService {
                 .type(cardInfo.getType())
                 .imageUrl(imageUrl)
                 .build();
+    }
+
+    /**
+     * 스탬프 사용 처리
+     */
+    private void handleStampUsage(String userId, Integer storeId, Integer orderId) {
+        // 스탬프 정책 조회
+        StampPolicy policy = stampPolicyMapper.findActiveByStoreId(storeId);
+        if (policy == null) {
+            throw new IllegalArgumentException("스탬프 정책을 찾을 수 없습니다.");
+        }
+
+        // 사용자 스탬프 조회
+        Stamp userStamp = stampMapper.findByUserIdAndStoreId(userId, storeId);
+        if (userStamp == null || userStamp.getStampCount() < policy.getStampsRequired()) {
+            throw new IllegalArgumentException("스탬프가 부족합니다.");
+        }
+
+        // 스탬프 차감
+        userStamp.setStampCount(userStamp.getStampCount() - policy.getStampsRequired());
+        userStamp.setLastOrderId(orderId);
+        stampMapper.updateStamp(userStamp);
+
+        // 스탬프 사용 이력 추가
+        StampHistory history = StampHistory.builder()
+                .stampId(userStamp.getStampId())
+                .orderId(orderId)
+                .actionType("USE")
+                .stampCount(policy.getStampsRequired())
+                .policyId(policy.getPolicyId())
+                .build();
+
+        stampHistoryMapper.insertHistory(history);
+    }
+
+    /**
+     * 스탬프 적립 처리
+     */
+    private void addStamps(String userId, Integer storeId, Integer orderId) {
+        // 스탬프 정책에 따라 적립할 스탬프 수 결정 (예: 주문 1건당 1개)
+        int stampsToAdd = 1;
+
+        // 사용자 스탬프 조회
+        Stamp userStamp = stampMapper.findByUserIdAndStoreId(userId, storeId);
+
+        if (userStamp == null) {
+            // 새로운 스탬프 생성
+            userStamp = Stamp.builder()
+                    .userId(userId)
+                    .storeId(storeId)
+                    .stampCount(stampsToAdd)
+                    .lastOrderId(orderId)
+                    .build();
+
+            stampMapper.insertStamp(userStamp);
+        } else {
+            // 기존 스탬프 업데이트
+            userStamp.setStampCount(userStamp.getStampCount() + stampsToAdd);
+            userStamp.setLastOrderId(orderId);
+            stampMapper.updateStamp(userStamp);
+        }
+
+        // 스탬프 적립 이력 추가
+        StampHistory history = StampHistory.builder()
+                .stampId(userStamp.getStampId())
+                .orderId(orderId)
+                .actionType("EARN")
+                .stampCount(stampsToAdd)
+                .build();
+
+        stampHistoryMapper.insertHistory(history);
     }
 
     /**

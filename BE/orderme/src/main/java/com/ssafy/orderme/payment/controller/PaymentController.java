@@ -95,7 +95,7 @@ public class PaymentController {
     @GetMapping("/success")
     public ResponseEntity<ApiResponse<?>> paymentSuccess(
             @RequestParam("paymentKey") String paymentKey,
-            @RequestParam("orderId") String orderId,
+            @RequestParam("orderId") Integer orderId,
             @RequestParam("amount") BigDecimal amount){
 
         log.info("결제 성공 콜백: paymentKey={}, orderId={}, amount={}", paymentKey, orderId, amount);
@@ -116,8 +116,9 @@ public class PaymentController {
             // 자동으로 결제 승인 처리 (이미 승인된 경우를 대비해 검증 로직 필요)
             PaymentApprovalRequest approvalRequest = new PaymentApprovalRequest();
             approvalRequest.setPaymentKey(paymentKey);
-            approvalRequest.setOrderId(orderId);
+            approvalRequest.setOrderId(orderId.toString());
             approvalRequest.setAmount(amount);
+            approvalRequest.setPaymentType("CARD"); // 기본값 설정 또는 요청에서 가져오기
 
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("orderId", orderId);
@@ -125,13 +126,10 @@ public class PaymentController {
             responseData.put("amount", amount);
 
             return ResponseEntity.ok(ApiResponse.success("결제가 완료되었습니다.", responseData));
-
-
         }catch(Exception e){
             log.error("결제 성공 처리 중 오류 발생", e);
             return ResponseEntity.ok(ApiResponse.error(500, "결제 처리 중 오류가 발생했습니다."));
         }
-
     }
 
     // 결제 실패 처리
@@ -139,7 +137,7 @@ public class PaymentController {
     public ResponseEntity<ApiResponse<?>> paymentFail(
             @RequestParam("code") String errorCode,
             @RequestParam("message") String errorMessage,
-            @RequestParam("orderId") String orderId) {
+            @RequestParam("orderId") Integer orderId) {
 
         log.info("결제 실패 콜백: code={}, message={}, orderId={}", errorCode, errorMessage, orderId);
 

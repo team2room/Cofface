@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.orderme.order.mapper.StampMapper">
+    <!-- ID로 스탬프 조회 -->
+    <select id="findById" resultType="com.ssafy.orderme.order.model.Stamp">
+        SELECT
+            stamp_id as stampId,
+            user_id as userId,
+            store_id as storeId,
+            stamp_count as stampCount,
+            last_order_id as lastOrderId,
+            created_at as createdAt,
+            updated_at as updatedAt
+        FROM stamps
+        WHERE stamp_id = #{stampId}
+    </select>
+
+    <!-- 사용자 ID와 매장 ID로 스탬프 조회 -->
+    <select id="findByUserIdAndStoreId" resultType="com.ssafy.orderme.order.model.Stamp">
+        SELECT
+            stamp_id as stampId,
+            user_id as userId,
+            store_id as storeId,
+            stamp_count as stampCount,
+            last_order_id as lastOrderId,
+            created_at as createdAt,
+            updated_at as updatedAt
+        FROM stamps
+        WHERE user_id = #{userId}
+          AND store_id = #{storeId}
+    </select>
+
+    <!-- 사용자별 스탬프 목록 조회 -->
+    <select id="findByUserId" resultType="com.ssafy.orderme.order.model.Stamp">
+        SELECT
+            stamp_id as stampId,
+            user_id as userId,
+            store_id as storeId,
+            stamp_count as stampCount,
+            last_order_id as lastOrderId,
+            created_at as createdAt,
+            updated_at as updatedAt
+        FROM stamps
+        WHERE user_id = #{userId}
+        ORDER BY store_id
+    </select>
+
+    <!-- 매장별 스탬프 목록 조회 -->
+    <select id="findByStoreId" resultType="com.ssafy.orderme.order.model.Stamp">
+        SELECT
+            stamp_id as stampId,
+            user_id as userId,
+            store_id as storeId,
+            stamp_count as stampCount,
+            last_order_id as lastOrderId,
+            created_at as createdAt,
+            updated_at as updatedAt
+        FROM stamps
+        WHERE store_id = #{storeId}
+        ORDER BY user_id
+    </select>
+
+    <!-- 사용자와 매장 조합으로 스탬프 존재 여부 확인 -->
+    <select id="existsByUserIdAndStoreId" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM stamps
+        WHERE user_id = #{userId}
+          AND store_id = #{storeId}
+    </select>
+
+    <!-- 스탬프 추가 -->
+    <insert id="insertStamp" parameterType="com.ssafy.orderme.order.model.Stamp"
+            useGeneratedKeys="true" keyProperty="stampId">
+        INSERT INTO stamps (
+            user_id,
+            store_id,
+            stamp_count,
+            last_order_id
+        ) VALUES (
+                     #{userId},
+                     #{storeId},
+                     #{stampCount},
+                     #{lastOrderId}
+                 )
+    </insert>
+
+    <!-- 스탬프 업데이트 -->
+    <update id="updateStamp" parameterType="com.ssafy.orderme.order.model.Stamp">
+        UPDATE stamps
+        SET
+            stamp_count = #{stampCount},
+            last_order_id = #{lastOrderId},
+            updated_at = NOW()
+        WHERE stamp_id = #{stampId}
+    </update>
+
+    <!-- 스탬프 삭제 -->
+    <delete id="deleteStamp">
+        DELETE FROM stamps
+        WHERE stamp_id = #{stampId}
+    </delete>
+</mapper>

@@ -17,4 +17,8 @@ public interface OrderMapper {
     int updateOrderStatus(@Param("orderId") Integer orderId, @Param("orderStatus") String orderStatus);
     int updatePaymentStatus(@Param("orderId") Integer orderId, @Param("paymentStatus") String paymentStatus);
     int softDeleteOrder(@Param("orderId") Integer orderId);
+
+    // 사용자별 최근 주문 목록 조회
+    List<Order> findRecentByUserId(@Param("userId") String userId, @Param("limit") int limit);
+
 }

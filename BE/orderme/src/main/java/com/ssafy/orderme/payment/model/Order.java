@@ -13,15 +13,16 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Order {
-    private String orderId;
+    private Integer orderId;
     private String userId;
-    private Integer kioskId;
+    private Integer kioskId; //store_id
     private BigDecimal totalAmount;
     private LocalDateTime orderDate;
-    private String paymentMethod;
-    private String paymentStatus;
     private Boolean isStampUsed;
     private String orderStatus;
     private Boolean isTakeout;
+    private Boolean isGuest;
+    private Integer age;
+    private String gender;
     private Boolean isDelete;
 }
