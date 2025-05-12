@@ -46,6 +46,14 @@ class VerificationResponse(BaseModel):
     matched: bool
     processing_time: float
 
+class VerificationRequest(BaseModel):
+    rgb_image: str
+    depth_image: Optional[str] = None
+
+class EmbeddingVerificationRequest(BaseModel):
+    embedding: List[float]
+    liveness: bool = True
+    distance: float = 0.0
 
 # InsightFace 모델을 관리하는 클래스
 class FaceRecognitionSystem:
@@ -182,10 +190,18 @@ def merge_embeddings(embeddings_dict):
 # Base64 디코딩 함수
 def base64_to_image(base64_str):
     """Base64 문자열을 OpenCV 이미지로 변환"""
-    img_bytes = base64.b64decode(base64_str.split(',')[1] if ',' in base64_str else base64_str)
-    nparr = np.frombuffer(img_bytes, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    return img
+    try:
+        # 'data:image/jpeg;base64,' 부분 제거
+        if ',' in base64_str:
+            base64_str = base64_str.split(',')[1]
+        
+        img_bytes = base64.b64decode(base64_str)
+        nparr = np.frombuffer(img_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        return img
+    except Exception as e:
+        logger.error(f"Base64 이미지 디코딩 실패: {e}")
+        return None
 
 
 # 시스템 인스턴스 생성
@@ -269,12 +285,12 @@ async def register_face(registration: FaceRegistrationRequest):
 
 # API 엔드포인트: 얼굴 인증
 @app.post("/verify", response_model=VerificationResponse)
-async def verify_face(rgb_image: str, depth_image: Optional[str] = None):
+async def verify_face(request: VerificationRequest):
     """RGB 이미지와 깊이 이미지를 사용하여 사용자 확인"""
     start_time = datetime.now()
     try:
         # RGB 이미지에서 얼굴 검출 및 임베딩 추출
-        rgb_img = base64_to_image(rgb_image)
+        rgb_img = base64_to_image(request.rgb_image)
         if rgb_img is None:
             raise HTTPException(status_code=400, detail="RGB 이미지 디코딩 실패")
 
@@ -284,10 +300,8 @@ async def verify_face(rgb_image: str, depth_image: Optional[str] = None):
             raise HTTPException(status_code=400, detail="얼굴을 찾을 수 없음")
 
         # 깊이 정보가 있으면 추가 분석 (선택사항)
-        if depth_image:
-            depth_img = base64_to_image(depth_image)
-            # 여기서 깊이 정보를 활용한 추가 검증 로직 구현 가능
-            # 예: 3D 얼굴 스푸핑 방지, 깊이 기반 마스크 탐지 등
+        if request.depth_image:
+            depth_img = base64_to_image(request.depth_image)
 
         # 벡터 DB에서 검색
         search_result = face_system.db_client.search(
@@ -303,12 +317,17 @@ async def verify_face(rgb_image: str, depth_image: Optional[str] = None):
             # 매칭 성공
             match = search_result[0]
             user_id = match.payload.get("user_id")
-            confidence = 1.0 - match.score  # 코사인 거리를 신뢰도로 변환
-
-            logger.info(f"사용자 확인 성공: {user_id}, 신뢰도: {confidence:.4f}")
+            
+            # 코사인 거리를 향상된 신뢰도로 변환
+            raw_confidence = 1.0 - match.score
+            # 0.6 거리가 0% 신뢰도, 0.0 거리가 100% 신뢰도가 되도록 조정
+            adjusted_confidence = (0.6 - match.score) / 0.6 * 100
+            adjusted_confidence = max(0, min(100, adjusted_confidence))
+            
+            logger.info(f"사용자 확인 성공: {user_id}, 원본 신뢰도: {raw_confidence:.4f}, 조정 신뢰도: {adjusted_confidence:.2f}%")
             return VerificationResponse(
                 user_id=user_id,
-                confidence=confidence,
+                confidence=adjusted_confidence / 100,  # 0~1 범위로 변환
                 matched=True,
                 processing_time=processing_time
             )
@@ -326,6 +345,61 @@ async def verify_face(rgb_image: str, depth_image: Optional[str] = None):
         logger.error(f"얼굴 확인 중 오류 발생: {e}")
         raise HTTPException(status_code=500, detail=f"얼굴 확인 실패: {str(e)}")
 
+
+@app.post("/verify_embedding", response_model=VerificationResponse)
+async def verify_embedding(request: EmbeddingVerificationRequest):
+    """임베딩을 직접 받아 사용자 확인"""
+    start_time = datetime.now()
+    try:
+        # 임베딩을 numpy 배열로 변환
+        embedding = np.array(request.embedding)
+        
+        # 임베딩 정규화
+        norm = np.linalg.norm(embedding)
+        if norm > 0:
+            embedding = embedding / norm
+        
+        # 벡터 DB에서 검색
+        search_result = face_system.db_client.search(
+            collection_name=COLLECTION_NAME,
+            query_vector=embedding.tolist(),
+            limit=1,
+            score_threshold=SIMILARITY_THRESHOLD
+        )
+
+        processing_time = (datetime.now() - start_time).total_seconds()
+
+        if search_result and len(search_result) > 0:
+            # 매칭 성공
+            match = search_result[0]
+            user_id = match.payload.get("user_id")
+            
+            # 코사인 거리를 향상된 신뢰도로 변환
+            raw_confidence = 1.0 - match.score
+            # 0.6 거리가 0% 신뢰도, 0.0 거리가 100% 신뢰도가 되도록 조정
+            adjusted_confidence = (0.6 - match.score) / 0.6 * 100
+            adjusted_confidence = max(0, min(100, adjusted_confidence))
+            
+            logger.info(f"사용자 확인 성공: {user_id}, 원본 신뢰도: {raw_confidence:.4f}, 조정 신뢰도: {adjusted_confidence:.2f}%, 라이브니스: {request.liveness}, 거리: {request.distance:.2f}m")
+            return VerificationResponse(
+                user_id=user_id,
+                confidence=adjusted_confidence / 100,  # 0~1 범위로 변환
+                matched=True,
+                processing_time=processing_time
+            )
+        else:
+            # 매칭 실패
+            logger.info(f"사용자 확인 실패: 매칭되는 얼굴 없음, 라이브니스: {request.liveness}, 거리: {request.distance:.2f}m")
+            return VerificationResponse(
+                user_id=None,
+                confidence=0.0,
+                matched=False,
+                processing_time=processing_time
+            )
+
+    except Exception as e:
+        logger.error(f"임베딩 확인 중 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail=f"임베딩 확인 실패: {str(e)}")
 
 # 서버 상태 확인
 @app.get("/health")
