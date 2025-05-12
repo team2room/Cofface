@@ -1,117 +1,85 @@
+import tw from 'twin.macro'
 import styled from '@emotion/styled'
 import { colors } from '@/styles/colors'
+import {
+  FaceCircleProps,
+  TimerCircleProps,
+} from '@/interfaces/RegisterInterfaces'
 
 // 캡처 컨테이너 스타일
-export const CaptureContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  flex: 1;
-  position: relative;
+export const CaptureContainer = tw.div`
+  flex flex-col items-center w-full flex-1 relative
 `
 
 // 메시지 스타일
-export const Message = styled.div`
-  font-size: 20px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 8px;
+export const Message = tw.div`
+  text-center mb-2
 `
 
-export const SubMessage = styled.div`
-  font-size: 16px;
-  text-align: center;
-  margin-bottom: 16px;
-  color: #aaa;
+export const SubMessage = tw.div`
+  text-base text-center mb-4 text-gray
 `
 
 // 카메라 뷰 스타일
-export const FaceCircle = styled.div<FaceCircleProps>`
-  position: relative;
-  width: 280px;
-  height: 280px;
-  margin-bottom: 24px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 4px solid ${(props) => props.borderColor || '#333'};
-  transition: border-color 0.3s ease;
+export const FaceCircle = styled.div`
+  ${tw`relative w-[280px] h-[280px] mb-6 rounded-full overflow-hidden mt-6`}
+  border: 4px solid #333;
 `
 
-export const VideoContainer = styled.div`
-  position: relative;
-  width: 100%;
-  height: 100%;
+// 얼굴 가이드 타원형 - SVG 사용
+export const FaceGuideCircle = styled.div<FaceCircleProps>`
+  ${tw`absolute top-0 left-0 w-full h-full z-20 pointer-events-none`}
+
+  &:after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 90%;
+    height: 105%;
+    transform: translate(-50%, -50%);
+    border: 6px solid ${(props) => props.borderColor || '#333'};
+    border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+  }
 `
 
-export const Video = styled.video`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  min-width: 100%;
-  min-height: 100%;
-  width: auto;
-  height: auto;
-  transform: translateX(-50%) translateY(-50%) scaleX(-1);
+export const VideoContainer = tw.div`
+  relative w-full h-full
 `
 
-export const Canvas = styled.canvas`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transform: scaleX(-1); // 캔버스도 비디오와 동일하게 좌우 반전
+export const Video = tw.video`
+  absolute top-1/2 left-1/2 min-w-full min-h-full w-auto h-auto
+  transform -translate-x-1/2 -translate-y-1/2 -scale-x-100
 `
 
-export const GuideLine = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
+export const Canvas = tw.canvas`
+  absolute top-0 left-0 w-full h-full
+  transform -scale-x-100
+`
+
+export const GuideLine = tw.div`
+  absolute top-0 left-0 w-full h-full z-10
 `
 
 // 타이머 관련 스타일
-export const TimerDisplay = styled.div`
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 24px;
-  font-weight: bold;
-  color: white;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 3;
+export const TimerDisplay = tw.div`
+  absolute top-2.5 right-2.5 text-2xl font-bold text-white
+  w-10 h-10 flex items-center justify-center z-30
 `
 
-export const TimerCircleContainer = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-  pointer-events: none;
+export const TimerCircleContainer = tw.div`
+  absolute top-0 left-0 w-full h-full z-10
+  pointer-events-none
 `
 
-export const TimerCircleSVG = styled.svg`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+export const TimerCircleSVG = tw.svg`
+  absolute top-0 left-0 w-full h-full
 `
 
 export const TimerCirclePath = styled.circle<TimerCircleProps>`
-  fill: none;
+  ${tw`fill-none stroke-[6px] rounded-full`}
   stroke: ${(props) => props.color};
-  stroke-width: 8px;
-  stroke-linecap: round;
   stroke-dasharray: 1570;
   stroke-dashoffset: ${(props) => 1570 * (1 - props.progress)};
   transition: stroke-dashoffset 0.3s ease;
@@ -119,70 +87,43 @@ export const TimerCirclePath = styled.circle<TimerCircleProps>`
 `
 
 // 가이드라인 스타일
-export const FaceGuideline = styled.div`
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  z-index: 1;
-  pointer-events: none;
+export const FaceGuideline = tw.div`
+  absolute w-full h-full top-0 left-0 z-10
+  pointer-events-none
 `
 
 // 버튼 스타일
 export const ActionButtonContainer = styled.button<{ secondary?: boolean }>`
-  width: 100%;
-  padding: 16px;
-  border-radius: 12px;
+  ${tw`w-full py-3 rounded-2xl text-base font-bold cursor-pointer`}
+  ${(props) => (props.secondary ? tw`bg-transparent border mt-3` : tw`mt-3`)}
   background-color: ${(props) =>
     props.secondary ? 'transparent' : colors.main};
   color: white;
   border: ${(props) => (props.secondary ? `1px solid ${colors.main}` : 'none')};
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  margin-top: ${(props) => (props.secondary ? '12px' : '16px')};
 
   &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    ${tw`opacity-50 cursor-not-allowed`}
     background-color: ${(props) => (props.secondary ? 'transparent' : '#666')};
   }
 `
 
 // 캡처된 이미지 스타일
-export const CapturedImagesGrid = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  width: 100%;
-  margin: 0 auto 24px;
+export const CapturedImagesGrid = tw.div`
+  flex flex-wrap justify-center gap-3 w-full
+  mx-auto mb-6
 `
 
 export const CapturedImageContainer = styled.div`
-  position: relative;
-  width: 100px;
-  height: 100px;
-  border-radius: 12px;
-  overflow: hidden;
+  ${tw`relative w-[100px] h-[100px] rounded-xl overflow-hidden`}
   border: 2px solid ${colors.main};
 `
 
-export const CapturedImageLabel = styled.div`
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
-  text-align: center;
-  padding: 4px 0;
-  font-size: 12px;
+export const CapturedImageLabel = tw.div`
+  absolute bottom-0 left-0 right-0
+  bg-black bg-opacity-70 text-white
+  text-center py-1 text-xs
 `
 
-export const CapturedImg = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+export const CapturedImg = tw.img`
+  w-full h-full object-cover
 `

@@ -306,3 +306,37 @@ export const getStateLabel = (state: FaceDetectionState): string => {
       return ''
   }
 }
+
+// 타원형 안에 얼굴이 있는지 확인하는 함수
+export const checkFaceInOval = (landmarks: any[]): boolean => {
+  // 얼굴 랜드마크에서 주요 점 추출
+  const nose = landmarks[4] // 코 끝
+  const leftCheek = landmarks[234] // 왼쪽 볼
+  const rightCheek = landmarks[454] // 오른쪽 볼
+  const chin = landmarks[152] // 턱 끝
+  const forehead = landmarks[10] // 이마 위
+
+  // 화면 중앙 좌표 (0.5, 0.5)
+  const centerX = 0.5
+  const centerY = 0.5
+
+  // 타원형 크기 매개변수 (이 값을 조정하여 타원의 크기 변경)
+  const a = 0.2 // 가로 반경
+  const b = 0.25 // 세로 반경 (약간 더 길게)
+
+  // 주요 점들이 타원 안에 있는지 확인
+  const points = [nose, leftCheek, rightCheek, chin, forehead]
+
+  // 모든 점이 타원 안에 있으면 true 반환
+  return points.every((point) => {
+    const dx = point.x - centerX
+    const dy = point.y - centerY
+
+    // 타원 방정식: (x/a)² + (y/b)² <= 1
+    // y축으로 약간 더 늘어난 타원 (아래쪽이 좀 더 좁음)
+    // 아래쪽(y > centerY)에서는 b 값을 약간 줄여서 타원을 더 좁게 함
+    const adjustedB = point.y > centerY ? b * 0.9 : b
+
+    return (dx * dx) / (a * a) + (dy * dy) / (adjustedB * adjustedB) <= 1
+  })
+}

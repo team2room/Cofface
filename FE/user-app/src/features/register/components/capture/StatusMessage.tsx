@@ -2,7 +2,6 @@ import { StatusMessageProps } from '@/interfaces/RegisterInterfaces'
 import { Text } from '@/styles/typography'
 import styled from '@emotion/styled'
 
-// 상태 메시지 스타일
 export const StatusMessageContainer = styled.div`
   margin-top: 16px;
   padding: 12px 16px;
