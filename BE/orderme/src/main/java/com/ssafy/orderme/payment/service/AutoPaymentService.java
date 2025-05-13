@@ -48,7 +48,7 @@ public class AutoPaymentService {
      */
     @Transactional
     public PaymentResponseDto processAutoPayment(AutoPaymentRequest request, String userId) {
-        // 1. 사용자의 결제 정보 가져오기
+        // 1. 사용자의 결제 정보 가져오기 (기존 코드 유지)
         PaymentInfo paymentInfo;
         if (request.getPaymentInfoId() != null) {
             // 지정된 결제 정보 가져오기
@@ -73,11 +73,31 @@ public class AutoPaymentService {
         // A-{순번} 형식의 주문번호 생성
         String orderNumber = "A-" + todayOrderCount;
 
+        // 주문 원본 금액 저장
+        BigDecimal originalAmount = request.getTotalAmount();
+        BigDecimal finalAmount = originalAmount;
+
+        // 스탬프 사용 시 할인 금액 계산
+        if (request.getIsStampUsed() != null && request.getIsStampUsed()) {
+            // 스탬프 정책 조회
+            StampPolicy policy = stampPolicyMapper.findActiveByStoreId(request.getKioskId());
+            if (policy != null) {
+                // 할인 금액 적용
+                BigDecimal discountAmount = BigDecimal.valueOf(policy.getDiscountAmount());
+                finalAmount = originalAmount.subtract(discountAmount);
+
+                // 최소 결제 금액은 0원
+                if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
+                    finalAmount = BigDecimal.ZERO;
+                }
+            }
+        }
+
         // 2. 주문 생성 (기존 코드 유지하되 orderNumber 필드는 DB에 저장하지 않음)
         Order order = Order.builder()
                 .userId(userId)
                 .kioskId(request.getKioskId())
-                .totalAmount(request.getTotalAmount())
+                .totalAmount(originalAmount)  // 원본 주문 금액은 그대로 저장
                 .orderDate(orderDate)
                 .isStampUsed(request.getIsStampUsed() != null ? request.getIsStampUsed() : false)
                 .orderStatus("ACCEPTED") // 자동 결제는 바로 승인 상태로 설정
@@ -100,10 +120,10 @@ public class AutoPaymentService {
             addStamps(userId, request.getKioskId(), order.getOrderId());
         }
 
-        // 5. 결제 처리 (기존 코드 유지)
+        // 5. 결제 처리 (금액 수정 - 할인이 적용된 finalAmount 사용)
         Payment payment = Payment.builder()
                 .orderId(order.getOrderId())
-                .amount(request.getTotalAmount().doubleValue())
+                .amount(finalAmount.doubleValue())  // 할인이 적용된 최종 금액으로 결제
                 .paymentType("CARD") // 카드 결제
                 .status("DONE") // 결제 완료
                 .paymentDate(LocalDateTime.now())
@@ -112,7 +132,7 @@ public class AutoPaymentService {
 
         paymentMapper.insertPayment(payment);
 
-        // 6. 응답 DTO 생성 - 여기서 주문번호 포함
+        // 6. 응답 DTO 생성 - 최종 결제 금액 및 주문번호 포함
         return PaymentResponseDto.builder()
                 .orderId(order.getOrderId())
                 .orderNumber(orderNumber) // 계산한 주문번호 설정
