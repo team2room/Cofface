@@ -15,14 +15,14 @@ const ImageWrapper = tw.div`
 `
 
 // 풀 배경
-// const FullImg = tw.img`
-//   absolute top-0 left-0 w-full h-full object-cover
-// `
+const FullImg = tw.img`
+  absolute top-0 left-0 w-full h-full object-cover
+`
 
 // 중간 배경
-const MiddleImg = tw.img`
-  absolute top-40 w-[908px] h-[1224px] object-cover
-`
+// const MiddleImg = tw.img`
+//   absolute top-40 w-[908px] h-[1224px] object-cover
+// `
 
 const ButtonGroup = tw.div`
   absolute bottom-40 w-full flex justify-center gap-20 z-10
@@ -99,15 +99,11 @@ export default function StartScreen() {
   return (
     <>
       <ImageWrapper>
-        <MiddleImg
-          src="https://picsum.photos/200"
-          alt="Spring Garden"
-          draggable={false}
-        />
+        <FullImg src="/시작광고.png" alt="Spring Garden" draggable={false} />
       </ImageWrapper>
 
       <TopLeftText>
-        <Text variant="title4" weight="extrabold" color="littleDarkGray">
+        <Text variant="title4" weight="heavy" color="main">
           ORDER.ME
         </Text>
       </TopLeftText>
