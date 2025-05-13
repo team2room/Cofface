@@ -14,7 +14,7 @@ const OvalPath = ({ rotate = '' }) => (
       left: '50%',
       width: '70%',
       height: '70%',
-      border: '3px dashed rgba(255, 255, 255, 0.7)',
+      border: '3px dashed rgba(37, 35, 35, 0.7)',
       borderRadius: '50% 50% 40% 40% / 60% 60% 40% 40%',
       transform: `translateX(-50%) ${rotate}`,
       perspective: '500px',

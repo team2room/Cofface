@@ -4,39 +4,39 @@ import {
   RotationState,
 } from '@/interfaces/RegisterInterfaces'
 
-// 얼굴이 원 안에 있는지 확인
-export const checkFaceInCircle = (
-  landmarks: mp.NormalizedLandmarkList,
-): boolean => {
-  // 얼굴 중심점 (코 끝 랜드마크 사용)
-  const nose = landmarks[1]
+// // 얼굴이 원 안에 있는지 확인
+// export const checkFaceInCircle = (
+//   landmarks: mp.NormalizedLandmarkList,
+// ): boolean => {
+//   // 얼굴 중심점 (코 끝 랜드마크 사용)
+//   const nose = landmarks[1]
 
-  // 정규화된 중심점 (0~1 범위)
-  const center = {
-    x: 0.5, // 중앙
-    y: 0.5, // 중앙
-  }
+//   // 정규화된 중심점 (0~1 범위)
+//   const center = {
+//     x: 0.5, // 중앙
+//     y: 0.5, // 중앙
+//   }
 
-  // 원의 반지름 (정규화된 값)
-  const radius = 0.35
+//   // 원의 반지름 (정규화된 값)
+//   const radius = 0.35
 
-  // 코와 중심 사이의 거리 계산
-  const distance = Math.sqrt(
-    Math.pow(nose.x - center.x, 2) + Math.pow(nose.y - center.y, 2),
-  )
+//   // 코와 중심 사이의 거리 계산
+//   const distance = Math.sqrt(
+//     Math.pow(nose.x - center.x, 2) + Math.pow(nose.y - center.y, 2),
+//   )
 
-  // 거리, 반지름, 결과 로깅
-  const result = distance < radius
-  console.log('원 위치 체크:', {
-    distance: distance.toFixed(3),
-    radius,
-    result,
-    noseX: nose.x.toFixed(3),
-    noseY: nose.y.toFixed(3),
-  })
+//   // 거리, 반지름, 결과 로깅
+//   const result = distance < radius
+//   console.log('원 위치 체크:', {
+//     distance: distance.toFixed(3),
+//     radius,
+//     result,
+//     noseX: nose.x.toFixed(3),
+//     noseY: nose.y.toFixed(3),
+//   })
 
-  return result
-}
+//   return result
+// }
 
 // 얼굴 회전 계산 함수 (정수값으로 반환)
 export const calculateFaceRotation = (
@@ -116,8 +116,8 @@ export const isCorrectOrientation = (
     case FaceDetectionState.FRONT_FACE:
       // 정면: roll, pitch, yaw 모두 ±15도 이내
       const frontRollOK = Math.abs(rotation.roll) <= 20
-      const frontPitchOK = Math.abs(rotation.pitch) <= 6
-      const frontYawOK = Math.abs(rotation.yaw) <= 10
+      const frontPitchOK = Math.abs(rotation.pitch) <= 15
+      const frontYawOK = Math.abs(rotation.yaw) <= 15
 
       const frontResult = frontRollOK && frontPitchOK && frontYawOK
       console.log('정면 방향 체크:', {
@@ -227,15 +227,15 @@ export const getMessage = (
 export const getBorderStatusMessage = (borderColor: string): string => {
   switch (borderColor) {
     case '#ff3d00':
-      return '얼굴이 감지되지 않았습니다. 카메라에 얼굴을 비춰주세요.'
+      return '얼굴이 감지되지 않았습니다.\n카메라에 얼굴을 비춰주세요.'
     case '#FFC107':
-      return '얼굴을 타원형 안에 맞춰주세요. 약간 더 가까이 이동해보세요.'
+      return '얼굴을 타원형 안에 맞춰주세요.\n약간 더 가까이 이동해보세요.'
     case '#FFAB00':
-      return '위치는 좋아요! 안내에 따라 고개를 천천히 돌려주세요.'
+      return '위치는 좋아요!\n안내에 따라 고개를 천천히 돌려주세요.'
     case '#00c853':
-      return '완벽해요! 잠시 그대로 유지해 주세요. 곧 촬영됩니다.'
+      return '완벽해요!\n잠시 그대로 유지해 주세요.'
     case '#4285F4':
-      return '촬영 중입니다. 현재 자세를 유지해주세요.'
+      return '촬영 중입니다.\n현재 자세를 유지해주세요.'
     default:
       return '얼굴을 타원형 안에 맞춰주세요.'
   }
@@ -249,13 +249,13 @@ export const getStageText = (detectionState: FaceDetectionState): string => {
     case FaceDetectionState.FRONT_FACE:
       return '정면 촬영 중 (1/5)'
     case FaceDetectionState.LEFT_FACE:
-      return '왼쪽 촬영 중 (2/5) - 천천히 오른쪽으로 고개를 돌려주세요'
+      return '왼쪽 촬영 중 (2/5)\n천천히 오른쪽으로 고개를 돌려주세요'
     case FaceDetectionState.RIGHT_FACE:
-      return '오른쪽 촬영 중 (3/5) - 천천히 왼쪽으로 고개를 돌려주세요'
+      return '오른쪽 촬영 중 (3/5)\n천천히 왼쪽으로 고개를 돌려주세요'
     case FaceDetectionState.UP_FACE:
-      return '위쪽 촬영 중 (4/5) - 살짝 위쪽을 바라봐주세요'
+      return '위쪽 촬영 중 (4/5)\n살짝 위쪽을 바라봐주세요'
     case FaceDetectionState.DOWN_FACE:
-      return '아래쪽 촬영 중 (5/5) - 살짝 아래쪽을 바라봐주세요'
+      return '아래쪽 촬영 중 (5/5)\n살짝 아래쪽을 바라봐주세요'
     case FaceDetectionState.COMPLETED:
       return '촬영 완료'
     default:
@@ -296,7 +296,7 @@ export const checkFaceInCustomOval = (landmarks: any[]): boolean => {
 
   // 화면 중앙 좌표
   const centerX = 0.5
-  const centerY = 0.47 // 타원형이 살짝 아래로 치우쳐 있으므로 중심점 조정
+  const centerY = 0.6 // 타원형이 살짝 아래로 치우쳐 있으므로 중심점 조정
 
   // 얼굴 크기 계산
   const faceWidth = Math.abs(leftJaw.x - rightJaw.x)
@@ -307,6 +307,8 @@ export const checkFaceInCustomOval = (landmarks: any[]): boolean => {
     x: (leftEye.x + rightEye.x) / 2,
     y: (forehead.y + chin.y) / 2,
   }
+
+  console.log('faceCenter', faceCenter)
 
   // 타원의 크기 (뷰포트 기준)
   const ovalWidth = 0.45 // 가로 반경
@@ -355,18 +357,18 @@ export const checkFaceInCustomOval = (landmarks: any[]): boolean => {
   // 얼굴 크기가 타원에 적절한지 확인
   // 가로는 타원 가로의 70-90% 사이여야 함
   const widthRatio = faceWidth / ovalWidth
-  const isWidthGood = widthRatio >= 0.5 && widthRatio <= 1.0
+  const isWidthGood = widthRatio >= 0.5 && widthRatio <= 1.1
 
   // 세로는 타원 세로의 75-90% 사이여야 함
   const heightRatio = faceHeight / ovalHeight
-  const isHeightGood = heightRatio >= 0.75 && heightRatio <= 1.2
+  const isHeightGood = heightRatio >= 0.75 && heightRatio <= 1.1
 
   console.log(widthRatio, heightRatio)
 
   // 얼굴 중심이 타원 중심에 가까운지 확인
   const centerDistanceX = Math.abs(faceCenter.x - centerX)
   const centerDistanceY = Math.abs(faceCenter.y - centerY)
-  const isCentered = centerDistanceX < 0.05 && centerDistanceY < 0.07
+  const isCentered = centerDistanceX < 0.07 && centerDistanceY < 0.09
 
   // 모든 조건을 충족해야 함
   return allPointsInside && isWidthGood && isHeightGood && isCentered
