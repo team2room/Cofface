@@ -3,3 +3,4 @@ venv
 invenv
 __pycache__
 models
+.env
