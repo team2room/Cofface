@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.orderme.recommendation.mapper.RecommendationMapper">
+
+    <!-- MenuMapper의 MenuResultMap을 참조합니다 -->
+    <select id="findPopularMenusByGenderAndAge" resultMap="com.ssafy.orderme.kiosk.mapper.MenuMapper.MenuResultMap">
+        SELECT
+            m.menu_id, m.menu_name, m.price, m.category_id,
+            c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
+        FROM Menus m
+                 JOIN GenderAgePreference gap ON m.menu_id = gap.menu_id
+                 LEFT JOIN Categories c ON m.category_id = c.category_id
+        WHERE gap.store_id = #{storeId}
+          AND gap.gender = #{gender}
+          AND gap.age_group = #{ageGroup}
+          AND m.is_deleted = false
+          AND m.is_sold_out = false
+        ORDER BY gap.order_count DESC
+            LIMIT #{limit}
+    </select>
+
+    <select id="findMostPopularMenus" resultMap="com.ssafy.orderme.kiosk.mapper.MenuMapper.MenuResultMap">
+        SELECT
+            m.menu_id, m.menu_name, m.price, m.category_id,
+            c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
+        FROM Menus m
+                 LEFT JOIN Categories c ON m.category_id = c.category_id
+        WHERE c.store_id = #{storeId}
+          AND m.is_deleted = false
+          AND m.is_sold_out = false
+        ORDER BY m.popularity DESC
+            LIMIT #{limit}
+    </select>
+
+    <select id="findUserPreferredMenus" resultMap="com.ssafy.orderme.kiosk.mapper.MenuMapper.MenuResultMap">
+        SELECT
+            m.menu_id, m.menu_name, m.price, m.category_id,
+            c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
+        FROM Menus m
+                 LEFT JOIN Categories c ON m.category_id = c.category_id
+                 JOIN orderMenu om ON m.menu_id = om.menu_id
+                 JOIN orders o ON om.order_id = o.order_id
+        WHERE c.store_id = #{storeId}
+          AND o.user_id = #{userId}
+          AND m.is_deleted = false
+          AND m.is_sold_out = false
+        GROUP BY m.menu_id, m.menu_name, m.price, m.category_id,
+                 c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
+        ORDER BY COUNT(*) DESC
+            LIMIT #{limit}
+    </select>
+
+    <update id="updateMenuPopularity">
+        UPDATE Menus
+        SET popularity = IFNULL(popularity, 0) + 1
+        WHERE menu_id = #{menuId}
+    </update>
+
+    <insert id="updateGenderAgePreference">
+        INSERT INTO GenderAgePreference (store_id, gender, age_group, menu_id, order_count, last_updated)
+        VALUES (#{storeId}, #{gender}, #{ageGroup}, #{menuId}, 1, NOW())
+            ON DUPLICATE KEY UPDATE
+                                 order_count = order_count + 1,
+                                 last_updated = NOW()
+    </insert>
+
+    <insert id="updateUserPreference">
+        INSERT INTO UserMenuPreference (user_id, menu_id, order_count, last_updated)
+        VALUES (#{userId}, #{menuId}, 1, NOW())
+            ON DUPLICATE KEY UPDATE
+                                 order_count = order_count + 1,
+                                 last_updated = NOW()
+    </insert>
+
+</mapper>

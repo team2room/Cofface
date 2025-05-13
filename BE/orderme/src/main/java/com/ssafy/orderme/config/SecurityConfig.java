@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/verify/**").permitAll()
                         .requestMatchers("/api/auth/admin/**").permitAll()
                         .requestMatchers("/api/kiosk/**").permitAll()
+                        .requestMatchers("/api/admin/**").permitAll()
                         .requestMatchers("/api/auth/kiosk/phone-login").permitAll()
                         .requestMatchers("/api/auth/kiosk/face-login").permitAll()
                         .requestMatchers("/api/auth/refresh").permitAll()

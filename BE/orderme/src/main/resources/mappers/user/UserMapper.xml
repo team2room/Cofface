@@ -29,7 +29,7 @@
         SELECT EXISTS(SELECT 1 FROM users WHERE phone_number = #{phoneNumber})
     </select>
 
-    <insert id="insert" parameterType="com.ssafy.orderme.user.model.User" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="com.ssafy.orderme.user.model.User" useGeneratedKeys="true" keyProperty="internalId">
         INSERT INTO users (user_id, name, phone_number, birth_date, password, gender)
         VALUES (#{id}, #{name}, #{phoneNumber}, #{birthDate}, #{password}, #{gender})
     </insert>

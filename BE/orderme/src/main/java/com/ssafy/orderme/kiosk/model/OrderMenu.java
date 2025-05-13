@@ -8,8 +8,10 @@ import java.time.LocalDateTime;
 public class OrderMenu {
     private Long orderMenuId;     // 주문 메뉴 ID
     private Long orderId;         // 주문 ID
+    private Long menuId;          // 메뉴 ID (추가)
     private Integer menuPrice;    // 메뉴 가격
     private String menuName;      // 메뉴 이름
+    private Integer quantity;     // 수량 (추가)
     private Integer totalPrice;   // 총 가격
     private Boolean isDeleted;    // 삭제 여부
     private LocalDateTime deletedAt; // 삭제 시간
