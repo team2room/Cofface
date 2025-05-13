@@ -1,7 +1,7 @@
 import {
   CameraViewProps,
   FaceDetectionState,
-} from '@/interfaces/RegisterInterfaces'
+} from '@/interfaces/FaceRegisterInterfaces'
 import { colors } from '@/styles/colors'
 import {
   FaceCircle,

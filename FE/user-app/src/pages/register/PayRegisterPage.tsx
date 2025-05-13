@@ -327,7 +327,7 @@ export function PayRegisterPage() {
           </PaymentForm>
         </FormSection>
 
-        {/* 등록하기 버튼 - 페이지 하단에 위치 */}
+        {/* 등록하기 버튼 */}
         {isFormComplete && (
           <RegisterWrapper>
             <AgreementBox />

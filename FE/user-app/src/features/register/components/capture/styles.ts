@@ -4,7 +4,7 @@ import { colors } from '@/styles/colors'
 import {
   FaceCircleProps,
   TimerCircleProps,
-} from '@/interfaces/RegisterInterfaces'
+} from '@/interfaces/FaceRegisterInterfaces'
 
 // 캡처 컨테이너 스타일
 export const CaptureContainer = tw.div`

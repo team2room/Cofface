@@ -1,4 +1,4 @@
-import { FaceRegisterMainButtonProps } from '@/interfaces/RegisterInterfaces'
+import { FaceRegisterMainButtonProps } from '@/interfaces/FaceRegisterInterfaces'
 import { Text } from '@/styles/typography'
 import tw from 'twin.macro'
 

@@ -2,7 +2,7 @@ import axios from 'axios'
 import {
   CapturedImage,
   FaceDetectionState,
-} from '@/interfaces/RegisterInterfaces'
+} from '@/interfaces/FaceRegisterInterfaces'
 
 //TODO - api 연결시 수정해야 함
 

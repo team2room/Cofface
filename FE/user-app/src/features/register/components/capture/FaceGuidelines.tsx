@@ -1,4 +1,4 @@
-import { FaceDetectionState } from '@/interfaces/RegisterInterfaces'
+import { FaceDetectionState } from '@/interfaces/FaceRegisterInterfaces'
 import { FaceGuideline } from '@/features/register/components/capture/styles'
 
 interface FaceGuidelinesProps {

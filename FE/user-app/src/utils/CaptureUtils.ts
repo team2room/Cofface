@@ -2,7 +2,7 @@ import * as mp from '@mediapipe/face_mesh'
 import {
   FaceDetectionState,
   RotationState,
-} from '@/interfaces/RegisterInterfaces'
+} from '@/interfaces/FaceRegisterInterfaces'
 
 // // 얼굴이 원 안에 있는지 확인
 // export const checkFaceInCircle = (

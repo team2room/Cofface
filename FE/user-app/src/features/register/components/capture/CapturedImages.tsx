@@ -1,5 +1,5 @@
 import React from 'react'
-import { CapturedImagesProps } from '@/interfaces/RegisterInterfaces'
+import { CapturedImagesProps } from '@/interfaces/FaceRegisterInterfaces'
 import { getStateLabel } from '@/utils/CaptureUtils'
 import {
   CapturedImagesGrid,

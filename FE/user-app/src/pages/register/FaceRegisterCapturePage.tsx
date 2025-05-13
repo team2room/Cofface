@@ -9,7 +9,7 @@ import {
   CaptureContainer,
   Message,
 } from '@/features/register/components/capture/styles'
-import { FaceDetectionState } from '@/interfaces/RegisterInterfaces'
+import { FaceDetectionState } from '@/interfaces/FaceRegisterInterfaces'
 import { getMessage } from '@/utils/CaptureUtils'
 import { useFaceDetection } from '@/features/register/hooks/useFaceDetection'
 import { Text } from '@/styles/typography'

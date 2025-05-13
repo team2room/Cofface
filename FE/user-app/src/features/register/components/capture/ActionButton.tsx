@@ -1,5 +1,5 @@
 import React from 'react'
-import { ActionButtonProps } from '@/interfaces/RegisterInterfaces'
+import { ActionButtonProps } from '@/interfaces/FaceRegisterInterfaces'
 import { ActionButtonContainer } from '@/features/register/components/capture/styles'
 
 const ActionButton: React.FC<ActionButtonProps> = ({
