@@ -1,6 +1,6 @@
 import DetailHeader from '@/components/DetailHeader'
-import { FaceRegisterCheckModal } from '@/features/register/components/FaceRegisterCheckModal'
-import { FaceRegisterMainButton } from '@/features/register/components/FaceRegisterMainButton'
+import { FaceRegisterCheckModal } from '@/features/register/components/intro/FaceRegisterCheckModal'
+import { FaceRegisterMainButton } from '@/features/register/components/intro/FaceRegisterMainButton'
 import { FaceRegisterMainButtonProps } from '@/interfaces/RegisterInterfaces'
 import { Text } from '@/styles/typography'
 import { useEffect, useState } from 'react'
@@ -8,6 +8,7 @@ import tw from 'twin.macro'
 import faceScan from '@/assets/face-scan.gif'
 import shield from '@/assets/shield.png'
 import phone from '@/assets/phone.png'
+import { useNavigate } from 'react-router-dom'
 
 const HeaderWrapper = tw.div`
   sticky top-0 z-10 bg-white w-full
@@ -30,6 +31,7 @@ const ButtonWrapper = tw.div`
 `
 
 export function FaceRegisterPage() {
+  const navigate = useNavigate()
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   // 페이지 진입 시 drawer 자동으로 열기
@@ -68,7 +70,12 @@ export function FaceRegisterPage() {
   return (
     <Container>
       <HeaderWrapper>
-        <DetailHeader title="ㅤ" />
+        <DetailHeader
+          title="ㅤ"
+          onBack={() => {
+            navigate('/')
+          }}
+        />
       </HeaderWrapper>
       <ContentWrapper>
         <TextWrapper>
