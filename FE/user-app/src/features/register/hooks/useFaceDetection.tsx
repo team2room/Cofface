@@ -31,14 +31,14 @@ export function useFaceDetection() {
   const [borderStatusMessage, setBorderStatusMessage] = useState<string>('')
   const [modelsLoaded, setModelsLoaded] = useState<boolean>(false)
   const [loadingError, setLoadingError] = useState<string | null>(null)
-  const [stateStable, setStateStable] = useState<boolean>(true)
-  const [rotation, setRotation] = useState<RotationState>({
+  const [_stateStable, setStateStable] = useState<boolean>(true)
+  const [_rotation, setRotation] = useState<RotationState>({
     roll: 0,
     pitch: 0,
     yaw: 0,
   })
   const [capturedImages, setCapturedImages] = useState<CapturedImage[]>([])
-  const [faceWithinBounds, setFaceWithinBounds] = useState<boolean>(false)
+  const [_faceWithinBounds, setFaceWithinBounds] = useState<boolean>(false)
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null)

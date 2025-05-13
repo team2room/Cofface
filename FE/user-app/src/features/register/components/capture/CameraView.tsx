@@ -18,10 +18,8 @@ import {
 // 방향별 가이드라인 SVG 컴포넌트 - 입체적 수직선과 두꺼운 화살표
 const DirectionGuidelineSVG = ({
   detectionState,
-  borderColor,
 }: {
   detectionState: FaceDetectionState
-  borderColor: string
 }) => {
   // 정면일 때는 가이드라인을 표시하지 않음
   if (
@@ -371,10 +369,7 @@ export function CameraView({
             <OvalFaceGuideSVG borderColor={borderColor} />
 
             {/* 방향 가이드라인 추가 - 정면이 아닐 때만 표시 */}
-            <DirectionGuidelineSVG
-              detectionState={detectionState}
-              borderColor={borderColor}
-            />
+            <DirectionGuidelineSVG detectionState={detectionState} />
           </>
         )}
 
