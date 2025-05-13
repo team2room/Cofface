@@ -3,27 +3,37 @@ import {
   AlertDialogContent,
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
 import CustomButton from '@/components/CustomButton'
 import { OptionModalProps } from '@/interfaces/OrderInterface'
 import RequiredOptionsSection from './RequiredOptionSection'
 import OptionalOptionsSection from './OptionalOptionSection'
+import { useOrderStore } from '@/stores/orderStore'
+import { Minus, Plus } from 'lucide-react'
 
 const FirstSection = tw.div`bg-lightLight p-8 mb-4`
 const InfoText = tw.div`flex flex-col items-start`
 const DefaultButton = tw.button`w-80 border border-main rounded-xl py-1 mx-auto shadow-md`
 const PriceRow = tw.div`border-y-2 border-dark p-3 flex justify-between my-6`
 
+const OptionGroup = tw.div`flex flex-1 gap-4 justify-center`
+const OptionRow = tw.div`flex items-center`
+const RequiredOption = tw.div`flex-1 flex flex-col gap-10`
+const CntButton = tw.button`border border-dark p-2 shadow-md`
+
 export default function OptionModal({
   open,
   onOpenChange,
   menu,
 }: OptionModalProps) {
+  const addOrder = useOrderStore((state) => state.addOrder)
+
   const requiredOptions = menu.options.filter((opt) => opt.isRequired)
   const optionalOptions = menu.options.filter((opt) => !opt.isRequired)
 
+  const [quantity, setQuantity] = useState(1)
   const [selectedOptions, setSelectedOptions] = useState<
     Record<string, number | null>
   >({})
@@ -35,6 +45,16 @@ export default function OptionModal({
     }))
   }
 
+  // 필수 선택 옵션 확인
+  const isAllRequiredSelected = useMemo(() => {
+    return requiredOptions.every(
+      (opt) =>
+        selectedOptions.hasOwnProperty(opt.optionCategory) &&
+        selectedOptions[opt.optionCategory] !== null,
+    )
+  }, [selectedOptions, requiredOptions])
+
+  // 기본값 선택 버튼 함수
   const handleSetDefaults = () => {
     const defaults: Record<string, number | null> = {}
     menu.options.forEach((opt) => {
@@ -44,17 +64,54 @@ export default function OptionModal({
     setSelectedOptions(defaults)
   }
 
-  const totalOptionPrice = useMemo(() => {
-    return Object.entries(selectedOptions).reduce((sum, [category, index]) => {
-      if (index === null) return sum
+  // 선택된 옵션 저장
+  const selectedOptionDetails = useMemo(() => {
+    return Object.entries(selectedOptions).flatMap(([category, index]) => {
+      if (index === null) return []
       const optionGroup = menu.options.find(
         (o) => o.optionCategory === category,
       )
-      return optionGroup ? sum + optionGroup.additionalPrices[index] : sum
-    }, 0)
+      if (!optionGroup) return []
+      return [
+        {
+          category,
+          value: optionGroup.optionNames[index],
+          price: optionGroup.additionalPrices[index],
+          optionId: optionGroup.optionIds[index],
+        },
+      ]
+    })
   }, [selectedOptions, menu.options])
 
+  const totalOptionPrice = selectedOptionDetails.reduce(
+    (sum, opt) => sum + opt.price,
+    0,
+  )
   const totalPrice = menu.price + totalOptionPrice
+
+  const handleQuantityChange = (change: number) => {
+    setQuantity((prev) => Math.max(1, prev + change))
+  }
+
+  const handleConfirm = () => {
+    addOrder({
+      menuId: menu.menuId,
+      name: menu.menuName,
+      basePrice: menu.price,
+      quantity,
+      options: selectedOptionDetails,
+      totalPrice: totalPrice,
+    })
+    onOpenChange(false)
+  }
+
+  // 모달 닫힐 때 상태 초기화
+  useEffect(() => {
+    if (!open) {
+      setQuantity(1)
+      setSelectedOptions({})
+    }
+  }, [open])
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -70,11 +127,31 @@ export default function OptionModal({
         <FirstSection>
           <div className="flex flex-row items-center gap-6">
             <img src={menu.imageUrl} alt={menu.menuName} className="w-80" />
-            <RequiredOptionsSection
-              requiredOptions={requiredOptions}
-              selectedOptions={selectedOptions}
-              handleSelectOption={handleSelectOption}
-            />
+            <RequiredOption>
+              {/* 수량 */}
+              <OptionRow>
+                <Text variant="body2" weight="bold" className="w-44">
+                  수량
+                </Text>
+                <OptionGroup>
+                  <CntButton onClick={() => handleQuantityChange(-1)}>
+                    <Minus size={16} className="text-dark" />
+                  </CntButton>
+                  <Text variant="caption1" weight="semibold" className="px-2">
+                    {quantity}
+                  </Text>
+                  <CntButton onClick={() => handleQuantityChange(1)}>
+                    <Plus size={16} className="text-dark" />
+                  </CntButton>
+                </OptionGroup>
+              </OptionRow>
+
+              <RequiredOptionsSection
+                requiredOptions={requiredOptions}
+                selectedOptions={selectedOptions}
+                handleSelectOption={handleSelectOption}
+              />
+            </RequiredOption>
           </div>
 
           <InfoText>
@@ -129,7 +206,7 @@ export default function OptionModal({
           </div>
           <div>
             <Text variant="body1" weight="bold" color="main">
-              {totalPrice.toLocaleString()}
+              {(totalPrice * quantity).toLocaleString()}
             </Text>
             <Text variant="body1" weight="semibold">
               원
@@ -146,8 +223,8 @@ export default function OptionModal({
           />
           <CustomButton
             text={'선택 완료'}
-            variant="main"
-            onClick={() => onOpenChange(false)}
+            variant={isAllRequiredSelected ? 'main' : 'disabled'}
+            onClick={handleConfirm}
           />
         </AlertDialogFooter>
       </AlertDialogContent>

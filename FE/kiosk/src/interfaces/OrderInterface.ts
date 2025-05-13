@@ -65,6 +65,22 @@ export interface OptionModalProps {
 }
 
 // 선택 상품
+export interface SelectedOption {
+  category: string
+  value: string
+  price: number
+  optionId: number
+}
+
+export interface OrderItemReal {
+  menuId: number
+  name: string
+  basePrice: number
+  quantity: number
+  options: SelectedOption[]
+  totalPrice: number
+}
+
 export interface OrderItem {
   name: string
   price: number
