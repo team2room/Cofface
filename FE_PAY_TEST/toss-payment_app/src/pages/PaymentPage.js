@@ -1,330 +1,400 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loadTossPayments, ANONYMOUS } from '@tosspayments/tosspayments-sdk';
-import { preparePayment } from '../api/paymentApi';
+import { loadPaymentWidget } from '@tosspayments/payment-widget-sdk';
+import { preparePayment, getClientKey } from '../api/paymentApi';
+import { isAuthenticated, getUser } from '../utils/authUtils';
 import '../styles/Payment.css';
 
+const TOSS_PAYMENTS_TEST_CLIENT_KEY = process.env.REACT_APP_TOSS_CLIENT_KEY || 'test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq';
+
+// 테스트용 상품 데이터
+const TEST_PRODUCTS = [
+  { id: 1, name: '아메리카노', price: 4500, image: '/images/americano.jpg' },
+  { id: 2, name: '카페라떼', price: 5000, image: '/images/latte.jpg' },
+  { id: 3, name: '바닐라라떼', price: 5500, image: '/images/vanilla-latte.jpg' },
+];
+
+// 테스트용 옵션 데이터
+const TEST_OPTIONS = {
+  1: [
+    { id: 101, name: '샷 추가', price: 500 },
+    { id: 102, name: '시럽 추가', price: 300 },
+  ],
+  2: [
+    { id: 201, name: '샷 추가', price: 500 },
+    { id: 202, name: '두유로 변경', price: 500 },
+  ],
+  3: [
+    { id: 301, name: '샷 추가', price: 500 },
+    { id: 302, name: '두유로 변경', price: 500 },
+    { id: 303, name: '시럽 추가', price: 300 },
+  ],
+};
+
 const PaymentPage = () => {
-  // 랜덤 문자열 생성 함수 (주문 ID용)
-  const generateRandomString = () => window.btoa(Math.random()).slice(0, 20);
-  
-  const [paymentInfo, setPaymentInfo] = useState({
-    orderName: '',
-    amount: '',
-    customerName: '',
-    customerEmail: ''
-  });
-  
+  const [clientKey, setClientKey] = useState('');
+  const [cart, setCart] = useState([]);
+  const [selectedOptions, setSelectedOptions] = useState({});
+  const [totalAmount, setTotalAmount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [tossPayments, setTossPayments] = useState(null);
-  const [widgets, setWidgets] = useState(null);
-  const [ready, setReady] = useState(false);
-  const [initialized, setInitialized] = useState(false);
+  const [useStamp, setUseStamp] = useState(false);
+  const [isTakeout, setIsTakeout] = useState(false);
+  const [paymentWidgetLoaded, setPaymentWidgetLoaded] = useState(false);
+  const [paymentWidget, setPaymentWidget] = useState(null);
+  const [paymentMethodsWidget, setPaymentMethodsWidget] = useState(null);
   const navigate = useNavigate();
   
-  // 결제 요청 중인지 확인하는 ref
-  const isProcessingRef = useRef(false);
-  // 위젯 인스턴스 저장용 ref
-  const paymentMethodsRef = useRef(null);
-  const agreementRef = useRef(null);
-  const mountedRef = useRef(false);
-  
-  // 토스 결제 위젯 초기화 - V2 방식
+  // 인증 확인 및 클라이언트 키 가져오기
   useEffect(() => {
-    // 이미 마운트되었거나 초기화되었다면 재실행하지 않음
-    if (mountedRef.current || initialized) return;
-    mountedRef.current = true;
-    
-    // 토스 페이먼츠 테스트용 클라이언트 키
-    const clientKey = 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm';
-    
-    async function initializeWidget() {
-      try {
-        // 기존 위젯 정리 (혹시 있다면)
-        if (paymentMethodsRef.current) {
-          try {
-            paymentMethodsRef.current.cleanup();
-            paymentMethodsRef.current = null;
-          } catch (e) {
-            console.error("결제 위젯 정리 중 오류:", e);
-          }
-        }
-        
-        if (agreementRef.current) {
-          try {
-            agreementRef.current.cleanup();
-            agreementRef.current = null;
-          } catch (e) {
-            console.error("약관 위젯 정리 중 오류:", e);
-          }
-        }
-        
-        // DOM 요소 확인
-        const paymentMethodEl = document.querySelector('#payment-method');
-        const agreementEl = document.querySelector('#agreement');
-        
-        if (!paymentMethodEl || !agreementEl) {
-          console.error("위젯을 렌더링할 DOM 요소를 찾을 수 없습니다.");
-          return;
-        }
-        
-        // 토스페이먼츠 SDK 로드 (V2 방식)
-        const tossPaymentsInstance = await loadTossPayments(clientKey);
-        setTossPayments(tossPaymentsInstance);
-        
-        // 결제 위젯 초기화 (비회원 결제는 ANONYMOUS 사용)
-        const widgetsInstance = tossPaymentsInstance.widgets({ customerKey: ANONYMOUS });
-        setWidgets(widgetsInstance);
-        
-        // 초기 금액 설정 (1,000원)
-        await widgetsInstance.setAmount({
-          value: 1000,
-          currency: 'KRW'
-        });
-        
-        // DOM 요소 상태 확인 함수
-        const isDomElementInitialized = (selector) => {
-          const element = document.querySelector(selector);
-          return element && element.childNodes.length > 0;
-        };
-        
-        // 결제 수단 위젯 렌더링
-        if (!isDomElementInitialized('#payment-method')) {
-          const paymentMethodsInstance = await widgetsInstance.renderPaymentMethods({
-            selector: '#payment-method',
-            variantKey: 'DEFAULT'
-          });
-          paymentMethodsRef.current = paymentMethodsInstance;
-        }
-        
-        // 이용약관 위젯 렌더링
-        if (!isDomElementInitialized('#agreement')) {
-          const agreementInstance = await widgetsInstance.renderAgreement({
-            selector: '#agreement',
-            variantKey: 'AGREEMENT'
-          });
-          agreementRef.current = agreementInstance;
-        }
-        
-        setReady(true);
-        setInitialized(true);
-      } catch (error) {
-        console.error("결제 위젯 초기화 오류:", error);
-        setError("결제 위젯을 불러오는 중 오류가 발생했습니다.");
-      }
-    }
-    
-    // 렌더링 지연을 통한 중복 실행 방지
-    const timer = setTimeout(() => {
-      initializeWidget();
-    }, 100);
-    
-    return () => {
-      clearTimeout(timer);
-      mountedRef.current = false;
-      
-      // 컴포넌트 언마운트 시 정리
-      if (paymentMethodsRef.current) {
-        try {
-          paymentMethodsRef.current.cleanup();
-          paymentMethodsRef.current = null;
-        } catch (e) {
-          console.error("결제 위젯 정리 중 오류:", e);
-        }
-      }
-      
-      if (agreementRef.current) {
-        try {
-          agreementRef.current.cleanup();
-          agreementRef.current = null;
-        } catch (e) {
-          console.error("약관 위젯 정리 중 오류:", e);
-        }
-      }
-    };
-  }, [initialized]);
-  
-  // 금액 변경 시 위젯 업데이트 - V2 방식
-  useEffect(() => {
-    if (!widgets || !paymentInfo.amount) return;
-    
-    try {
-      // 문자열에서 쉼표 제거하고 정수로 변환
-      const amountValue = parseInt(String(paymentInfo.amount).replace(/,/g, ''));
-      if (amountValue >= 1000) { // 최소 금액 검증
-        // V2에서는 setAmount 메소드 사용
-        widgets.setAmount({
-          value: amountValue,
-          currency: 'KRW'
-        });
-      }
-    } catch (error) {
-      console.error("결제 금액 업데이트 오류:", error);
-    }
-  }, [widgets, paymentInfo.amount]);
-  
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    
-    // amount 필드의 경우 쉼표 제거 후 정수형으로 변환
-    if (name === 'amount') {
-      const cleanValue = value.replace(/,/g, '');
-      const numValue = parseInt(cleanValue) || '';
-      setPaymentInfo(prev => ({ ...prev, [name]: numValue }));
-    } else {
-      setPaymentInfo(prev => ({ ...prev, [name]: value }));
-    }
-  };
-  
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // 이미 처리 중인 요청이 있으면 중복 실행 방지
-    if (isProcessingRef.current || loading) {
-      console.log("이미 결제 요청이 진행 중입니다.");
+    if (!isAuthenticated()) {
+      navigate('/login', { state: { from: '/payment' } });
       return;
     }
     
-    // 결제 처리 중 상태로 설정
-    isProcessingRef.current = true;
+    const fetchClientKey = async () => {
+      try {
+        const response = await getClientKey();
+        
+        if (response.success) {
+          setClientKey(response.data.clientKey || TOSS_PAYMENTS_TEST_CLIENT_KEY);
+        } else {
+          console.error('클라이언트 키 가져오기 실패:', response.message);
+          setError('결제 정보를 가져오는데 실패했습니다.');
+        }
+      } catch (err) {
+        console.error('클라이언트 키 가져오기 오류:', err);
+        setError('결제 정보를 가져오는데 실패했습니다.');
+      }
+    };
+    
+    fetchClientKey();
+  }, [navigate]);
+  
+  // 토스페이먼츠 결제 위젯 로드
+  useEffect(() => {
+    if (!clientKey) return;
+    
+    const loadWidget = async () => {
+      try {
+        const paymentWidgetInstance = await loadPaymentWidget(clientKey, 'test');
+        setPaymentWidget(paymentWidgetInstance);
+        setPaymentWidgetLoaded(true);
+      } catch (err) {
+        console.error('결제 위젯 로드 오류:', err);
+        setError('결제 위젯을 로드하는데 실패했습니다.');
+      }
+    };
+    
+    loadWidget();
+  }, [clientKey]);
+  
+  // 결제 수단 위젯 마운트
+  useEffect(() => {
+    if (!paymentWidgetLoaded || !paymentWidget) return;
+    
+    try {
+      const paymentMethodsWidgetInstance = paymentWidget.renderPaymentMethods(
+        '#payment-methods',
+        { value: totalAmount },
+        { variantKey: 'DEFAULT' }
+      );
+      
+      setPaymentMethodsWidget(paymentMethodsWidgetInstance);
+    } catch (err) {
+      console.error('결제 수단 위젯 마운트 오류:', err);
+    }
+  }, [paymentWidgetLoaded, paymentWidget, totalAmount]);
+  
+  // 총 결제 금액 계산
+  useEffect(() => {
+    let amount = 0;
+    
+    cart.forEach(item => {
+      // 메뉴 가격
+      amount += item.price * item.quantity;
+      
+      // 선택된 옵션 가격 추가
+      if (selectedOptions[item.id]) {
+        selectedOptions[item.id].forEach(optionId => {
+          const option = TEST_OPTIONS[item.id].find(opt => opt.id === optionId);
+          if (option) {
+            amount += option.price * item.quantity;
+          }
+        });
+      }
+    });
+    
+    setTotalAmount(amount);
+    
+    // 결제 수단 위젯이 있으면 금액 업데이트
+    if (paymentMethodsWidget) {
+      try {
+        paymentMethodsWidget.updateAmount(amount);
+      } catch (err) {
+        console.error('결제 금액 업데이트 오류:', err);
+      }
+    }
+  }, [cart, selectedOptions, paymentMethodsWidget]);
+  
+  // 장바구니에 상품 추가
+  const addToCart = (product) => {
+    setCart(prevCart => {
+      const existingItem = prevCart.find(item => item.id === product.id);
+      
+      if (existingItem) {
+        // 이미 장바구니에 있는 경우 수량 증가
+        return prevCart.map(item => 
+          item.id === product.id 
+            ? { ...item, quantity: item.quantity + 1 } 
+            : item
+        );
+      } else {
+        // 새로운 아이템 추가
+        return [...prevCart, { ...product, quantity: 1 }];
+      }
+    });
+  };
+  
+  // 장바구니에서 상품 제거
+  const removeFromCart = (productId) => {
+    setCart(prevCart => prevCart.filter(item => item.id !== productId));
+    
+    // 해당 상품의 옵션 선택 정보도 제거
+    setSelectedOptions(prev => {
+      const newOptions = { ...prev };
+      delete newOptions[productId];
+      return newOptions;
+    });
+  };
+  
+  // 상품 수량 변경
+  const updateQuantity = (productId, newQuantity) => {
+    if (newQuantity < 1) return;
+    
+    setCart(prevCart => 
+      prevCart.map(item => 
+        item.id === productId 
+          ? { ...item, quantity: newQuantity } 
+          : item
+      )
+    );
+  };
+  
+  // 옵션 선택 토글
+  const toggleOption = (productId, optionId) => {
+    setSelectedOptions(prev => {
+      const currentOptions = prev[productId] || [];
+      
+      if (currentOptions.includes(optionId)) {
+        // 이미 선택된 옵션이면 제거
+        return {
+          ...prev,
+          [productId]: currentOptions.filter(id => id !== optionId)
+        };
+      } else {
+        // 새로운 옵션 추가
+        return {
+          ...prev,
+          [productId]: [...currentOptions, optionId]
+        };
+      }
+    });
+  };
+  
+  // 결제 처리
+  const handlePayment = async () => {
+    if (cart.length === 0) {
+      setError('장바구니가 비어있습니다.');
+      return;
+    }
+    
+    if (!paymentWidget) {
+      setError('결제 위젯이 로드되지 않았습니다.');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     
     try {
-      // 금액 유효성 검사 - 쉼표 제거하고 정수로 변환
-      const amount = typeof paymentInfo.amount === 'string' 
-        ? parseInt(paymentInfo.amount.replace(/,/g, '')) 
-        : paymentInfo.amount;
-        
-      if (!amount || amount < 1000) {
-        setError("결제 금액은 최소 1,000원 이상이어야 합니다.");
-        setLoading(false);
-        isProcessingRef.current = false;
-        return;
-      }
+      // 장바구니 정보를 API 요청에 맞게 변환
+      const menuOrders = cart.map(item => ({
+        menuId: item.id,
+        quantity: item.quantity,
+        options: selectedOptions[item.id]
+          ? selectedOptions[item.id].map(optionId => ({ optionItemId: optionId }))
+          : []
+      }));
       
       // 결제 준비 API 호출
-      const response = await preparePayment({
-        ...paymentInfo,
-        amount: amount, // 정수형으로 변환
+      const prepareResponse = await preparePayment({
+        kioskId: 1, // 테스트용 키오스크 ID
+        amount: totalAmount,
+        isStampUsed: useStamp,
+        isTakeout: isTakeout,
+        menuOrders: menuOrders
+      });
+      
+      if (!prepareResponse.success) {
+        throw new Error(prepareResponse.message || '결제 준비에 실패했습니다.');
+      }
+      
+      const { orderId } = prepareResponse.data;
+      
+      // 토스페이먼츠 결제 요청
+      await paymentWidget.requestPayment({
+        orderId: orderId.toString(),
+        orderName: `커피 주문 (${cart.length}건)`,
+        customerName: getUser()?.name || '고객',
+        customerEmail: getUser()?.email,
+        customerMobilePhone: getUser()?.phoneNumber,
         successUrl: `${window.location.origin}/success`,
         failUrl: `${window.location.origin}/fail`
       });
       
-      console.log("결제 준비 완료:", response);
-      
-      // orderName이 비어있으면 기본값 설정
-      const orderName = paymentInfo.orderName || "주문 상품";
-      
-      // V2 방식의 결제 요청
-      try {
-        await widgets.requestPayment({
-          orderId: response.data.orderId || generateRandomString(),
-          orderName: orderName,
-          successUrl: `${window.location.origin}/success`,
-          failUrl: `${window.location.origin}/fail`,
-          customerEmail: paymentInfo.customerEmail,
-          customerName: paymentInfo.customerName
-        });
-      } catch (paymentError) {
-        // 위젯 관련 오류 처리
-        console.error("결제 요청 오류:", paymentError);
-        
-        // 위젯 초기화 오류인 경우 재설정 시도
-        if (paymentError.message && paymentError.message.includes('이미 위젯이 렌더링되어 있습니다')) {
-          setInitialized(false); // 위젯 재초기화를 위해 상태 변경
-          setError("위젯을 재설정합니다. 잠시 후 다시 시도해주세요.");
-        } else {
-          setError(paymentError.message || "결제 요청 중 오류가 발생했습니다.");
-        }
-      }
     } catch (err) {
-      console.error('결제 요청 오류:', err);
-      setError(err.message || '결제 요청 중 오류가 발생했습니다. 다시 시도해주세요.');
-    } finally {
+      console.error('결제 처리 오류:', err);
+      setError(err.message || '결제 처리 중 오류가 발생했습니다.');
       setLoading(false);
-      // 일정 시간 후에 처리 상태 초기화 (다음 요청을 위한 준비)
-      setTimeout(() => {
-        isProcessingRef.current = false;
-      }, 1000);
     }
   };
   
   return (
     <div className="payment-container">
-      <h1 className="payment-title">상품 결제</h1>
+      <h1 className="payment-title">주문 및 결제</h1>
       
-      <form className="payment-form" onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="orderName">상품명</label>
-          <input
-            type="text"
-            id="orderName"
-            name="orderName"
-            value={paymentInfo.orderName}
-            onChange={handleChange}
-            placeholder="상품명을 입력하세요"
-            required
-          />
+      <div className="payment-content">
+        <div className="menu-section">
+          <h2>메뉴 선택</h2>
+          <div className="menu-grid">
+            {TEST_PRODUCTS.map(product => (
+              <div key={product.id} className="menu-item">
+                <div className="menu-image">
+                  <img src={product.image || '/images/default-menu.jpg'} alt={product.name} />
+                </div>
+                <div className="menu-info">
+                  <h3>{product.name}</h3>
+                  <p className="menu-price">{product.price.toLocaleString()}원</p>
+                </div>
+                <button 
+                  className="add-to-cart-button"
+                  onClick={() => addToCart(product)}
+                  disabled={loading}
+                >
+                  담기
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
         
-        <div className="form-group">
-          <label htmlFor="amount">결제 금액</label>
-          <input
-            type="text"
-            id="amount"
-            name="amount"
-            value={typeof paymentInfo.amount === 'number' 
-              ? paymentInfo.amount.toLocaleString('ko-KR') 
-              : paymentInfo.amount}
-            onChange={handleChange}
-            placeholder="최소 1,000원"
-            required
-          />
-          <small>최소 결제 금액은 1,000원입니다.</small>
+        <div className="cart-section">
+          <h2>장바구니</h2>
+          
+          {cart.length === 0 ? (
+            <div className="empty-cart">
+              <p>장바구니가 비어있습니다.</p>
+            </div>
+          ) : (
+            <div className="cart-items">
+              {cart.map(item => (
+                <div key={item.id} className="cart-item">
+                  <div className="cart-item-info">
+                    <h3>{item.name}</h3>
+                    <p className="item-price">{item.price.toLocaleString()}원</p>
+                    
+                    <div className="quantity-control">
+                      <button 
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        disabled={loading || item.quantity <= 1}
+                      >
+                        -
+                      </button>
+                      <span>{item.quantity}</span>
+                      <button 
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        disabled={loading}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="cart-item-options">
+                    <h4>옵션 선택</h4>
+                    <div className="options-list">
+                      {TEST_OPTIONS[item.id] && TEST_OPTIONS[item.id].map(option => (
+                        <div key={option.id} className="option-item">
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={selectedOptions[item.id]?.includes(option.id) || false}
+                              onChange={() => toggleOption(item.id, option.id)}
+                              disabled={loading}
+                            />
+                            {option.name} (+{option.price.toLocaleString()}원)
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <button 
+                    className="remove-item-button"
+                    onClick={() => removeFromCart(item.id)}
+                    disabled={loading}
+                  >
+                    삭제
+                  </button>
+                </div>
+              ))}
+              
+              <div className="cart-options">
+                <label className="option-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={useStamp}
+                    onChange={e => setUseStamp(e.target.checked)}
+                    disabled={loading}
+                  />
+                  스탬프 사용하기
+                </label>
+                
+                <label className="option-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={isTakeout}
+                    onChange={e => setIsTakeout(e.target.checked)}
+                    disabled={loading}
+                  />
+                  포장하기
+                </label>
+              </div>
+              
+              <div className="cart-total">
+                <span>총 금액:</span>
+                <span className="total-price">{totalAmount.toLocaleString()}원</span>
+              </div>
+            </div>
+          )}
         </div>
         
-        <div className="form-group">
-          <label htmlFor="customerName">고객명</label>
-          <input
-            type="text"
-            id="customerName"
-            name="customerName"
-            value={paymentInfo.customerName}
-            onChange={handleChange}
-            placeholder="고객명을 입력하세요"
-            required
-          />
+        <div className="payment-section">
+          <h2>결제 수단</h2>
+          <div id="payment-methods" className="payment-methods-widget"></div>
+          
+          {error && <div className="payment-error">{error}</div>}
+          
+          <button 
+            className="payment-button"
+            onClick={handlePayment}
+            disabled={loading || cart.length === 0}
+          >
+            {loading ? '처리 중...' : `${totalAmount.toLocaleString()}원 결제하기`}
+          </button>
         </div>
-        
-        <div className="form-group">
-          <label htmlFor="customerEmail">이메일</label>
-          <input
-            type="email"
-            id="customerEmail"
-            name="customerEmail"
-            value={paymentInfo.customerEmail}
-            onChange={handleChange}
-            placeholder="이메일을 입력하세요"
-            required
-          />
-        </div>
-        
-        {/* 결제 위젯 렌더링 영역 - V2에서는 selector로 지정 */}
-        <div id="payment-method" className="payment-widget-area"></div>
-        <div id="agreement" className="agreement-widget-area"></div>
-        
-        <button
-          type="submit"
-          className="payment-button"
-          disabled={loading || !ready || isProcessingRef.current}
-        >
-          {loading ? '처리 중...' : '결제하기'}
-        </button>
-      </form>
-      
-      {error && <div className="error-message">{error}</div>}
+      </div>
     </div>
   );
 };

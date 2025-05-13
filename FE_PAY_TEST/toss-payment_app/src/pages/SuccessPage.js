@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { approvePayment } from '../api/paymentApi';
+import { approvePayment, handlePaymentFailure } from '../api/paymentApi';
 import '../styles/Payment.css';
 
 const SuccessPage = () => {
@@ -30,25 +30,25 @@ const SuccessPage = () => {
         const result = await approvePayment({
           paymentKey,
           orderId,
-          amount: parseFloat(amount)
+          amount: parseFloat(amount),
+          paymentType: 'CARD' // 기본값 설정
         });
         
-        setPaymentResult(result.data);
-        
-        // 결제 성공 시 처리 (예: 홈으로 리다이렉트 타이머 설정)
-        // setTimeout(() => {
-        //   navigate('/');
-        // }, 5000);
+        if (result.success) {
+          setPaymentResult(result.data);
+        } else {
+          throw new Error(result.message || '결제 승인에 실패했습니다.');
+        }
       } catch (err) {
         console.error('결제 승인 오류:', err);
-        setError(err.response?.data?.message || err.message || '결제 승인 중 오류가 발생했습니다.');
+        setError(err.message || '결제 승인 중 오류가 발생했습니다.');
       } finally {
         setLoading(false);
       }
     };
     
     processPayment();
-  }, [location, navigate]);
+  }, [location]);
   
   const handleGoBack = () => {
     navigate('/');
@@ -109,7 +109,7 @@ const SuccessPage = () => {
             <h2>결제 정보</h2>
             <div className="info-row">
               <span>주문 번호:</span>
-              <span>{paymentResult.orderId}</span>
+              <span>{paymentResult.orderNumber}</span>
             </div>
             <div className="info-row">
               <span>결제 금액:</span>
@@ -117,7 +117,7 @@ const SuccessPage = () => {
             </div>
             <div className="info-row">
               <span>결제 상태:</span>
-              <span>{paymentResult.status}</span>
+              <span>{paymentResult.status === 'DONE' ? '결제 완료' : paymentResult.status}</span>
             </div>
             {paymentResult.paymentDate && (
               <div className="info-row">

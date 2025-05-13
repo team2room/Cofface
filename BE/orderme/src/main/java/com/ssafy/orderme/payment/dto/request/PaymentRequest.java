@@ -6,19 +6,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class PaymentRequest {
-    private Integer kioskId;         // 키오스크(매장) 아이디
-    private String paymentMethod;   // 결제 방식
-    private String paymentStatus;   // 결제 상태
-    private String orderStatus;     // 주문 상태
-    private Boolean isTakeout;      // 포장 여부
-    private BigDecimal totalAmount;    // 결제 금액
-    private Boolean isStampUsed;        // 쿠폰 사용 여부
-    private String successUrl;      // 성공 시 리다이렉트 URL
-    private String failUrl;         // 실패 시 리다이렉트 URL
+    private Integer kioskId; // 키오스크/매장 ID
+    private BigDecimal totalAmount; // 총 결제 금액
+    private Boolean isStampUsed; // 스탬프 사용 여부
+    private Boolean isTakeout; // 포장 여부
+    private String weather;
+    private List<MenuOrderRequest> menuOrders; // 주문한 메뉴 목록
 }

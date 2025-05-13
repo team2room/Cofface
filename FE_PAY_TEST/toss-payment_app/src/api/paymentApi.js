@@ -1,46 +1,73 @@
-import axios from 'axios';
+import axiosInstance from '../utils/axiosConfig';
 
-// 백엔드 API를 직접 호출하지 않고 클라이언트에서만 처리하는 간단한 버전
+// 결제 준비 API (토스페이먼츠 결제 위젯을 위한 정보 가져오기)
 export const preparePayment = async (paymentData) => {
-  // 모의 응답만 반환 (실제로는 백엔드 호출 없음)
-  return {
-    success: true,
-    data: {
-      orderId: generateRandomId(),
-      amount: paymentData.amount,
-      clientKey: 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm'
-    }
-  };
-};
-
-// 결제 승인 API (SuccessPage에서 사용)
-export const approvePayment = async (paymentKey, orderId, amount) => {
   try {
-    console.log('결제 승인 정보:', { paymentKey, orderId, amount });
-
-    // 모의 응답 (백엔드 호출 없이 성공 응답)
-    return {
-      success: true,
-      data: {
-        orderId: orderId,
-        amount: amount,
-        paymentKey: paymentKey,
-        status: '결제 완료',
-        paymentDate: new Date().toISOString()
-      }
-    };
+    const response = await axiosInstance.post('/api/payments/prepare', {
+      kioskId: paymentData.kioskId || 1, // 기본값으로 1 설정, 실제 구현에서는 매장 ID 전달
+      totalAmount: paymentData.amount,
+      isStampUsed: paymentData.isStampUsed || false,
+      isTakeout: paymentData.isTakeout || false,
+      menuOrders: paymentData.menuOrders || []
+    });
+    
+    return response.data;
   } catch (error) {
-    console.error('결제 승인 오류:', error);
-    throw new Error('결제 승인 중 오류가 발생했습니다.');
+    console.error('결제 준비 오류:', error);
+    throw error;
   }
 };
 
-// 랜덤 ID 생성 (주문 ID용)
-const generateRandomId = () => {
-  return 'ORDER' + Date.now() + '' + Math.random().toString(36).substring(2, 9);
+// 토스페이먼츠 클라이언트 키 가져오기
+export const getClientKey = async () => {
+  try {
+    // 수정: 전체 경로 사용 (/api/payments/client-key)
+    const response = await axiosInstance.get('/api/payments/client-key');
+    return response.data;
+  } catch (error) {
+    console.error('클라이언트 키 가져오기 오류:', error);
+    throw error;
+  }
+};
+
+// 결제 승인 API
+export const approvePayment = async (paymentData) => {
+  try {
+    const response = await axiosInstance.post('/api/payments/confirm', {
+      paymentKey: paymentData.paymentKey,
+      orderId: paymentData.orderId,
+      amount: paymentData.amount,
+      paymentType: 'CARD' // 기본값
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('결제 승인 오류:', error);
+    throw error;
+  }
+};
+
+// 결제 실패 처리 API
+export const handlePaymentFailure = async (orderId, errorCode, errorMessage) => {
+  try {
+    const response = await axiosInstance.post('/api/payments/failure', null, {
+      params: {
+        orderId,
+        errorCode,
+        errorMessage
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('결제 실패 처리 오류:', error);
+    throw error;
+  }
 };
 
 export default {
   preparePayment,
-  approvePayment
+  getClientKey,
+  approvePayment,
+  handlePaymentFailure
 };

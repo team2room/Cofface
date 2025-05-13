@@ -7,10 +7,14 @@ import com.ssafy.orderme.payment.dto.response.PaymentResponseDto;
 import com.ssafy.orderme.payment.model.Order;
 import com.ssafy.orderme.payment.model.Payment;
 import com.ssafy.orderme.payment.service.PaymentService;
+import com.ssafy.orderme.security.JwtTokenProvider;
 import com.ssafy.orderme.user.model.User;
 import com.ssafy.orderme.user.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -26,48 +30,57 @@ import java.util.Map;
 public class PaymentController {
     private final PaymentService paymentService;
     private final UserService userService;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    // 결제 준비 (주문 생성)
+    @Value("${toss.client-key}")
+    private String tossPaymentsClientKey;
+
+    /**
+     * 토스페이먼츠 클라이언트 키 제공 API
+     */
+    @GetMapping("/client-key")
+    public ResponseEntity<?> getClientKey() {
+        Map<String, Object> response = new HashMap<>();
+        Map<String, String> data = new HashMap<>();
+
+        data.put("clientKey", tossPaymentsClientKey);
+
+        response.put("success", true);
+        response.put("data", data);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // 주문 생성 (결제 준비)
     @PostMapping("/prepare")
-    public ResponseEntity<ApiResponse<?>> prepare(@RequestBody PaymentRequest request,
-                                                  @AuthenticationPrincipal org.springframework.security.core.userdetails.User principal) {
-        log.info("Payment preparation request: {}", request);
-
+    public ResponseEntity<ApiResponse<?>> preparePayment(
+            @RequestBody PaymentRequest request,
+            HttpServletRequest httpRequest) {
         try {
-            // 결제 금액 검증
-            if (request.getTotalAmount() == null || request.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
-                return ResponseEntity.ok(ApiResponse.error(400, "유효하지 않은 결제 금액입니다."));
+            // 토큰에서 사용자 ID 추출 (없으면 게스트로 간주)
+            String userId = null;
+            String authHeader = httpRequest.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                userId = jwtTokenProvider.getUserId(authHeader.replace("Bearer ", ""));
             }
 
-            // Principal에서 사용자 ID 추출
-            String userId = principal.getUsername(); // JWT에서 추출된 userId
+            // 주문 생성
+            Order order = paymentService.createOrder(request, userId);
 
-            // 사용자 정보 조회
-            User user = userService.findById(userId);
-            if (user == null) {
-                return ResponseEntity.ok(ApiResponse.error(404, "사용자 정보를 찾을 수 없습니다."));
-            }
-
-            Order order = paymentService.createOrder(request, user.getId());
-
-            // 응답 데이터 구성
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("orderId", order.getOrderId());
-            responseData.put("amount", order.getTotalAmount());
-            responseData.put("clientKey", paymentService.getClientKey());
-
-            return ResponseEntity.ok(ApiResponse.success("결제 준비가 완료되었습니다.", responseData));
+            return ResponseEntity.ok(ApiResponse.success(Map.of(
+                    "orderId", order.getTossOrderId(),
+                    "orderNumber", order.getOrderNumber()
+            )));
         } catch (Exception e) {
-            log.error("결제 준비 중 오류 발생", e);
-            return ResponseEntity.ok(ApiResponse.error(500, "결제 준비 중 오류가 발생했습니다."));
+            log.error("결제 준비 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(500, "결제 준비에 실패했습니다."));
         }
     }
 
     // 결제 승인
-    @PostMapping("/approve")
-    public ResponseEntity<ApiResponse<?>> approve(@RequestBody PaymentApprovalRequest request) {
-        log.info("결제 승인 요청: {}", request);
-
+    @PostMapping("/confirm")
+    public ResponseEntity<ApiResponse<?>> confirmPayment(@RequestBody PaymentApprovalRequest request) {
         try {
             // 필수 정보 검증
             if (request.getPaymentKey() == null || request.getOrderId() == null || request.getAmount() == null) {
@@ -75,86 +88,27 @@ public class PaymentController {
             }
 
             // 결제 승인 처리
-            PaymentResponseDto payment = paymentService.approvePayment(request);
-
-            // 응답 데이터 구성
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("paymentKey", payment.getPaymentKey());
-            responseData.put("orderId", payment.getOrderId());
-            responseData.put("amount", payment.getAmount());
-            responseData.put("status", payment.getStatus());
-            responseData.put("orderNumber", payment.getOrderNumber());
-
-            return ResponseEntity.ok(ApiResponse.success("결제가 성공적으로 승인되었습니다.", responseData));
+            PaymentResponseDto response = paymentService.approvePayment(request);
+            return ResponseEntity.ok(ApiResponse.success("결제가 성공적으로 승인되었습니다.", response));
         } catch (Exception e) {
             log.error("결제 승인 중 오류 발생", e);
             return ResponseEntity.ok(ApiResponse.error(500, "결제 승인 중 오류가 발생했습니다."));
         }
     }
 
-    // 결제 성공 페이지
-    @GetMapping("/success")
-    public ResponseEntity<ApiResponse<?>> paymentSuccess(
-            @RequestParam("paymentKey") String paymentKey,
-            @RequestParam("orderId") Integer orderId,
-            @RequestParam("amount") BigDecimal amount){
-
-        log.info("결제 성공 콜백: paymentKey={}, orderId={}, amount={}", paymentKey, orderId, amount);
-
-        try{
-            // 주문 정보 조회
-            Order order = paymentService.getOrderById(orderId);
-            if (order == null) {
-                return ResponseEntity.ok(ApiResponse.error(404, "주문 정보를 찾을 수 없습니다."));
-            }
-
-            // 금액 검증
-            if (!order.getTotalAmount().equals(amount)) {
-                log.error("금액 불일치: 주문금액={}, 결제금액={}", order.getTotalAmount(), amount);
-                return ResponseEntity.ok(ApiResponse.error(400, "결제 금액이 일치하지 않습니다."));
-            }
-
-            // 자동으로 결제 승인 처리 (이미 승인된 경우를 대비해 검증 로직 필요)
-            PaymentApprovalRequest approvalRequest = new PaymentApprovalRequest();
-            approvalRequest.setPaymentKey(paymentKey);
-            approvalRequest.setOrderId(orderId.toString());
-            approvalRequest.setAmount(amount);
-            approvalRequest.setPaymentType("CARD"); // 기본값 설정 또는 요청에서 가져오기
-
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("orderId", orderId);
-            responseData.put("paymentKey", paymentKey);
-            responseData.put("amount", amount);
-
-            return ResponseEntity.ok(ApiResponse.success("결제가 완료되었습니다.", responseData));
-        }catch(Exception e){
-            log.error("결제 성공 처리 중 오류 발생", e);
-            return ResponseEntity.ok(ApiResponse.error(500, "결제 처리 중 오류가 발생했습니다."));
-        }
-    }
-
     // 결제 실패 처리
-    @GetMapping("/fail")
-    public ResponseEntity<ApiResponse<?>> paymentFail(
-            @RequestParam("code") String errorCode,
-            @RequestParam("message") String errorMessage,
-            @RequestParam("orderId") Integer orderId) {
-
-        log.info("결제 실패 콜백: code={}, message={}, orderId={}", errorCode, errorMessage, orderId);
-
-        try{
-            // 실패한 결제 처리
+    @PostMapping("/failure")
+    public ResponseEntity<ApiResponse<?>> handlePaymentFailure(
+            @RequestParam Integer orderId,
+            @RequestParam String errorCode,
+            @RequestParam String errorMessage) {
+        try {
             paymentService.handlePaymentFailure(orderId, errorCode, errorMessage);
-
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("errorCode", errorCode);
-            responseData.put("errorMessage", errorMessage);
-            responseData.put("orderId", orderId);
-
-            return ResponseEntity.ok(ApiResponse.error(400, "결제에 실패했습니다.", responseData));
-        }catch (Exception e){
-            log.error("결제 실패 처리 중 오류 발생", e);
-            return ResponseEntity.ok(ApiResponse.error(500, "결제 실패 처리 중 오류가 발생했습니다."));
+            return ResponseEntity.ok(ApiResponse.success("결제 실패가 정상적으로 처리되었습니다."));
+        } catch (Exception e) {
+            log.error("결제 실패 처리 오류", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(500, "결제 실패 처리 중 오류가 발생했습니다."));
         }
     }
 }

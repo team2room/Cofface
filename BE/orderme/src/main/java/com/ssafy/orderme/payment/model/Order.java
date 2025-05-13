@@ -26,4 +26,6 @@ public class Order {
     private String gender;
     private Boolean isDelete;
     private String orderNumber;
+    private String tossOrderId;
+    private String weather;
 }

@@ -33,4 +33,6 @@ public interface OrderMapper {
 
     int countOrdersByStoreAndDate(@Param("kioskId") Integer kioskId,
                                   @Param("orderDate") LocalDateTime orderDate);
+
+    Order findByTossOrderId(String tossOrderId);
 }
