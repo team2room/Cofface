@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import { User } from '@/interfaces/userInterface'
 import { getCookie, removeCookie, setCookie } from '@/lib/cookie'
+import { User } from '@/interfaces/UserInterface'
 
 // 전화번호 로그인 시 사용
 interface LoginStore {
