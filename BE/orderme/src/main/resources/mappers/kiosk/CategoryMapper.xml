@@ -18,7 +18,7 @@
         SELECT
             category_id, store_id, category_name, display_order,
             is_active, is_deleted, deleted_at
-        FROM Categories
+        FROM categories
         WHERE store_id = #{storeId}
           AND is_deleted = FALSE
           AND is_active = TRUE
@@ -30,7 +30,7 @@
         SELECT
             category_id, store_id, category_name, display_order,
             is_active, is_deleted, deleted_at
-        FROM Categories
+        FROM categories
         WHERE category_id = #{categoryId}
           AND is_deleted = FALSE
     </select>

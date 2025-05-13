@@ -74,7 +74,7 @@
             m.menu_id, m.menu_name, m.price, m.category_id,
             c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
         FROM Menus m
-                 JOIN Categories c ON m.category_id = c.category_id
+                 JOIN categories c ON m.category_id = c.category_id
         WHERE c.store_id = #{storeId}
           AND m.category_id = #{categoryId}
           AND m.is_deleted = 0
@@ -87,7 +87,7 @@
             m.menu_id, m.menu_name, m.price, m.category_id,
             c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
         FROM Menus m
-                 LEFT JOIN Categories c ON m.category_id = c.category_id
+                 LEFT JOIN categories c ON m.category_id = c.category_id
         WHERE m.menu_id = #{menuId}
           AND m.is_deleted = 0
     </select>
@@ -97,8 +97,8 @@
         SELECT
             oc.category_id, oc.category_name, oc.is_required, oc.display_order,
             oc.is_sold_out, oc.is_deleted, oc.deleted_at
-        FROM OptionCategories oc
-                 JOIN MenuOptionCategories moc ON oc.category_id = moc.category_id
+        FROM optioncategories oc
+                 JOIN menuoptioncategories moc ON oc.category_id = moc.category_id
         WHERE moc.menu_id = #{menuId}
           AND oc.is_deleted = 0
         ORDER BY oc.display_order, oc.category_name
@@ -109,7 +109,7 @@
         SELECT
             item_id, category_id, option_name, additional_price,
             is_default, display_order, is_deleted, deleted_at
-        FROM OptionItems
+        FROM optionitems
         WHERE category_id = #{categoryId}
           AND is_deleted = 0
         ORDER BY display_order, option_name

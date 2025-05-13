@@ -11,7 +11,7 @@
             CAST(COALESCE(eat_in_sales, 0) AS SIGNED) AS eatInSales,
             CAST(COALESCE(takeout_orders, 0) AS SIGNED) AS takeoutOrders,
             CAST(COALESCE(eat_in_orders, 0) AS SIGNED) AS eatInOrders
-        FROM SalesStats
+        FROM salesstats
         WHERE store_id = #{storeId}
           AND stats_date = #{date}
           AND stats_period_type = 'DAY'
@@ -23,12 +23,12 @@
             m.menu_name AS menuName,
             m.image_url AS imageUrl,
             CAST(SUM(mps.order_count) AS SIGNED) AS orderCount
-        FROM MenuPopularityStats mps
-                 JOIN Menus m ON mps.menu_id = m.menu_id
+        FROM menupopularitystats mps
+                 JOIN menus m ON mps.menu_id = m.menu_id
         WHERE mps.store_id = #{storeId}
           AND mps.stats_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
         GROUP BY mps.menu_id
-        ORDER BY orderCount DESC
+        ORDER BY ordercount DESC
             LIMIT 3
     </select>
 
@@ -39,8 +39,8 @@
             m.menu_name AS menuName,
             m.image_url AS imageUrl,
             mps.percentage
-        FROM MenuPreferenceStats mps
-                 JOIN Menus m ON mps.menu_id = m.menu_id
+        FROM menupreferencestats mps
+                 JOIN menus m ON mps.menu_id = m.menu_id
         WHERE mps.store_id = #{storeId}
           AND mps.gender IS NOT NULL
           AND mps.age_group IS NULL
@@ -55,8 +55,8 @@
             m.menu_name AS menuName,
             m.image_url AS imageUrl,
             mps.percentage
-        FROM MenuPreferenceStats mps
-                 JOIN Menus m ON mps.menu_id = m.menu_id
+        FROM menupreferencestats mps
+                 JOIN menus m ON mps.menu_id = m.menu_id
         WHERE mps.store_id = #{storeId}
           AND mps.gender IS NULL
           AND mps.age_group IS NOT NULL
@@ -69,7 +69,7 @@
         SELECT
             stats_date AS date,
             CAST(COALESCE(total_sales, 0) AS SIGNED) AS totalSales
-        FROM SalesStats
+        FROM salesstats
         WHERE store_id = #{storeId}
           AND stats_date BETWEEN #{startDate} AND #{endDate}
           AND stats_period_type = 'DAY'
@@ -78,7 +78,7 @@
 
     <!-- 일일 매출 통계 저장 -->
     <insert id="insertDailySalesStats">
-        INSERT INTO SalesStats (
+        INSERT INTO salesstats (
             store_id, stats_period_type, stats_date, year, month, week, day,
             total_sales, takeout_sales, eat_in_sales, total_orders, takeout_orders, eat_in_orders,
             created_at, updated_at
@@ -99,7 +99,7 @@
             SUM(CASE WHEN is_takeout = FALSE THEN 1 ELSE 0 END) AS eat_in_orders,
             NOW() AS created_at,
             NOW() AS updated_at
-        FROM Orders
+        FROM orders
         WHERE DATE(order_date) = #{date}
           AND is_deleted = FALSE
         GROUP BY store_id
@@ -117,9 +117,9 @@
             COUNT(om.order_menu_id) AS order_count,
             NOW() AS created_at,
             NOW() AS updated_at
-        FROM OrderMenu om
-                 JOIN Orders o ON om.order_id = o.order_id
-                 JOIN Menus m ON om.menu_name = m.menu_name
+        FROM ordermenu om
+                 JOIN orders o ON om.order_id = o.order_id
+                 JOIN menus m ON om.menu_name = m.menu_name
         WHERE DATE(o.order_date) = #{date}
           AND o.is_deleted = FALSE
         GROUP BY o.store_id, m.menu_id
@@ -135,9 +135,9 @@
                 o.store_id,
                 u.gender,
                 COUNT(om.order_menu_id) AS total_count
-            FROM OrderMenu om
-                     JOIN Orders o ON om.order_id = o.order_id
-                     JOIN Users u ON o.user_id = u.internal_id
+            FROM ordermenu om
+                     JOIN orders o ON om.order_id = o.order_id
+                     JOIN users u ON o.user_id = u.internal_id
             WHERE DATE(o.order_date) = #{date}
             AND o.is_deleted = FALSE
             AND u.gender IS NOT NULL
@@ -153,10 +153,10 @@
             #{date} AS stats_date,
             NOW() AS created_at,
             NOW() AS updated_at
-        FROM OrderMenu om
-                 JOIN Orders o ON om.order_id = o.order_id
-                 JOIN Users u ON o.user_id = u.internal_id
-                 JOIN Menus m ON om.menu_name = m.menu_name
+        FROM ordermenu om
+                 JOIN orders o ON om.order_id = o.order_id
+                 JOIN users u ON o.user_id = u.internal_id
+                 JOIN menus m ON om.menu_name = m.menu_name
                  JOIN gender_totals gt ON o.store_id = gt.store_id AND u.gender = gt.gender
         WHERE DATE(o.order_date) = #{date}
           AND o.is_deleted = FALSE
@@ -174,9 +174,9 @@
                 o.store_id,
                 FLOOR((YEAR(#{date}) - YEAR(u.birth_date)) / 10) * 10 AS age_group,
                 COUNT(om.order_menu_id) AS total_count
-            FROM OrderMenu om
-                     JOIN Orders o ON om.order_id = o.order_id
-                     JOIN Users u ON o.user_id = u.internal_id
+            FROM ordermenu om
+                     JOIN orders o ON om.order_id = o.order_id
+                     JOIN users u ON o.user_id = u.internal_id
             WHERE DATE(o.order_date) = #{date}
             AND o.is_deleted = FALSE
             AND u.birth_date IS NOT NULL
@@ -192,7 +192,7 @@
             #{date} AS stats_date,
             NOW() AS created_at,
             NOW() AS updated_at
-        FROM OrderMenu om
+        FROM ordermenu om
                  JOIN Orders o ON om.order_id = o.order_id
                  JOIN Users u ON o.user_id = u.internal_id
                  JOIN Menus m ON om.menu_name = m.menu_name

@@ -14,13 +14,13 @@
     <select id="findAll" resultMap="StoreResultMap">
         SELECT
             store_id, store_name, address, contact_number, business_hours, created_at
-        FROM Stores
+        FROM stores
     </select>
 
     <select id="findById" parameterType="Long" resultMap="StoreResultMap">
         SELECT
             store_id, store_name, address, contact_number, business_hours, created_at
-        FROM Stores
+        FROM stores
         WHERE store_id = #{storeId}
     </select>
 
