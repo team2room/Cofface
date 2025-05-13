@@ -29,20 +29,21 @@ public class AuthController {
     // 회원가입 인증번호 요청
     @PostMapping("/verify/request")
     public ResponseEntity<ApiResponse<?>> requestVerification(@RequestBody VerificationRequest request){
-        // 1. 유저 기본 정보 검증
-        boolean isValidUser = userService.validateUserBasicInfo(
-                request.getName(),
-                request.getIdNumberFront(),
-                request.getIdNumberGender()
-        );
 
-        if(!isValidUser){
-            return ResponseEntity.ok(ApiResponse.error(400, "유효하지 않은 사용자 정보입니다."));
-        }
+        // 1. 전화번호 존재 여부 확인
+        boolean isExistingUser = userService.isPhoneNumberRegistered(request.getPhoneNumber());
 
-        // 2. 전화번호 중복 체크
-        if(userService.isPhoneNumberRegistered(request.getPhoneNumber())){
-            return ResponseEntity.ok(ApiResponse.error(400, "이미 등록된 전화번호입니다."));
+        // 2. 신규 유저인 경우 기본 정보 검증
+        if(!isExistingUser) {
+            boolean isValidUser = userService.validateUserBasicInfo(
+                    request.getName(),
+                    request.getIdNumberFront(),
+                    request.getIdNumberGender()
+            );
+
+            if(!isValidUser){
+                return ResponseEntity.ok(ApiResponse.error(400, "유효하지 않은 사용자 정보입니다."));
+            }
         }
 
         // 3. 인증번호 생성 및 저장
@@ -75,16 +76,23 @@ public class AuthController {
             return ResponseEntity.ok(ApiResponse.error(400, "인증번호가 일치하지 않습니다."));
         }
 
-        // 2. 사용자 정보 저장(회원가입)
-        User user = userService.createUser(
-                request.getName(),
-                request.getIdNumberFront(),
-                request.getIdNumberGender(),
-                request.getPhoneNumber(),
-                request.getPassword()
-        );
+        User user = userService.findByPhoneNumber(request.getPhoneNumber());
+        boolean isNewUser = false;
 
-        // 3. JWT 토큰 생성(앱용 및 리프레시 토큰)
+        // 3. 사용자 상태에 따른 처리
+        if(user == null) {
+            // 회원가입 처리
+            isNewUser = true;
+            user = userService.createUser(
+                    request.getName(),
+                    request.getIdNumberFront(),
+                    request.getIdNumberGender(),
+                    request.getPhoneNumber(),
+                    request.getPassword()
+            );
+        }
+
+        // 4. JWT 토큰 생성(앱용 및 리프레시 토큰)
         String accessToken = jwtTokenProvider.createToken(
                 user.getId().toString(),
                 JwtTokenProvider.TokenType.APP
@@ -92,15 +100,17 @@ public class AuthController {
 
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId().toString());
 
-        // 4. 응답 데이터 구성
+        // 5. 응답 데이터 구성
         Map<String, Object> responseData = new HashMap<>();
         responseData.put("accessToken", accessToken);
         responseData.put("refreshToken", refreshToken);
         responseData.put("tokenType", "Bearer");
         responseData.put("expiresIn", 2592000); // 30일
         responseData.put("user", user.toDto());
+        responseData.put("isNewUser", isNewUser);
 
-        return ResponseEntity.ok(ApiResponse.success("회원가입이 완료되었습니다.", responseData));
+        String message = isNewUser ? "회원가입이 완료되었습니다." : "로그인이 완료되었습니다.";
+        return ResponseEntity.ok(ApiResponse.success(message, responseData));
     }
 
     // 앱 자동 로그인 토큰 갱신
