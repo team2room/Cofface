@@ -3,6 +3,7 @@ package com.ssafy.orderme.payment.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.orderme.payment.dto.request.PaymentApprovalRequest;
 import com.ssafy.orderme.payment.dto.request.PaymentRequest;
+import com.ssafy.orderme.payment.dto.response.PaymentResponseDto;
 import com.ssafy.orderme.payment.mapper.OrderMapper;
 import com.ssafy.orderme.payment.mapper.PaymentMapper;
 import com.ssafy.orderme.payment.model.Order;
@@ -62,6 +63,15 @@ public class PaymentService {
         // 외부 결제 시스템에 사용할 고유 주문 ID 생성
         String orderIdForToss = generateOrderId();
 
+        // 주문일시
+        LocalDateTime orderDate = LocalDateTime.now();
+
+        // 해당 매장의 오늘 주문 수 조회 (+1 하면 현재 주문의 순번이 됨)
+        int todayOrderCount = orderMapper.countOrdersByStoreAndDate(request.getKioskId(), orderDate) + 1;
+
+        // A-{순번} 형식의 주문번호 생성
+        String orderNumber = "A-" + todayOrderCount;
+
         // 주문 정보 저장
         Order order = Order.builder()
                 .userId(userId)
@@ -72,6 +82,7 @@ public class PaymentService {
                 .orderStatus("PENDING")
                 .isTakeout(request.getIsTakeout() != null ? request.getIsTakeout() : false)
                 .isDelete(false)
+                .orderNumber(orderNumber)
                 .build();
 
         orderMapper.insertOrder(order);
@@ -81,7 +92,7 @@ public class PaymentService {
 
     // 결제 승인 처리
     @Transactional
-    public Payment approvePayment(PaymentApprovalRequest request){
+    public PaymentResponseDto approvePayment(PaymentApprovalRequest request){
         try{
             // 토스페이먼츠 결제 승인 API 호출
             String tossPaymentsUrl = "https://api.tosspayments.com/v1/payments/confirm";
@@ -141,7 +152,13 @@ public class PaymentService {
 
             paymentMapper.insertPayment(payment);
 
-            return payment;
+            return PaymentResponseDto.builder()
+                    .orderId(order.getOrderId())
+                    .orderNumber(order.getOrderNumber())
+                    .paymentKey(payment.getPaymentKey())
+                    .status(payment.getStatus())
+                    .amount(payment.getAmount())
+                    .build();
         }catch (Exception e){
             log.error("결제 승인 처리 중 오류 발생", e);
             throw new RuntimeException("결제 승인 처리에 실패했습니다", e);

@@ -25,4 +25,5 @@ public class Order {
     private Integer age;
     private String gender;
     private Boolean isDelete;
+    private String orderNumber;
 }

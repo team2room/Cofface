@@ -11,5 +11,4 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class OptionOrderRequest {
     private Integer optionItemId; // 옵션 항목 ID
-    private Integer quantity; // 수량 (필요한 경우)
 }

@@ -8,6 +8,7 @@ import com.ssafy.orderme.payment.dto.request.AutoPaymentRequest;
 import com.ssafy.orderme.payment.dto.request.MenuOrderRequest;
 import com.ssafy.orderme.payment.dto.request.OptionOrderRequest;
 import com.ssafy.orderme.payment.dto.response.CardCompanyResponse;
+import com.ssafy.orderme.payment.dto.response.PaymentResponseDto;
 import com.ssafy.orderme.payment.mapper.OrderMapper;
 import com.ssafy.orderme.payment.mapper.PaymentInfoMapper;
 import com.ssafy.orderme.payment.mapper.PaymentMapper;
@@ -46,7 +47,7 @@ public class AutoPaymentService {
      * 자동 결제 처리
      */
     @Transactional
-    public Payment processAutoPayment(AutoPaymentRequest request, String userId) {
+    public PaymentResponseDto processAutoPayment(AutoPaymentRequest request, String userId) {
         // 1. 사용자의 결제 정보 가져오기
         PaymentInfo paymentInfo;
         if (request.getPaymentInfoId() != null) {
@@ -63,25 +64,35 @@ public class AutoPaymentService {
             }
         }
 
-        // 2. 주문 생성
+        // 주문일시 설정
+        LocalDateTime orderDate = LocalDateTime.now();
+
+        // 해당 매장의 오늘 주문 수 조회 (+1 하면 현재 주문의 순번이 됨)
+        int todayOrderCount = orderMapper.countOrdersByStoreAndDate(request.getKioskId(), orderDate) + 1;
+
+        // A-{순번} 형식의 주문번호 생성
+        String orderNumber = "A-" + todayOrderCount;
+
+        // 2. 주문 생성 (기존 코드 유지하되 orderNumber 필드는 DB에 저장하지 않음)
         Order order = Order.builder()
                 .userId(userId)
                 .kioskId(request.getKioskId())
                 .totalAmount(request.getTotalAmount())
-                .orderDate(LocalDateTime.now())
+                .orderDate(orderDate)
                 .isStampUsed(request.getIsStampUsed() != null ? request.getIsStampUsed() : false)
                 .orderStatus("ACCEPTED") // 자동 결제는 바로 승인 상태로 설정
                 .isTakeout(request.getIsTakeout() != null ? request.getIsTakeout() : false)
                 .isGuest(false) // 등록된 사용자이므로 게스트 아님
                 .isDelete(false)
+                // orderNumber는 데이터베이스에 저장하지 않음
                 .build();
 
         orderMapper.insertOrder(order);
 
-        // 3. 주문 메뉴 추가
+        // 3. 주문 메뉴 추가 (기존 코드 유지)
         insertOrderMenus(order.getOrderId(), request.getMenuOrders());
 
-        // 4. 스탬프 처리
+        // 4. 스탬프 처리 (기존 코드 유지)
         if (request.getIsStampUsed() != null && request.getIsStampUsed()) {
             handleStampUsage(userId, request.getKioskId(), order.getOrderId());
         } else {
@@ -89,7 +100,7 @@ public class AutoPaymentService {
             addStamps(userId, request.getKioskId(), order.getOrderId());
         }
 
-        // 5. 결제 처리 (실제 결제 로직은 외부 결제 시스템과 연동 필요)
+        // 5. 결제 처리 (기존 코드 유지)
         Payment payment = Payment.builder()
                 .orderId(order.getOrderId())
                 .amount(request.getTotalAmount().doubleValue())
@@ -101,7 +112,14 @@ public class AutoPaymentService {
 
         paymentMapper.insertPayment(payment);
 
-        return payment;
+        // 6. 응답 DTO 생성 - 여기서 주문번호 포함
+        return PaymentResponseDto.builder()
+                .orderId(order.getOrderId())
+                .orderNumber(orderNumber) // 계산한 주문번호 설정
+                .paymentKey(payment.getPaymentKey())
+                .status(payment.getStatus())
+                .amount(payment.getAmount())
+                .build();
     }
 
     /**
@@ -156,7 +174,6 @@ public class AutoPaymentService {
                     .optionItemId(optionItem.getItemId())
                     .optionName(optionItem.getOptionName())
                     .optionPrice(optionItem.getAdditionalPrice())
-                    .quantity(option.getQuantity())
                     .isDeleted(false)
                     .build();
 

@@ -3,6 +3,7 @@ package com.ssafy.orderme.payment.controller;
 import com.ssafy.orderme.common.ApiResponse;
 import com.ssafy.orderme.payment.dto.request.PaymentApprovalRequest;
 import com.ssafy.orderme.payment.dto.request.PaymentRequest;
+import com.ssafy.orderme.payment.dto.response.PaymentResponseDto;
 import com.ssafy.orderme.payment.model.Order;
 import com.ssafy.orderme.payment.model.Payment;
 import com.ssafy.orderme.payment.service.PaymentService;
@@ -74,7 +75,7 @@ public class PaymentController {
             }
 
             // 결제 승인 처리
-            Payment payment = paymentService.approvePayment(request);
+            PaymentResponseDto payment = paymentService.approvePayment(request);
 
             // 응답 데이터 구성
             Map<String, Object> responseData = new HashMap<>();
@@ -82,7 +83,7 @@ public class PaymentController {
             responseData.put("orderId", payment.getOrderId());
             responseData.put("amount", payment.getAmount());
             responseData.put("status", payment.getStatus());
-            responseData.put("paymentDate", payment.getPaymentDate());
+            responseData.put("orderNumber", payment.getOrderNumber());
 
             return ResponseEntity.ok(ApiResponse.success("결제가 성공적으로 승인되었습니다.", responseData));
         } catch (Exception e) {

@@ -146,4 +146,67 @@ public class OrderService {
 
         return result;
     }
+
+    /**
+     * 매장별 주문 정보 조회 (요약 포함)
+     */
+    public OrderResponse getOrderWithSummaryByStore(Integer orderId, Integer storeId) {
+        // 주문 정보 조회 (매장 검증 포함)
+        Order order = orderMapper.findByIdAndStoreId(orderId, storeId);
+        if (order == null) {
+            throw new IllegalArgumentException("주문 정보를 찾을 수 없습니다.");
+        }
+
+        // 주문 메뉴 목록 조회
+        List<OrderMenu> menuList = orderMenuMapper.findByOrderId(orderId);
+
+        // 주문 요약 생성
+        String orderSummary = createOrderSummary(menuList);
+
+        return OrderResponse.fromOrder(order, orderSummary);
+    }
+
+    /**
+     * 매장별 주문 정보 상세 조회 (메뉴 상세 포함)
+     */
+    public OrderResponse getOrderWithDetailsByStore(Integer orderId, Integer storeId) {
+        // 주문 정보 조회 (매장 검증 포함)
+        Order order = orderMapper.findByIdAndStoreId(orderId, storeId);
+        if (order == null) {
+            throw new IllegalArgumentException("주문 정보를 찾을 수 없습니다.");
+        }
+
+        // 주문 메뉴 목록 조회
+        List<OrderMenu> menuList = orderMenuMapper.findByOrderId(orderId);
+
+        // 주문 요약 생성
+        String orderSummary = createOrderSummary(menuList);
+
+        // 메뉴 상세 정보 생성
+        List<OrderMenuResponse> menuDetails = createMenuDetails(menuList);
+
+        return OrderResponse.fromOrderWithDetails(order, orderSummary, menuDetails);
+    }
+
+    /**
+     * 사용자별, 매장별 최근 주문 목록 조회
+     */
+    public List<OrderResponse> getRecentOrdersByUserIdAndStoreId(String userId, Integer storeId, int limit) {
+        List<Order> orderList = orderMapper.findRecentByUserIdAndStoreId(userId, storeId, limit);
+        List<OrderResponse> result = new ArrayList<>();
+
+        for (Order order : orderList) {
+            // 주문 메뉴 목록 조회
+            List<OrderMenu> menuList = orderMenuMapper.findByOrderId(order.getOrderId());
+
+            // 주문 요약 생성
+            String orderSummary = createOrderSummary(menuList);
+
+            // 응답 객체 생성
+            OrderResponse response = OrderResponse.fromOrder(order, orderSummary);
+            result.add(response);
+        }
+
+        return result;
+    }
 }

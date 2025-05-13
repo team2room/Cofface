@@ -40,4 +40,22 @@
                      #{isDeleted}
                  )
     </insert>
+
+    <!-- 사용자별, 매장별 자주 주문하는 메뉴 TOP N 조회 -->
+    <select id="findTopMenusByUserIdAndStoreId" resultType="com.ssafy.orderme.order.model.MenuFrequency">
+        SELECT
+            om.menu_id as menuId,
+            om.menu_name as menuName,
+            SUM(om.quantity) as totalCount,
+            COUNT(DISTINCT om.order_id) as totalOrders
+        FROM ordermenu om
+                 JOIN orders o ON om.order_id = o.order_id
+        WHERE o.user_id = #{userId}
+          AND o.kiosk_id = #{storeId}
+          AND o.is_delete = 0
+          AND om.is_deleted = 0
+        GROUP BY om.menu_id, om.menu_name
+        ORDER BY totalCount DESC, totalOrders DESC
+            LIMIT #{limit}
+    </select>
 </mapper>

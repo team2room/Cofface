@@ -24,9 +24,11 @@ public class OrderController {
 
     // 주문 정보 조회 (요약 포함)
     @GetMapping("/{orderId}")
-    public ResponseEntity<ApiResponse<?>> getOrder(@PathVariable Integer orderId) {
+    public ResponseEntity<ApiResponse<?>> getOrder(
+            @PathVariable Integer orderId,
+            @RequestParam Integer storeId) {
         try {
-            OrderResponse order = orderService.getOrderWithSummary(orderId);
+            OrderResponse order = orderService.getOrderWithSummaryByStore(orderId, storeId);
             return ResponseEntity.ok(ApiResponse.success(order));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -40,9 +42,11 @@ public class OrderController {
 
     // 주문 정보 상세 조회 (메뉴 상세 포함)
     @GetMapping("/{orderId}/details")
-    public ResponseEntity<ApiResponse<?>> getOrderDetails(@PathVariable Integer orderId) {
+    public ResponseEntity<ApiResponse<?>> getOrderDetails(
+            @PathVariable Integer orderId,
+            @RequestParam Integer storeId) {
         try {
-            OrderResponse order = orderService.getOrderWithDetails(orderId);
+            OrderResponse order = orderService.getOrderWithDetailsByStore(orderId, storeId);
             return ResponseEntity.ok(ApiResponse.success(order));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -58,12 +62,13 @@ public class OrderController {
     @GetMapping("/recent")
     public ResponseEntity<ApiResponse<?>> getRecentOrders(
             HttpServletRequest httpRequest,
+            @RequestParam Integer storeId,
             @RequestParam(defaultValue = "10") int limit) {
         try {
             String token = httpRequest.getHeader("Authorization").replace("Bearer ", "");
             String userId = jwtTokenProvider.getUserId(token);
 
-            List<OrderResponse> orders = orderService.getRecentOrdersByUserId(userId, limit);
+            List<OrderResponse> orders = orderService.getRecentOrdersByUserIdAndStoreId(userId, storeId, limit);
             return ResponseEntity.ok(ApiResponse.success(orders));
         } catch (Exception e) {
             log.error("최근 주문 조회 실패", e);

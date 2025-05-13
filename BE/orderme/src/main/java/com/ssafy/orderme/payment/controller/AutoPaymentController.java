@@ -3,6 +3,7 @@ package com.ssafy.orderme.payment.controller;
 import com.ssafy.orderme.common.ApiResponse;
 import com.ssafy.orderme.payment.dto.request.AutoPaymentRequest;
 import com.ssafy.orderme.payment.dto.response.CardCompanyResponse;
+import com.ssafy.orderme.payment.dto.response.PaymentResponseDto;
 import com.ssafy.orderme.payment.model.CardRegistrationRequest;
 import com.ssafy.orderme.payment.model.Payment;
 import com.ssafy.orderme.payment.model.PaymentInfo;
@@ -83,9 +84,9 @@ public class AutoPaymentController {
         String userId = jwtTokenProvider.getUserId(token);
 
         // 자동 결제 처리
-        Payment payment = autoPaymentService.processAutoPayment(request, userId);
+        PaymentResponseDto response = autoPaymentService.processAutoPayment(request, userId);
 
-        return ResponseEntity.ok(ApiResponse.success("자동 결제가 처리되었습니다."));
+        return ResponseEntity.ok(ApiResponse.success("결제가 성공적으로 승인되었습니다.", response));
     }
 
     // 유저의 카드 정보 조회

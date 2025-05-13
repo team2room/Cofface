@@ -91,7 +91,8 @@
             is_guest,
             age,
             gender,
-            is_delete
+            is_delete,
+            order_number
         ) VALUES (
                      #{userId},
                      #{kioskId},
@@ -103,7 +104,8 @@
                      #{isGuest},
                      #{age},
                      #{gender},
-                     #{isDelete}
+                     #{isDelete},
+                     #{orderNumber}
                  )
     </insert>
 
@@ -158,5 +160,58 @@
           AND is_delete = 0
         ORDER BY order_date DESC
             LIMIT #{limit}
+    </select>
+
+    <!-- 사용자별, 매장별 최근 주문 목록 조회 -->
+    <select id="findRecentByUserIdAndStoreId" resultType="com.ssafy.orderme.payment.model.Order">
+        SELECT
+            order_id as orderId,
+            user_id as userId,
+            kiosk_id as kioskId,
+            total_amount as totalAmount,
+            order_date as orderDate,
+            is_stamp_used as isStampUsed,
+            order_status as orderStatus,
+            is_takeout as isTakeout,
+            is_guest as isGuest,
+            age as age,
+            gender as gender,
+            is_delete as isDelete
+        FROM orders
+        WHERE user_id = #{userId}
+          AND kiosk_id = #{storeId}
+          AND is_delete = 0
+        ORDER BY order_date DESC
+            LIMIT #{limit}
+    </select>
+
+    <!-- 주문 ID와 매장 ID로 주문 조회 (매장 검증 포함) -->
+    <select id="findByIdAndStoreId" resultType="com.ssafy.orderme.payment.model.Order">
+        SELECT
+            order_id as orderId,
+            user_id as userId,
+            kiosk_id as kioskId,
+            total_amount as totalAmount,
+            order_date as orderDate,
+            is_stamp_used as isStampUsed,
+            order_status as orderStatus,
+            is_takeout as isTakeout,
+            is_guest as isGuest,
+            age as age,
+            gender as gender,
+            is_delete as isDelete
+        FROM orders
+        WHERE order_id = #{orderId}
+          AND kiosk_id = #{storeId}
+          AND is_delete = 0
+    </select>
+
+    <!-- 특정 매장의 해당 날짜 주문 수 조회 -->
+    <select id="countOrdersByStoreAndDate" resultType="int">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE kiosk_id = #{kioskId}
+          AND DATE(order_date) = DATE(#{orderDate})
+          AND is_delete = false
     </select>
 </mapper>
