@@ -8,7 +8,6 @@ import com.ssafy.orderme.kiosk.model.OptionItem;
 import com.ssafy.orderme.recommendation.service.RecommendationService;
 import com.ssafy.orderme.recommendation.service.WeatherRecommendationService;
 import com.ssafy.orderme.user.mapper.UserMapper;
-import com.ssafy.orderme.user.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -40,7 +39,7 @@ public class MenuService {
     /**
      * 매장의 모든 메뉴 목록 조회
      */
-    public List<MenuResponse> getAllMenusByStoreId(Long storeId) {
+    public List<MenuResponse> getAllMenusByStoreId(Integer storeId) {
         List<Menu> menus = menuMapper.findAllByStoreId(storeId);
         return convertToMenuResponseList(menus);
     }
@@ -48,7 +47,7 @@ public class MenuService {
     /**
      * 카테고리별 메뉴 목록 조회
      */
-    public List<MenuResponse> getMenusByCategoryId(Long storeId, Long categoryId) {
+    public List<MenuResponse> getMenusByCategoryId(Integer storeId, Integer categoryId) {
         List<Menu> menus = menuMapper.findByCategoryId(storeId, categoryId);
         return convertToMenuResponseList(menus);
     }
@@ -56,7 +55,7 @@ public class MenuService {
     /**
      * 메뉴 상세 정보 조회
      */
-    public MenuDetailResponse getMenuDetail(Long menuId) {
+    public MenuDetailResponse getMenuDetail(Integer menuId) {
         Menu menu = menuMapper.findById(menuId);
         if (menu == null) {
             return null;
@@ -78,13 +77,13 @@ public class MenuService {
             // 옵션 아이템 정보 매핑
             List<String> optionNames = new ArrayList<>();
             List<Integer> additionalPrices = new ArrayList<>();
-            List<Long> optionIds = new ArrayList<>();
+            List<Integer> optionIds = new ArrayList<>(); // Integer로 변경
             List<Boolean> isDefault = new ArrayList<>();
 
             for (OptionItem item : items) {
                 optionNames.add(item.getOptionName());
                 additionalPrices.add(item.getAdditionalPrice());
-                optionIds.add(item.getItemId());
+                optionIds.add(item.getItemId().intValue()); // Long -> Integer 변환
                 isDefault.add(item.getIsDefault());
             }
 
@@ -98,10 +97,10 @@ public class MenuService {
 
         // 메뉴 상세 응답 생성
         MenuDetailResponse response = new MenuDetailResponse();
-        response.setMenuId(menu.getMenuId());
+        response.setMenuId(menu.getMenuId().longValue());
         response.setMenuName(menu.getMenuName());
         response.setPrice(menu.getPrice());
-        response.setCategoryId(menu.getCategoryId());
+        response.setCategoryId(menu.getCategoryId().longValue());
         response.setCategoryName(menu.getCategory() != null ? menu.getCategory().getCategoryName() : null);
         response.setIsSoldOut(menu.getIsSoldOut());
         response.setImageUrl(menu.getImageUrl());
@@ -162,12 +161,12 @@ public class MenuService {
      * - 자주 주문한 메뉴 3개
      * - 추천 메뉴 3개
      */
-    public RecommendedMenuResponse getRecommendedMenusForUser(Long storeId, String userId) {
+    public RecommendedMenuResponse getRecommendedMenusForUser(Integer storeId, String userId) {
         // 1. 사용자가 가장 많이 주문한 메뉴 3개 조회
         List<Menu> frequentMenus = menuMapper.findFrequentOrderedMenus(storeId, userId, 3);
 
         // 자주 주문한 메뉴 ID 추출 (중복 제거용)
-        Set<Long> frequentMenuIds = frequentMenus.stream()
+        Set<Integer> frequentMenuIds = frequentMenus.stream()
                 .map(Menu::getMenuId)
                 .collect(Collectors.toSet());
 
@@ -197,12 +196,12 @@ public class MenuService {
      * - 인기 메뉴 3개
      * - 추천 메뉴 3개
      */
-    public RecommendedMenuResponse getRecommendedMenusForGuest(Long storeId, String ageGroup, String gender) {
+    public RecommendedMenuResponse getRecommendedMenusForGuest(Integer storeId, String ageGroup, String gender) {
         // 1. 매장에서 가장 많이 팔린 메뉴 3개 조회 (인기 메뉴)
         List<Menu> popularMenus = menuMapper.findPopularMenus(storeId, 3);
 
         // 인기 메뉴 ID 추출 (중복 제거용)
-        Set<Long> popularMenuIds = popularMenus.stream()
+        Set<Integer> popularMenuIds = popularMenus.stream()
                 .map(Menu::getMenuId)
                 .collect(Collectors.toSet());
 
@@ -234,7 +233,7 @@ public class MenuService {
             List<Menu> weatherMenus = convertToMenus(weatherMenuResponses);
 
             // 이미 추가된 메뉴와 중복되지 않는 메뉴만 추가
-            Set<Long> recommendedMenuIds = recommendedMenus.stream()
+            Set<Integer> recommendedMenuIds = recommendedMenus.stream()
                     .map(Menu::getMenuId)
                     .collect(Collectors.toSet());
 
@@ -259,7 +258,7 @@ public class MenuService {
                     .collect(Collectors.toList());
 
             // 이미 추천 메뉴에 포함된 메뉴 제외
-            Set<Long> recommendedMenuIds = recommendedMenus.stream()
+            Set<Integer> recommendedMenuIds = recommendedMenus.stream()
                     .map(Menu::getMenuId)
                     .collect(Collectors.toSet());
 

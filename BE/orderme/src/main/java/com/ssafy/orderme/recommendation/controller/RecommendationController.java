@@ -27,11 +27,11 @@ public class RecommendationController {
      */
     @GetMapping("/advanced")
     public ApiResponse<RecommendationResponse> getAdvancedRecommendations(
-            @RequestParam Long storeId,
-            @RequestParam(required = false) Long userId,
+            @RequestParam Integer storeId,
+            @RequestParam(required = false) String userId,
             @RequestParam(required = false) String gender,
             @RequestParam(required = false) String ageGroup,
-            @RequestParam(required = false) List<Long> excludeMenuIds) {
+            @RequestParam(required = false) List<Integer> excludeMenuIds) {
 
         List<MenuResponse> personalizedMenus;
         List<MenuResponse> genderAgeMenus = new ArrayList<>();
@@ -118,11 +118,11 @@ public class RecommendationController {
      */
     @GetMapping("/refresh")
     public ApiResponse<RecommendationResponse> refreshRecommendations(
-            @RequestParam Long storeId,
-            @RequestParam(required = false) Long userId,
+            @RequestParam Integer storeId,
+            @RequestParam(required = false) String userId,
             @RequestParam(required = false) String gender,
             @RequestParam(required = false) String ageGroup,
-            @RequestParam List<Long> excludeMenuIds) {
+            @RequestParam List<Integer> excludeMenuIds) {
 
         // 기존 추천에서 제외할 메뉴 ID 목록을 받아서 다시 추천
         return getAdvancedRecommendations(storeId, userId, gender, ageGroup, excludeMenuIds);
@@ -133,9 +133,9 @@ public class RecommendationController {
      */
     @PostMapping("/update-preference")
     public ApiResponse<?> updateMenuPreferences(
-            @RequestParam Long menuId,
-            @RequestParam Long storeId,
-            @RequestParam(required = false) Long userId,
+            @RequestParam Integer menuId,
+            @RequestParam Integer storeId,
+            @RequestParam(required = false) String userId,
             @RequestParam(required = false) String gender,
             @RequestParam(required = false) String ageGroup) {
 

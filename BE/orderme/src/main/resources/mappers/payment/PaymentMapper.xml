@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.orderme.payment.mapper.PaymentMapper">
+
+    <!-- 결제 결과 매핑 -->
+    <resultMap id="PaymentResultMap" type="com.ssafy.orderme.payment.model.Payment">
+        <id property="paymentId" column="payment_id"/>
+        <result property="orderId" column="order_id"/>
+        <result property="amount" column="amount"/>
+        <result property="paymentType" column="payment_type"/>
+        <result property="status" column="status"/>
+        <result property="paymentDate" column="payment_date"/>
+        <result property="paymentKey" column="payment_key"/>
+    </resultMap>
+
+    <!-- ID로 결제 찾기 -->
+    <select id="findById" resultMap="PaymentResultMap">
+        SELECT * FROM payments WHERE payment_id = #{paymentId}
+    </select>
+
+    <!-- 결제 키로 결제 찾기 -->
+    <select id="findByPaymentKey" resultMap="PaymentResultMap">
+        SELECT * FROM payments WHERE payment_key = #{paymentKey}
+    </select>
+
+    <!-- 주문 ID로 결제 찾기 -->
+    <select id="findByOrderId" resultMap="PaymentResultMap">
+        SELECT * FROM payments WHERE order_id = #{orderId}
+        ORDER BY payment_date DESC
+    </select>
+
+    <!-- 결제 정보 삽입 -->
+    <insert id="insertPayment" parameterType="com.ssafy.orderme.payment.model.Payment">
+        INSERT INTO payments (
+            order_id,
+            amount,
+            payment_type,
+            status,
+            payment_date,
+            payment_key
+        ) VALUES (
+                     #{orderId},
+                     #{amount},
+                     #{paymentType},
+                     #{status},
+                     #{paymentDate},
+                     #{paymentKey}
+                 )
+    </insert>
+
+    <!-- 결제 정보 업데이트 -->
+    <update id="updatePayment" parameterType="com.ssafy.orderme.payment.model.Payment">
+        UPDATE payments
+        SET
+            amount = #{amount},
+            payment_type = #{paymentType},
+            status = #{status},
+            payment_date = #{paymentDate}
+        WHERE payment_id = #{paymentId}
+    </update>
+
+    <!-- 결제 상태 업데이트 -->
+    <update id="updateStatus">
+        UPDATE payments
+        SET status = #{status}
+        WHERE payment_id = #{paymentId}
+    </update>
+
+</mapper>

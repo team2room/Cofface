@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.orderme.order.mapper.StampPolicyMapper">
+    <!-- ID로 스탬프 정책 조회 -->
+    <select id="findById" resultType="com.ssafy.orderme.order.model.StampPolicy">
+        SELECT
+            policy_id as policyId,
+            store_id as storeId,
+            stamps_required as stampsRequired,
+            discount_amount as discountAmount,
+            is_active as isActive,
+            created_at as createdAt,
+            updated_at as updatedAt
+        FROM stamppolicy
+        WHERE policy_id = #{policyId}
+    </select>
+
+    <!-- 매장별 활성화된 스탬프 정책 조회 -->
+    <select id="findActiveByStoreId" resultType="com.ssafy.orderme.order.model.StampPolicy">
+        SELECT
+            policy_id as policyId,
+            store_id as storeId,
+            stamps_required as stampsRequired,
+            discount_amount as discountAmount,
+            is_active as isActive,
+            created_at as createdAt,
+            updated_at as updatedAt
+        FROM stamppolicy
+        WHERE store_id = #{storeId}
+          AND is_active = 1
+            LIMIT 1
+    </select>
+
+    <!-- 매장별 모든 스탬프 정책 목록 조회 -->
+    <select id="findAllByStoreId" resultType="com.ssafy.orderme.order.model.StampPolicy">
+        SELECT
+            policy_id as policyId,
+            store_id as storeId,
+            stamps_required as stampsRequired,
+            discount_amount as discountAmount,
+            is_active as isActive,
+            created_at as createdAt,
+            updated_at as updatedAt
+        FROM stamppolicy
+        WHERE store_id = #{storeId}
+        ORDER BY is_active DESC, created_at DESC
+    </select>
+
+    <!-- 스탬프 정책 추가 -->
+    <insert id="insertPolicy" parameterType="com.ssafy.orderme.order.model.StampPolicy"
+            useGeneratedKeys="true" keyProperty="policyId">
+        INSERT INTO stamppolicy (
+            store_id,
+            stamps_required,
+            discount_amount,
+            is_active
+        ) VALUES (
+                     #{storeId},
+                     #{stampsRequired},
+                     #{discountAmount},
+                     #{isActive}
+                 )
+    </insert>
+
+    <!-- 스탬프 정책 업데이트 -->
+    <update id="updatePolicy" parameterType="com.ssafy.orderme.order.model.StampPolicy">
+        UPDATE stamppolicy
+        SET
+            stamps_required = #{stampsRequired},
+            discount_amount = #{discountAmount},
+            is_active = #{isActive},
+            updated_at = NOW()
+        WHERE policy_id = #{policyId}
+    </update>
+
+    <!-- 매장별 이전 정책 비활성화 -->
+    <update id="deactivatePoliciesByStoreId">
+        UPDATE stamppolicy
+        SET
+            is_active = 0,
+            updated_at = NOW()
+        WHERE store_id = #{storeId}
+    </update>
+
+    <!-- 스탬프 정책 활성화 상태 변경 -->
+    <update id="updatePolicyActiveStatus">
+        UPDATE stamppolicy
+        SET
+            is_active = #{isActive},
+            updated_at = NOW()
+        WHERE policy_id = #{policyId}
+    </update>
+</mapper>

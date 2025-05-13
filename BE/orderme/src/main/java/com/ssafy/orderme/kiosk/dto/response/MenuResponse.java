@@ -4,20 +4,20 @@ package com.ssafy.orderme.kiosk.dto.response;
  * 메뉴 응답 DTO
  */
 public class MenuResponse {
-    private Long menuId;       // 메뉴 ID
+    private Integer menuId;       // 메뉴 ID
     private String menuName;   // 메뉴 이름
     private Integer price;     // 가격
-    private Long categoryId;    // 카테고리 ID
+    private Integer categoryId;    // 카테고리 ID
     private String categoryName; // 카테고리 이름
     private Boolean isSoldOut; // 품절 여부
     private String imageUrl;   // 이미지 URL
     private String description; // 메뉴 설명
 
-    public Long getMenuId() {
+    public Integer getMenuId() {
         return menuId;
     }
 
-    public void setMenuId(Long menuId) {
+    public void setMenuId(Integer menuId) {
         this.menuId = menuId;
     }
 
@@ -37,11 +37,11 @@ public class MenuResponse {
         this.price = price;
     }
 
-    public Long getCategoryId() {
+    public Integer getCategoryId() {
         return categoryId;
     }
 
-    public void setCategoryId(Long categoryId) {
+    public void setCategoryId(Integer categoryId) {
         this.categoryId = categoryId;
     }
 

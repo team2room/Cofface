@@ -20,7 +20,7 @@ public class RecommendationService {
     /**
      * 회원 기반 추천 메뉴 조회 (회원의 선호도나 주문 이력 기반)
      */
-    public List<MenuResponse> getUserPreferredMenus(Long storeId, Long userId, List<Long> excludeMenuIds) {
+    public List<MenuResponse> getUserPreferredMenus(Integer storeId, String userId, List<Integer> excludeMenuIds) {
         try {
             // 사용자의 프로필에 설정된 선호 메뉴 또는 주문 이력 기반으로 추천
             List<Menu> menus = recommendationMapper.findUserPreferredMenus(storeId, userId, 3);
@@ -57,7 +57,7 @@ public class RecommendationService {
     /**
      * 성별과 나이를 기반으로 추천 메뉴를 조회 (기존 메소드 유지)
      */
-    public List<MenuResponse> getMenusByGenderAndAge(Long storeId, String gender, String ageGroup) {
+    public List<MenuResponse> getMenusByGenderAndAge(Integer storeId, String gender, String ageGroup) {
         // 기존 메소드는 excludeMenuIds를 null로 전달하여 새 메소드 호출
         return getMenusByGenderAndAge(storeId, gender, ageGroup, null);
     }
@@ -65,7 +65,7 @@ public class RecommendationService {
     /**
      * 성별과 나이를 기반으로 추천 메뉴를 조회 (새 메소드)
      */
-    public List<MenuResponse> getMenusByGenderAndAge(Long storeId, String gender, String ageGroup, List<Long> excludeMenuIds) {
+    public List<MenuResponse> getMenusByGenderAndAge(Integer storeId, String gender, String ageGroup, List<Integer> excludeMenuIds) {
         try {
             // ageGroup이 "20대", "30대" 등의 형식일 경우 숫자만 추출
             Integer age = null;
@@ -109,7 +109,7 @@ public class RecommendationService {
     /**
      * 성별과 나이를 기반으로 추천 메뉴를 조회 (기존 Integer age 파라미터 오버로딩 유지)
      */
-    public List<MenuResponse> getMenusByGenderAndAge(Long storeId, String gender, Integer age) {
+    public List<MenuResponse> getMenusByGenderAndAge(Integer storeId, String gender, Integer age) {
         try {
             if (age == null) {
                 age = 20; // 기본값 설정
@@ -128,7 +128,7 @@ public class RecommendationService {
     /**
      * 메뉴 인기도 업데이트 (주문 시 호출)
      */
-    public void updateMenuPopularity(Long menuId, Long storeId) {
+    public void updateMenuPopularity(Integer menuId, Integer storeId) {
         try {
             recommendationMapper.updateMenuPopularity(menuId, storeId);
         } catch (Exception e) {
@@ -139,14 +139,14 @@ public class RecommendationService {
     /**
      * 성별/나이 기반 메뉴 선호도 업데이트 (주문 시 호출)
      */
-    public void updateGenderAgePreference(Long menuId, Long storeId, String gender, String ageGroup) {
+    public void updateGenderAgePreference(Integer menuId, Integer storeId, String gender, String ageGroup) {
         recommendationMapper.updateGenderAgePreference(menuId, storeId, gender, ageGroup);
     }
 
     /**
      * 사용자 개인 선호도 업데이트 (주문 시 호출)
      */
-    public void updateUserPreference(Long menuId, Long userId) {
+    public void updateUserPreference(Integer menuId, String userId) {
         recommendationMapper.updateUserPreference(menuId, userId);
     }
 
@@ -175,7 +175,7 @@ public class RecommendationService {
     /**
      * 매장에서 가장 인기 있는 메뉴 조회 (기존 메소드 유지)
      */
-    public List<MenuResponse> getMostPopularMenus(Long storeId) {
+    public List<MenuResponse> getMostPopularMenus(Integer storeId) {
         // 기존 메소드는 excludeMenuIds를 null로 전달하여 새 메소드 호출
         return getMostPopularMenus(storeId, null);
     }
@@ -183,7 +183,7 @@ public class RecommendationService {
     /**
      * 매장에서 가장 인기 있는 메뉴 조회 (새 메소드)
      */
-    public List<MenuResponse> getMostPopularMenus(Long storeId, List<Long> excludeMenuIds) {
+    public List<MenuResponse> getMostPopularMenus(Integer storeId, List<Integer> excludeMenuIds) {
         try {
             // 인기 메뉴 조회 (매장에서 가장 많이 팔린 메뉴)
             List<Menu> menus = recommendationMapper.findMostPopularMenus(storeId, 5); // 더 많이 가져와서 필터링
