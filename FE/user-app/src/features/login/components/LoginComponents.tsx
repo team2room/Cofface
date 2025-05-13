@@ -5,7 +5,6 @@ import styled from '@emotion/styled'
 import { Text } from '@/styles/typography'
 import { LoginInputProps } from '@/interfaces/LoginInterfaces'
 
-// 스타일 컴포넌트
 export const LoginForm = styled.div`
   ${tw`w-full max-w-md flex flex-col space-y-3 mt-20`}
 `
@@ -52,6 +51,12 @@ export function NameInputField({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
     onChange(newValue)
+
+    if (newValue.trim().length >= 3) {
+      if (onComplete) {
+        setTimeout(() => onComplete(), 500)
+      }
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -118,9 +123,10 @@ export function BirthInputField({
     const newValue = birthPart + inputValue
     onChange(newValue)
 
-    // 성별 자리까지 입력 완료시 자동으로 다음 단계
-    if (inputValue.length === 1 && birthPart.length === 6 && onComplete) {
-      onComplete()
+    if (inputValue.length === 1 && birthPart.length === 6) {
+      if (onComplete) {
+        onComplete()
+      }
     }
   }
 
@@ -190,9 +196,10 @@ export function PhoneInputField({
     let inputValue = e.target.value.replace(/[^0-9]/g, '')
     onChange(inputValue)
 
-    // 휴대폰 번호 11자리 입력 완료시 자동으로 다음 단계
-    if (inputValue.length >= 11 && onComplete) {
-      onComplete()
+    if (inputValue.length >= 11) {
+      if (onComplete) {
+        onComplete()
+      }
     }
   }
 
