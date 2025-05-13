@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/refresh").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .requestMatchers("/api/payments/**").permitAll()
+                        .requestMatchers("/api/kiosk/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 // 필터를 직접 생성하여 추가
