@@ -3,7 +3,7 @@ import {
   AlertDialogContent,
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
 import CustomButton from '@/components/CustomButton'
@@ -35,6 +35,27 @@ export default function OptionModal({
     }))
   }
 
+  const handleSetDefaults = () => {
+    const defaults: Record<string, number | null> = {}
+    menu.options.forEach((opt) => {
+      const defaultIndex = opt.isDefault.findIndex((d) => d)
+      defaults[opt.optionCategory] = defaultIndex >= 0 ? defaultIndex : null
+    })
+    setSelectedOptions(defaults)
+  }
+
+  const totalOptionPrice = useMemo(() => {
+    return Object.entries(selectedOptions).reduce((sum, [category, index]) => {
+      if (index === null) return sum
+      const optionGroup = menu.options.find(
+        (o) => o.optionCategory === category,
+      )
+      return optionGroup ? sum + optionGroup.additionalPrices[index] : sum
+    }, 0)
+  }, [selectedOptions, menu.options])
+
+  const totalPrice = menu.price + totalOptionPrice
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="w-[95%]">
@@ -48,7 +69,7 @@ export default function OptionModal({
         </Text>
         <FirstSection>
           <div className="flex flex-row items-center gap-6">
-            <img src="https://picsum.photos/200" alt="menu" className="w-80" />
+            <img src={menu.imageUrl} alt={menu.menuName} className="w-80" />
             <RequiredOptionsSection
               requiredOptions={requiredOptions}
               selectedOptions={selectedOptions}
@@ -58,7 +79,7 @@ export default function OptionModal({
 
           <InfoText>
             <Text variant="body1" weight="bold" className="mt-4">
-              디카페인 카페모카
+              {menu.menuName}
             </Text>
             <Text
               variant="body2"
@@ -66,17 +87,16 @@ export default function OptionModal({
               color="darkGray"
               className="mb-6"
             >
-              4,500원
+              {menu.price.toLocaleString()}원
             </Text>
             <Text variant="caption1" weight="bold" color="littleDarkGray">
-              초코를 만나 풍부해진 디카페인 에스프레소와 고소한 우유, 부드러운
-              휘핑크림까지 더해 달콤하게 즐기는 커피
+              {menu.description}
             </Text>
           </InfoText>
         </FirstSection>
 
         {/* 기본값 버튼 */}
-        <DefaultButton onClick={() => {}}>
+        <DefaultButton onClick={handleSetDefaults}>
           <Text variant="body2" weight="bold" color="main">
             기본값으로 설정
           </Text>
@@ -109,7 +129,7 @@ export default function OptionModal({
           </div>
           <div>
             <Text variant="body1" weight="bold" color="main">
-              5,500
+              {totalPrice.toLocaleString()}
             </Text>
             <Text variant="body1" weight="semibold">
               원

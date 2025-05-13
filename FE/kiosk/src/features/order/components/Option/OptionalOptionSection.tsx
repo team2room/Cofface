@@ -1,8 +1,8 @@
 import { Text } from '@/styles/typography'
 import tw from 'twin.macro'
 import { OptionButton } from './OptionButton'
-import { MenuOption } from '@/interfaces/OrderInterface'
 import { useDragScroll } from '@/hooks/useDragScroll'
+import { MenuOption } from '@/interfaces/OrderInterface'
 
 const OptionalOption = tw.div`bg-littleGray px-8 h-[350px] overflow-auto`
 const OptionRow = tw.div`flex items-center`

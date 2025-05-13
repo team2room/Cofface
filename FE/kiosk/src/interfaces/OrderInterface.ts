@@ -15,6 +15,11 @@ export interface MenuCardProps {
   boxShadowColor: string
 }
 
+export interface AllMenuSectionProps {
+  menuItems: MenuItem[]
+  categories: Category[]
+}
+
 export interface RecommendSectionProps {
   recentMenus: MenuItem[]
   customMenus: MenuItem[]
@@ -28,17 +33,6 @@ export interface Category {
   isActive: boolean
 }
 
-// 선택 상품
-export interface OrderItem {
-  name: string
-  price: number
-  quantity: number
-}
-
-export interface OrderSectionProps {
-  orders: OrderItem[]
-}
-
 // 옵션 모달 관련
 export interface MenuOption {
   optionCategory: string
@@ -46,12 +40,17 @@ export interface MenuOption {
   optionNames: string[]
   additionalPrices: number[]
   optionIds: number[]
+  isDefault: boolean[]
   maxSelections: number
 }
 
-export interface MenuData {
+export interface MenuItemDetail {
+  menuId: number
   menuName: string
   price: number
+  categoryId: number
+  categoryName: string
+  isSoldOut: boolean
   imageUrl: string
   description: string
   options: MenuOption[]
@@ -62,7 +61,18 @@ export interface OptionModalProps {
   onOpenChange: (open: boolean) => void
   onCancel?: () => void
   onConfirm?: () => void
-  menu: MenuData
+  menu: MenuItemDetail
+}
+
+// 선택 상품
+export interface OrderItem {
+  name: string
+  price: number
+  quantity: number
+}
+
+export interface OrderSectionProps {
+  orders: OrderItem[]
 }
 
 // 옵션 포함 주문 정보
