@@ -1,6 +1,7 @@
 import AuthRedirect from './components/AuthRedirect'
 import ProtectedRoute from './components/ProtectedRoute'
 import HomePage from './pages/home/HomePage'
+import { StorePage } from './pages/home/StorePage'
 import LoginConfirmPage from './pages/login/LoginConfirmPage'
 import LoginVerifyPage from './pages/login/LoginVerifyPage'
 import MainPage from './pages/login/MainPage'
@@ -35,6 +36,7 @@ function App() {
           }
         >
           <Route path="/home" element={<HomePage />} />
+          <Route path="/store/:storeId" element={<StorePage />} />
 
           <Route path="/register/face" element={<FaceRegisterPage />} />
           <Route
