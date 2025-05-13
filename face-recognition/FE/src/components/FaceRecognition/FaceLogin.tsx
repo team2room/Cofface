@@ -4,7 +4,13 @@ import * as mp from '@mediapipe/face_mesh';
 import * as cam from '@mediapipe/camera_utils';
 
 // API 기능 가져오기
-import { FaceVerificationWebSocket, RealSenseWebSocket, checkServerHealth } from './api';
+import { 
+  FaceVerificationWebSocket, 
+  RealSenseWebSocket, 
+  checkRemoteServerHealth, 
+  checkLocalServerHealth, 
+  checkLiveness 
+} from './api';
 
 // 스타일 컴포넌트 및 유틸리티 가져오기
 import {
@@ -46,7 +52,8 @@ const FaceLogin: React.FC = () => {
   const [loadingError, setLoadingError] = useState<string | null>(null);
   
   // 웹소켓 관련 상태
-  const [wsConnected, setWsConnected] = useState<boolean>(false);
+  const [remoteServerConnected, setRemoteServerConnected] = useState<boolean>(false);
+  const [localServerConnected, setLocalServerConnected] = useState<boolean>(false);
   const [realTimeVerification, setRealTimeVerification] = useState<boolean>(false);
   
   // RealSense 관련 상태 추가
@@ -124,26 +131,42 @@ const FaceLogin: React.FC = () => {
     };
 
     // 서버 상태 확인
-    const checkServerStatus = async () => {
+    const checkServerStatuses = async () => {
       try {
-        const status = await checkServerHealth();
-        setServerStatus(status);
-        console.log('서버 상태:', status);
+        // 로컬 서버 상태 확인
+        try {
+          const localStatus = await checkLocalServerHealth();
+          setLocalServerConnected(localStatus.status === "healthy");
+          console.log('로컬 서버 상태:', localStatus);
+          
+          // 로컬 서버에 RealSense가 연결되어 있으면 연결
+          if (localStatus.realsense_available) {
+            connectToRealSense();
+          }
+        } catch (error) {
+          console.error('로컬 서버 상태 확인 오류:', error);
+          setLocalServerConnected(false);
+        }
         
-        // RealSense 사용 가능 여부 확인
-        if (status.realsense_available) {
-          connectToRealSense();
+        // 원격 서버 상태 확인
+        try {
+          const remoteStatus = await checkRemoteServerHealth();
+          setServerStatus(remoteStatus);
+          setRemoteServerConnected(remoteStatus.status === "healthy");
+          console.log('원격 서버 상태:', remoteStatus);
+        } catch (error) {
+          console.error('원격 서버 상태 확인 오류:', error);
+          setRemoteServerConnected(false);
+          setError('원격 GPU 서버에 연결할 수 없습니다.');
         }
       } catch (error) {
         console.error('서버 상태 확인 오류:', error);
-        setError(
-          '백엔드 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인하세요.'
-        );
+        setError('서버 연결에 문제가 있습니다. 다시 시도해주세요.');
       }
     };
 
     loadMediaPipeModels();
-    checkServerStatus();
+    checkServerStatuses();
 
     return () => {
       if (cameraRef.current) {
@@ -210,19 +233,19 @@ const FaceLogin: React.FC = () => {
     
     const onError = (event: Event) => {
       console.error('WebSocket 오류:', event);
-      setError('WebSocket 연결 오류가 발생했습니다.');
-      setWsConnected(false);
+      setError('원격 서버 WebSocket 연결 오류가 발생했습니다.');
+      setRemoteServerConnected(false);
     };
     
     const onClose = () => {
       console.log('WebSocket 연결 종료');
-      setWsConnected(false);
+      setRemoteServerConnected(false);
       setRealTimeVerification(false);
     };
     
     const onOpen = () => {
       console.log('WebSocket 연결 성공');
-      setWsConnected(true);
+      setRemoteServerConnected(true);
       setError(null);
     };
     
@@ -255,10 +278,10 @@ const FaceLogin: React.FC = () => {
         if (data.depth_stats) {
           setDepthStats(data.depth_stats);
         }
-        
-        // 라이브니스 결과가 있으면 저장
-        if (data.liveness_result) {
-          setLivenessResult(data.liveness_result);
+      } else if (data.type === 'liveness_result') {
+        // 라이브니스 결과 설정
+        if (data.result) {
+          setLivenessResult(data.result);
         }
       }
     };
@@ -266,7 +289,7 @@ const FaceLogin: React.FC = () => {
     const onError = (error: Event) => {
       console.error('RealSense WebSocket 오류:', error);
       setRealsenseConnected(false);
-      setError('RealSense 연결 오류: 서버와의 연결을 확인하세요.');
+      setError('RealSense 연결 오류: 로컬 서버와의 연결을 확인하세요.');
     };
 
     const onClose = () => {
@@ -755,13 +778,32 @@ const FaceLogin: React.FC = () => {
         setIsProcessing(true);
         setError(null);
         
-        // RealSense RGB 이미지 사용
-        const imageData = realsenseRgbFrame;
+        // 1. 먼저 로컬 서버에서 라이브니스 검사 수행
+        let livenessResult = null;
+        if (localServerConnected) {
+          try {
+            const response = await checkLiveness(realsenseRgbFrame);
+            livenessResult = response;
+            setLivenessResult(livenessResult);
+            
+            // 라이브니스 검사 실패 시 인증 중단
+            if (!livenessResult.is_live) {
+              setError(`라이브니스 검사 실패: ${livenessResult.reason}`);
+              setIsProcessing(false);
+              return;
+            }
+          } catch (error) {
+            console.error('라이브니스 검사 오류:', error);
+            // 라이브니스 검사 실패해도 계속 진행 (옵션)
+          }
+        }
         
-        if (wsRef.current && wsConnected) {
-          wsRef.current.sendVerifyRequest(imageData);
+        // 2. 원격 GPU 서버에 인증 요청 전송
+        if (wsRef.current && remoteServerConnected) {
+          // 라이브니스 결과와 함께
+          wsRef.current.sendVerifyRequest(realsenseRgbFrame, livenessResult);
         } else {
-          throw new Error('WebSocket이 연결되지 않았습니다.');
+          throw new Error('원격 서버 WebSocket이 연결되지 않았습니다.');
         }
         
       } catch (error) {
@@ -775,56 +817,59 @@ const FaceLogin: React.FC = () => {
         setError('얼굴 이미지가 캡처되지 않았습니다.');
         return;
       }
-  
+
       if (!faceDetected) {
         setError('얼굴이 감지되지 않았습니다. 카메라에 얼굴을 위치시키세요.');
         return;
       }
       
-      // 라이브니스 검사 결과가 있고, 가짜 얼굴로 판정된 경우
-      if (livenessResult && !livenessResult.is_live) {
-        setError('라이브니스 검사 실패: 실제 사람 얼굴이 아닙니다.');
-        return;
-      }
-  
       try {
         setIsProcessing(true);
         setError(null);
-  
-        // 매우 작은 크기로 비디오 프레임 캡처
+
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-  
+
         if (!ctx || !videoRef.current) {
-          throw new Error(
-            '캔버스 컨텍스트 또는 비디오 요소를 가져올 수 없습니다.'
-          );
+          throw new Error('캔버스 컨텍스트 또는 비디오 요소를 가져올 수 없습니다.');
         }
-  
-        // 매우 작은 크기로 설정 (많이 축소)
-        canvas.width = 160; // 최소 크기로 설정
+
+        // 이미지 캡처 및 압축
+        canvas.width = 160;
         canvas.height = 120;
-  
-        // 비디오에서 직접 이미지 그리기
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-  
-        // 매우 낮은 품질로 이미지 압축
-        const imageData = canvas.toDataURL('image/jpeg', 0.5); // 품질 50%로 낮춤
-  
-        console.log('이미지 데이터 크기:', Math.round(imageData.length / 1024), 'KB');
-  
-        if (wsRef.current && wsConnected) {
-          wsRef.current.sendVerifyRequest(imageData);
-        } else {
-          throw new Error('WebSocket이 연결되지 않았습니다.');
+        const imageData = canvas.toDataURL('image/jpeg', 0.5);
+
+        // 1. 로컬 서버로 라이브니스 검사 요청
+        let livenessResult = null;
+        if (localServerConnected) {
+          try {
+            const response = await checkLiveness(imageData);
+            livenessResult = response;
+            setLivenessResult(livenessResult);
+            
+            // 라이브니스 검사 실패 시 인증 중단
+            if (!livenessResult.is_live) {
+              setError(`라이브니스 검사 실패: ${livenessResult.reason}`);
+              setIsProcessing(false);
+              return;
+            }
+          } catch (error) {
+            console.error('라이브니스 검사 오류:', error);
+            // 라이브니스 검사 실패해도 계속 진행 (옵션)
+          }
         }
+        
+        // 2. 원격 GPU 서버에 인증 요청 전송
+        if (wsRef.current && remoteServerConnected) {
+          wsRef.current.sendVerifyRequest(imageData, livenessResult);
+        } else {
+          throw new Error('원격 서버 WebSocket이 연결되지 않았습니다.');
+        }
+        
       } catch (error) {
         console.error('얼굴 인증 오류:', error);
-        setError(
-          `얼굴 인증 오류: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
+        setError(`얼굴 인증 오류: ${error instanceof Error ? error.message : String(error)}`);
         setIsProcessing(false);
       }
     }
@@ -833,14 +878,6 @@ const FaceLogin: React.FC = () => {
   // 실시간 인식 실행
   const performRealTimeRecognition = async (): Promise<void> => {
     if (!faceDetected || !faceWithinBounds || isProcessing) {
-      return;
-    }
-    
-    // 라이브니스 검사 결과가 있고, 가짜 얼굴로 판정된 경우
-    if (livenessResult && !livenessResult.is_live) {
-      if (!error) {
-        setError('라이브니스 검사 실패: 실제 사람 얼굴이 아닙니다.');
-      }
       return;
     }
     
@@ -857,43 +894,74 @@ const FaceLogin: React.FC = () => {
           throw new Error('RealSense 프레임을 가져올 수 없습니다.');
         }
         
-        if (wsRef.current && wsConnected) {
-          wsRef.current.sendVerifyRequest(realsenseRgbFrame);
+        // 1. 로컬 서버로 라이브니스 검사 요청
+        let livenessResult = null;
+        if (localServerConnected) {
+          try {
+            const response = await checkLiveness(realsenseRgbFrame);
+            livenessResult = response;
+            setLivenessResult(livenessResult);
+            
+            // 라이브니스 검사 실패 시 인증 중단
+            if (!livenessResult.is_live) {
+              setError(`라이브니스 검사 실패: ${livenessResult.reason}`);
+              setIsProcessing(false);
+              return;
+            }
+          } catch (error) {
+            console.error('라이브니스 검사 오류:', error);
+          }
+        }
+        
+        // 2. 원격 GPU 서버에 인증 요청 전송
+        if (wsRef.current && remoteServerConnected) {
+          wsRef.current.sendVerifyRequest(realsenseRgbFrame, livenessResult);
         } else {
-          throw new Error('WebSocket이 연결되지 않았습니다.');
+          throw new Error('원격 서버 WebSocket이 연결되지 않았습니다.');
         }
       } else {
-        // 노트북 웹캠 사용 시
+        // 노트북 웹캠 사용 시 - 동일한 패턴으로 수정
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-  
+
         if (!ctx || !videoRef.current) {
           throw new Error('캔버스 컨텍스트 또는 비디오 요소를 가져올 수 없습니다.');
         }
-  
-        // 매우 작은 크기로 설정 (많이 축소)
-        canvas.width = 160; // 최소 크기로 설정
+
+        canvas.width = 160;
         canvas.height = 120;
-  
-        // 비디오에서 직접 이미지 그리기
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-  
-        // 매우 낮은 품질로 이미지 압축
-        const imageData = canvas.toDataURL('image/jpeg', 0.5); // 품질 50%로 낮춤
-  
-        if (wsRef.current && wsConnected) {
-          wsRef.current.sendVerifyRequest(imageData);
+        const imageData = canvas.toDataURL('image/jpeg', 0.5);
+
+        // 1. 라이브니스 검사
+        let livenessResult = null;
+        if (localServerConnected) {
+          try {
+            const response = await checkLiveness(imageData);
+            livenessResult = response;
+            setLivenessResult(livenessResult);
+            
+            // 라이브니스 검사 실패 시 인증 중단
+            if (!livenessResult.is_live) {
+              setError(`라이브니스 검사 실패: ${livenessResult.reason}`);
+              setIsProcessing(false);
+              return;
+            }
+          } catch (error) {
+            console.error('라이브니스 검사 오류:', error);
+          }
+        }
+        
+        // 2. 원격 인증
+        if (wsRef.current && remoteServerConnected) {
+          wsRef.current.sendVerifyRequest(imageData, livenessResult);
         } else {
-          throw new Error('WebSocket이 연결되지 않았습니다.');
+          throw new Error('원격 서버 WebSocket이 연결되지 않았습니다.');
         }
       }
     } catch (error) {
       console.error('실시간 얼굴 인증 오류:', error);
-      setError(
-        `얼굴 인증 오류: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
+      setError(`얼굴 인증 오류: ${error instanceof Error ? error.message : String(error)}`);
       setIsProcessing(false);
     }
   };
@@ -1000,8 +1068,8 @@ const FaceLogin: React.FC = () => {
           ? '오류가 발생했습니다'
           : !modelsLoaded
           ? '모델 로딩 중...'
-          : !wsConnected
-          ? 'WebSocket 연결 중...'
+          : !remoteServerConnected && !localServerConnected
+          ? '서버 연결 중...'
           : useRealsenseCamera
           ? '얼굴을 RealSense 카메라에 위치시키고 인증 버튼을 눌러주세요.'
           : '얼굴을 카메라에 위치시키고 인증 버튼을 눌러주세요.'}
@@ -1097,7 +1165,7 @@ const FaceLogin: React.FC = () => {
                     onClick={verifySingleFace}
                     disabled={isProcessing || 
                       (!faceDetected && !useRealsenseCamera) || 
-                      !wsConnected ||
+                      !remoteServerConnected ||
                       (useRealsenseCamera && !realsenseRgbFrame)}
                     style={{ flex: 1 }}
                   >
@@ -1107,7 +1175,7 @@ const FaceLogin: React.FC = () => {
                     onClick={toggleRealTimeMode}
                     disabled={
                       (!faceDetected && !useRealsenseCamera) || 
-                      !wsConnected ||
+                      !remoteServerConnected ||
                       (useRealsenseCamera && !realsenseRgbFrame)}
                     style={{ 
                       flex: 1, 
@@ -1130,7 +1198,7 @@ const FaceLogin: React.FC = () => {
             )}
           </div>
 
-          {/* WebSocket 및 RealSense 연결 상태 표시 */}
+          {/* 서버 연결 상태 표시 */}
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px', width: '100%', maxWidth: '400px' }}>
             <div
               style={{
@@ -1139,11 +1207,11 @@ const FaceLogin: React.FC = () => {
                 borderRadius: '5px',
                 fontSize: '14px',
                 textAlign: 'center',
-                backgroundColor: wsConnected ? 'rgba(0, 200, 83, 0.1)' : 'rgba(255, 152, 0, 0.1)',
-                color: wsConnected ? '#00c853' : '#ff9800',
+                backgroundColor: remoteServerConnected ? 'rgba(0, 200, 83, 0.1)' : 'rgba(255, 152, 0, 0.1)',
+                color: remoteServerConnected ? '#00c853' : '#ff9800',
               }}
             >
-              WebSocket: {wsConnected ? '연결됨' : '연결 중...'}
+              GPU 서버: {remoteServerConnected ? '연결됨' : '연결 중...'}
             </div>
             
             <div
@@ -1153,11 +1221,11 @@ const FaceLogin: React.FC = () => {
                 borderRadius: '5px',
                 fontSize: '14px',
                 textAlign: 'center',
-                backgroundColor: realsenseConnected ? 'rgba(33, 150, 243, 0.1)' : 'rgba(255, 152, 0, 0.1)',
-                color: realsenseConnected ? '#2196f3' : '#ff9800',
+                backgroundColor: localServerConnected ? 'rgba(33, 150, 243, 0.1)' : 'rgba(255, 152, 0, 0.1)',
+                color: localServerConnected ? '#2196f3' : '#ff9800',
               }}
             >
-              RealSense: {realsenseConnected ? '연결됨' : '연결 안됨'}
+              로컬 서버: {localServerConnected ? '연결됨' : '연결 안됨'}
             </div>
           </div>
 
@@ -1468,7 +1536,7 @@ const FaceLogin: React.FC = () => {
                   color: '#aaa',
                 }}
               >
-                <div>* 라이브니스 검사 기준: 얼굴 영역의 깊이 변화가 15mm 이상</div>
+                <div>* 라이브니스 검사 기준: 얼굴 영역의 깊이 변화가 15mm 이상, 100mm 이하</div>
               </div>
             </div>
           )}
@@ -1524,7 +1592,7 @@ const FaceLogin: React.FC = () => {
                 }}
               />
               <div>
-                <strong>노란색</strong>: 얼굴이 원 밖에 위치함
+                <strong>노란색</strong>: 얼굴 감지됨 (원 밖에 있음)
               </div>
             </div>
 
@@ -1532,7 +1600,6 @@ const FaceLogin: React.FC = () => {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                marginBottom: '10px',
               }}
             >
               <div
@@ -1545,12 +1612,12 @@ const FaceLogin: React.FC = () => {
                 }}
               />
               <div>
-                <strong>초록색</strong>: 인식 준비 완료
+                <strong>초록색</strong>: 얼굴 인식 준비 완료
               </div>
             </div>
           </div>
 
-          {/* 서버 상태 정보 */}
+          {/* 시스템 안내 */}
           <div
             style={{
               width: '100%',
@@ -1559,152 +1626,29 @@ const FaceLogin: React.FC = () => {
               borderRadius: '8px',
               padding: '15px',
               marginTop: '20px',
+              color: 'white',
             }}
           >
-            <h3 style={{ margin: '0 0 15px 0' }}>서버 상태</h3>
-
-            {serverStatus ? (
-              <>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '8px',
-                  }}
-                >
-                  <span>상태:</span>
-                  <span style={{ color: '#00c853' }}>
-                    {serverStatus.status === 'healthy' ? '정상' : '오류'}
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '8px',
-                  }}
-                >
-                  <span>초기화 완료:</span>
-                  <span>{serverStatus.initialized ? '✓' : '✗'}</span>
-                </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '8px',
-                  }}
-                >
-                  <span>GPU 사용 가능:</span>
-                  <span>{serverStatus.gpu_available ? '✓' : '✗'}</span>
-                </div>
-
-                {serverStatus.gpu_available && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginBottom: '8px',
-                    }}
-                  >
-                    <span>GPU 모델:</span>
-                    <span>{serverStatus.gpu_name}</span>
-                  </div>
-                )}
-
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '8px',
-                  }}
-                >
-                  <span>RealSense 상태:</span>
-                  <span>{serverStatus.realsense_available ? '✓' : '✗'}</span>
-                </div>
-              </>
-            ) : (
-              <div style={{ textAlign: 'center', color: '#f44336' }}>
-                서버 상태 정보를 불러올 수 없습니다.
-              </div>
+            <h3 style={{ margin: '0 0 15px 0' }}>시스템 안내</h3>
+            <p>
+              얼굴을 카메라 정중앙에 위치시키고 얼굴의 회전을 최소화한 상태에서 인증을 진행하세요.
+            </p>
+            <p>
+              <strong>인증 방법:</strong>
+            </p>
+            <ul>
+              <li>
+                <strong>개별 인증:</strong> '얼굴로 로그인' 버튼을 클릭하여 1회 인증
+              </li>
+              <li>
+                <strong>실시간 인증:</strong> '실시간 인식 시작' 버튼을 클릭하여 연속 인증
+              </li>
+            </ul>
+            {realsenseConnected && (
+              <p>
+                <strong>RealSense 카메라:</strong> 3D 깊이 정보를 활용한 라이브니스 검사를 통해 2D 사진을 이용한 위조를 방지합니다.
+              </p>
             )}
-          </div>
-
-          {/* 로그인 안내 */}
-          <div
-            style={{
-              width: '100%',
-              background: 'rgba(0, 0, 0, 0.7)',
-              border: '1px solid #555',
-              borderRadius: '8px',
-              padding: '15px',
-              marginTop: '20px',
-            }}
-          >
-            <h3 style={{ margin: '0 0 15px 0' }}>얼굴 인식 로그인 안내</h3>
-
-            <p
-              style={{
-                fontSize: '14px',
-                lineHeight: '1.5',
-                margin: '0 0 10px 0',
-              }}
-            >
-              1. <strong>단일 인증</strong>: 버튼을 클릭하여 한 번만 인증합니다.
-            </p>
-            <p
-              style={{
-                fontSize: '14px',
-                lineHeight: '1.5',
-                margin: '0 0 10px 0',
-              }}
-            >
-              2. <strong>실시간 인증</strong>: 실시간으로 얼굴을 인식하고 자동 인증합니다.
-            </p>
-            <p
-              style={{
-                fontSize: '14px',
-                lineHeight: '1.5',
-                margin: '0 0 10px 0',
-              }}
-            >
-              3. <strong>카메라 변경</strong>: RealSense와 노트북 카메라를 전환할 수 있습니다.
-            </p>
-            <p
-              style={{
-                fontSize: '14px',
-                lineHeight: '1.5',
-                margin: '0 0 10px 0',
-              }}
-            >
-              4. 인증 성공시 사용자 ID와 신뢰도가 표시됩니다.
-            </p>
-            <p
-              style={{
-                fontSize: '14px',
-                lineHeight: '1.5',
-                margin: '0 0 10px 0',
-              }}
-            >
-              5. 얼굴 등록이 되어 있지 않다면 먼저 얼굴 등록을 진행해주세요.
-            </p>
-
-            <div style={{ marginTop: '15px', textAlign: 'center' }}>
-              <a
-                href='/register'
-                style={{
-                  padding: '8px 15px',
-                  backgroundColor: '#4285F4',
-                  color: 'white',
-                  textDecoration: 'none',
-                  borderRadius: '5px',
-                  fontSize: '14px',
-                }}
-              >
-                얼굴 등록하러 가기
-              </a>
-            </div>
           </div>
         </InfoColumn>
       </ContentWrapper>

@@ -2,26 +2,22 @@
 import axios from 'axios';
 import { CapturedImage, FaceDetectionState } from './types';
 
-// API 기본 설정
-const isDevelopment =
-  process.env.NODE_ENV === 'development' ||
-  window.location.hostname === 'localhost';
+// GPU 서버 설정
+// const REMOTE_API_BASE_URL = 'https://face.orderme.store';
+// const REMOTE_WS_BASE_URL = 'wss://face.orderme.store';
+const REMOTE_API_BASE_URL = 'http://localhost:8800';
+const REMOTE_WS_BASE_URL = 'ws://localhost:8800';
 
-// API 엔드포인트 URL
-const API_BASE_URL = isDevelopment
-  ? 'http://localhost:8000'
-  : 'https://face.poloceleste.site';
+// 로컬 서버 설정 (라이브니스 검사용)
+const LOCAL_API_BASE_URL = 'http://localhost:8000';
+const LOCAL_WS_BASE_URL = 'ws://localhost:8000';
 
-// 웹소켓 URL - HTTP는 ws://, HTTPS는 wss:// 사용
-const WS_BASE_URL = isDevelopment
-  ? 'ws://localhost:8000'
-  : 'wss://face.poloceleste.site';
+console.log('원격 API URL:', REMOTE_API_BASE_URL);
+console.log('로컬 API URL:', LOCAL_API_BASE_URL);
 
-console.log('API 기본 URL:', API_BASE_URL);
-console.log('웹소켓 기본 URL:', WS_BASE_URL);
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
+// GPU 서버 API
+const remoteApi = axios.create({
+  baseURL: REMOTE_API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -29,7 +25,17 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// 웹소켓 인증 클래스
+// 로컬 서버 API
+const localApi = axios.create({
+  baseURL: LOCAL_API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  },
+  timeout: 5000,
+});
+
+// 원격 서버 웹소켓 인증 클래스
 export class FaceVerificationWebSocket {
   private ws: WebSocket | null = null;
   private reconnectTimer: NodeJS.Timeout | null = null;
@@ -46,13 +52,13 @@ export class FaceVerificationWebSocket {
 
   connect(): void {
     try {
-      const wsUrl = `${WS_BASE_URL}/ws/verify`;
-      console.log('WebSocket 연결 URL:', wsUrl);
+      const wsUrl = `${REMOTE_WS_BASE_URL}/ws/verify`;
+      console.log('원격 WebSocket 연결 URL:', wsUrl);
 
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = (event) => {
-        console.log('WebSocket 연결 성공');
+        console.log('원격 WebSocket 연결 성공');
         this.reconnectAttempts = 0;
         this.onOpen();
 
@@ -63,7 +69,7 @@ export class FaceVerificationWebSocket {
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('WebSocket 메시지 수신:', data);
+          console.log('원격 WebSocket 메시지 수신:', data);
           this.onMessage(data);
         } catch (error) {
           console.error('WebSocket 메시지 파싱 오류:', error);
@@ -71,7 +77,7 @@ export class FaceVerificationWebSocket {
       };
 
       this.ws.onerror = (event) => {
-        console.error('WebSocket 상세 오류:', {
+        console.error('원격 WebSocket 상세 오류:', {
           event,
           readyState: this.ws?.readyState,
           url: this.ws?.url,
@@ -81,7 +87,7 @@ export class FaceVerificationWebSocket {
       };
 
       this.ws.onclose = (event) => {
-        console.log('WebSocket 연결 종료:', event.code, event.reason);
+        console.log('원격 WebSocket 연결 종료:', event.code, event.reason);
         this.onClose();
 
         // ping 정지
@@ -123,11 +129,12 @@ export class FaceVerificationWebSocket {
     }
   }
 
-  sendVerifyRequest(rgbImage: string): void {
+  sendVerifyRequest(rgbImage: string, livenessResult: any = null): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       const message = {
         type: 'verify',
         rgb_image: rgbImage,
+        liveness_result: livenessResult // 로컬에서 처리한 라이브니스 결과 포함
       };
       this.ws.send(JSON.stringify(message));
     } else {
@@ -164,7 +171,7 @@ export class FaceVerificationWebSocket {
   }
 }
 
-// RealSense 프레임 수신 클래스
+// 로컬 RealSense 프레임 및 라이브니스 수신 클래스
 export class RealSenseWebSocket {
   private ws: WebSocket | null = null;
   private reconnectTimer: NodeJS.Timeout | null = null;
@@ -180,13 +187,13 @@ export class RealSenseWebSocket {
 
   connect(): void {
     try {
-      const wsUrl = `${WS_BASE_URL}/ws/realsense`;
-      console.log('RealSense 연결 URL:', wsUrl);
+      const wsUrl = `${LOCAL_WS_BASE_URL}/ws/realsense`;
+      console.log('로컬 RealSense 연결 URL:', wsUrl);
 
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = (event) => {
-        console.log('RealSense WebSocket 연결 성공');
+        console.log('로컬 RealSense WebSocket 연결 성공');
         this.reconnectAttempts = 0;
         this.onOpen();
       };
@@ -201,12 +208,12 @@ export class RealSenseWebSocket {
       };
 
       this.ws.onerror = (event) => {
-        console.error('RealSense WebSocket 오류:', event);
+        console.error('로컬 RealSense WebSocket 오류:', event);
         this.onError(event);
       };
 
       this.ws.onclose = (event) => {
-        console.log('RealSense WebSocket 연결 종료:', event.code, event.reason);
+        console.log('로컬 RealSense WebSocket 연결 종료:', event.code, event.reason);
         this.onClose();
 
         // 자동 재연결 시도
@@ -217,7 +224,7 @@ export class RealSenseWebSocket {
             30000
           );
           console.log(
-            `${delay}ms 후 RealSense 재연결 시도 (${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+            `${delay}ms 후 로컬 RealSense 재연결 시도 (${this.reconnectAttempts}/${this.maxReconnectAttempts})`
           );
 
           this.reconnectTimer = setTimeout(() => {
@@ -226,7 +233,7 @@ export class RealSenseWebSocket {
         }
       };
     } catch (error) {
-      console.error('RealSense WebSocket 연결 중 오류:', error);
+      console.error('로컬 RealSense WebSocket 연결 중 오류:', error);
       this.onError(error as Event);
     }
   }
@@ -242,9 +249,22 @@ export class RealSenseWebSocket {
       this.ws = null;
     }
   }
+  
+  // 필요시 라이브니스 검사 요청 함수 추가
+  requestLivenessCheck(rgbImage: string): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      const message = {
+        type: 'check_liveness',
+        rgb_image: rgbImage
+      };
+      this.ws.send(JSON.stringify(message));
+    } else {
+      console.error('RealSense WebSocket이 연결되지 않았습니다.');
+    }
+  }
 }
 
-// 기존 REST API 함수들
+// 기존 REST API 함수들 (원격 GPU 서버로 전송)
 export const registerFace = async (
   userId: string,
   capturedImages: CapturedImage[]
@@ -301,8 +321,8 @@ export const registerFace = async (
       );
     }
 
-    // API 요청 전송
-    const response = await api.post('/register', {
+    // 원격 GPU 서버에 요청 전송
+    const response = await remoteApi.post('/register', {
       user_id: userId,
       face_images: faceImages,
     });
@@ -314,12 +334,13 @@ export const registerFace = async (
   }
 };
 
-// REST 얼굴 인증 함수 - 실시간 인식을 위한 최적화
-export const verifyFace = async (rgbImage: string): Promise<any> => {
+// 얼굴 인증 함수 - 원격 GPU 서버로 전송
+export const verifyFace = async (rgbImage: string, livenessResult: any = null): Promise<any> => {
   try {
-    // 요청 본문에 이미지 데이터 포함
-    const response = await api.post('/verify', {
-      rgb_image: rgbImage
+    // 요청 본문에 이미지 데이터와 라이브니스 결과 포함
+    const response = await remoteApi.post('/verify', {
+      rgb_image: rgbImage,
+      liveness_result: livenessResult // 로컬 서버에서 처리한 라이브니스 결과
     });
 
     return response.data;
@@ -335,10 +356,23 @@ export const verifyFace = async (rgbImage: string): Promise<any> => {
   }
 };
 
-// RealSense 상태 확인 함수
+// 로컬 라이브니스 상태 확인 함수
+export const checkLiveness = async (rgbImage: string): Promise<any> => {
+  try {
+    const response = await localApi.post('/check_liveness', {
+      rgb_image: rgbImage
+    });
+    return response.data;
+  } catch (error) {
+    console.error('라이브니스 확인 중 오류 발생:', error);
+    throw error;
+  }
+};
+
+// 로컬 RealSense 상태 확인 함수
 export const checkRealSenseStatus = async (): Promise<any> => {
   try {
-    const response = await api.get('/test-realsense');
+    const response = await localApi.get('/test-realsense');
     return response.data;
   } catch (error) {
     console.error('RealSense 상태 확인 중 오류 발생:', error);
@@ -346,13 +380,24 @@ export const checkRealSenseStatus = async (): Promise<any> => {
   }
 };
 
-// 서버 상태 확인 함수
-export const checkServerHealth = async (): Promise<any> => {
+// 원격 서버 상태 확인 함수
+export const checkRemoteServerHealth = async (): Promise<any> => {
   try {
-    const response = await api.get('/health');
+    const response = await remoteApi.get('/health');
     return response.data;
   } catch (error) {
-    console.error('서버 상태 확인 중 오류 발생:', error);
+    console.error('원격 서버 상태 확인 중 오류 발생:', error);
+    throw error;
+  }
+};
+
+// 로컬 서버 상태 확인 함수
+export const checkLocalServerHealth = async (): Promise<any> => {
+  try {
+    const response = await localApi.get('/health');
+    return response.data;
+  } catch (error) {
+    console.error('로컬 서버 상태 확인 중 오류 발생:', error);
     throw error;
   }
 };
@@ -360,8 +405,10 @@ export const checkServerHealth = async (): Promise<any> => {
 export default {
   registerFace,
   verifyFace,
-  checkServerHealth,
+  checkLiveness,
   checkRealSenseStatus,
+  checkRemoteServerHealth,
+  checkLocalServerHealth,
   FaceVerificationWebSocket,
   RealSenseWebSocket
 };
