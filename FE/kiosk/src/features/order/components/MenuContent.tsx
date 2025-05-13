@@ -8,6 +8,7 @@ import OrderSection from '@/features/order/components/Menu/OrderSection'
 import ReceiptModal from '@/features/order/components/Receipt/ReceiptDialog'
 import { useAllMenu } from '../hooks/useAllMenu'
 import { useCategory } from '../hooks/useCategory'
+import { useOrderStore } from '@/stores/orderStore'
 
 const MenuButton = tw.button`w-80 border border-main rounded-xl px-8 py-1 my-4 mx-auto shadow-md`
 
@@ -16,9 +17,12 @@ export default function MenuContent({ onNext }: { onNext: () => void }) {
   const { category, loading: categoryLoading } = useCategory(1)
 
   const [showAllMenu, setShowAllMenu] = useState(false)
-  const total = 19000
-
   const [receiptOpen, setReceiptOpen] = useState(false)
+
+  const orders = useOrderStore((state) => state.orders)
+  const totalPrice = orders.reduce((total, item) => {
+    return total + item.totalPrice * item.quantity
+  }, 0)
 
   // if (menuLoading || categoryLoading) return <div>불러오는 중...</div>
 
@@ -46,7 +50,7 @@ export default function MenuContent({ onNext }: { onNext: () => void }) {
 
       {/* 결제하기 버튼 */}
       <CustomButton
-        text={`${total.toLocaleString()}원 결제하기`}
+        text={`${totalPrice.toLocaleString()}원 결제하기`}
         variant={'main'}
         onClick={() => setReceiptOpen(true)}
       />

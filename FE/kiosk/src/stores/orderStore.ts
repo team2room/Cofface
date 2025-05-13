@@ -1,9 +1,9 @@
-import { OrderItemReal } from '@/interfaces/OrderInterface'
+import { OrderItem } from '@/interfaces/OrderInterface'
 import { create } from 'zustand'
 
 interface OrderState {
-  orders: OrderItemReal[]
-  addOrder: (item: OrderItemReal) => void
+  orders: OrderItem[]
+  addOrder: (item: OrderItem) => void
   removeOrder: (index: number) => void
   updateQuantity: (index: number, quantity: number) => void
   clearOrders: () => void

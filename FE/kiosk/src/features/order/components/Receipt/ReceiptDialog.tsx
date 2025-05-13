@@ -6,8 +6,8 @@ import {
 import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
 import CustomButton from '@/components/CustomButton'
-import { RealOrderItem } from '@/interfaces/OrderInterface'
 import ReceiptItemList from './ReceiptItemList'
+import { useOrderStore } from '@/stores/orderStore'
 
 const Content = tw.div`h-[1150px] bg-lightLight p-4 mt-4 mb-12 flex flex-col justify-between`
 const HeaderRow = tw.div`flex justify-between p-2 border-y-2 border-dark`
@@ -28,14 +28,12 @@ export default function ReceiptModal({
   onOpenChange,
   onNext,
 }: ReceiptModalProps) {
-  const totalQuantity = dummyOrderItems.reduce(
-    (sum, item) => sum + item.quantity,
-    0,
-  )
+  const orders = useOrderStore((state) => state.orders)
 
-  const totalPrice = dummyOrderItems.reduce((total, item) => {
-    const optionsTotal = item.options.reduce((sum, opt) => sum + opt.price, 0)
-    return total + (item.basePrice + optionsTotal) * item.quantity
+  const totalQuantity = orders.reduce((sum, item) => sum + item.quantity, 0)
+
+  const totalPrice = orders.reduce((total, item) => {
+    return total + item.totalPrice * item.quantity
   }, 0)
 
   return (
@@ -68,7 +66,7 @@ export default function ReceiptModal({
             </HeaderRow>
 
             {/* 상품 목록 */}
-            <ReceiptItemList items={dummyOrderItems} />
+            <ReceiptItemList items={orders} />
           </div>
 
           {/* 총합 */}
@@ -125,34 +123,3 @@ export default function ReceiptModal({
     </AlertDialog>
   )
 }
-
-export const dummyOrderItems: RealOrderItem[] = [
-  {
-    name: '라이트 바닐라 아몬드라떼',
-    quantity: 1,
-    basePrice: 4000,
-    options: [
-      { name: '차가운 (ICE)', price: 0 },
-      { name: '중간 사이즈 (M)', price: 0 },
-    ],
-  },
-  {
-    name: '디카페인 카페모카',
-    quantity: 2,
-    basePrice: 5000,
-    options: [
-      { name: '차가운 (ICE)', price: 0 },
-      { name: '중간 사이즈 (M)', price: 0 },
-      { name: '얼음 적게', price: 0 },
-    ],
-  },
-  {
-    name: '디카페인 왕메가카페라떼',
-    quantity: 1,
-    basePrice: 4500,
-    options: [
-      { name: '차가운 (ICE)', price: 0 },
-      { name: '큰 사이즈 (L)', price: 500 },
-    ],
-  },
-]

@@ -72,34 +72,11 @@ export interface SelectedOption {
   optionId: number
 }
 
-export interface OrderItemReal {
+export interface OrderItem {
   menuId: number
   name: string
   basePrice: number
   quantity: number
   options: SelectedOption[]
   totalPrice: number
-}
-
-export interface OrderItem {
-  name: string
-  price: number
-  quantity: number
-}
-
-export interface OrderSectionProps {
-  orders: OrderItem[]
-}
-
-// 옵션 포함 주문 정보
-export interface OrderOption {
-  name: string
-  price: number // 0이면 추가금 없음
-}
-
-export interface RealOrderItem {
-  name: string
-  quantity: number
-  basePrice: number
-  options: OrderOption[]
 }
