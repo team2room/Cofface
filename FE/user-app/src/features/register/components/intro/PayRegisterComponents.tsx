@@ -3,47 +3,56 @@ import tw from 'twin.macro'
 import styled from '@emotion/styled'
 import { Text } from '@/styles/typography'
 import { NavArrowRight } from 'iconoir-react'
+import { CardCompanyProps } from '@/interfaces/PayRegisterInterfaces'
 
 export const PaymentForm = tw.div`
   w-full max-w-md flex flex-col space-y-3 my-4
 `
-
 export const InputContainer = tw.div`
   flex flex-col w-full
 `
-
 export const InputLabel = tw.label`
   text-sm text-littleDarkGray
 `
-
 export const StyledInput = styled(Input)`
   ${tw`w-full border-gray h-10`}
 `
-
 export const ReadOnlyInput = styled(StyledInput)`
   ${tw`cursor-pointer`}
 `
-
+export const CardNumInput = styled(Input)`
+  ${tw`w-full border-none h-10 cursor-pointer`}
+`
+export const CardNumWrapper = tw.div`
+  w-full border border-gray rounded-md flex items-center justify-between
+`
 export const Dash = tw.span`
   text-lg
 `
-
 export const InputGroup = tw.div`
   flex items-center gap-2
 `
-
 export const BoxWrapper = tw.div`
   flex flex-col border border-gray rounded-md p-4 gap-2
 `
 export const UnderWrapper = tw.div`
   flex items-center justify-between ml-1
 `
-
+export const CardNumberInputContainer = tw.div`
+  flex flex-col w-full relative
+`
+export const CardBrandContainer = tw.div`
+  flex items-center pr-3
+`
+export const CardBrandImage = tw.img`
+  h-4 w-auto
+`
 export interface PayInputProps {
   value: string
   onComplete?: () => void
   inputRef?: React.RefObject<HTMLInputElement>
   onFocus?: () => void
+  cardCompany?: CardCompanyProps | null
 }
 
 // 카드번호 입력 컴포넌트
@@ -51,6 +60,7 @@ export function CardNumberInputField({
   value,
   inputRef,
   onFocus,
+  cardCompany,
 }: PayInputProps) {
   // 카드번호 형식 변환 및 마스킹 처리 (앞 8자리만 표시, 뒤 8자리는 * 처리)
   const formatCardNumber = (cardNum: string) => {
@@ -79,19 +89,31 @@ export function CardNumberInputField({
   }
 
   return (
-    <InputContainer>
+    <CardNumberInputContainer>
       <Text variant="caption2" color="darkGray" className="pl-0.5">
         카드번호
       </Text>
-      <ReadOnlyInput
-        ref={inputRef}
-        type="text"
-        placeholder="카드번호 입력"
-        value={formatCardNumber(value)}
-        readOnly
-        onClick={handleFocus}
-      />
-    </InputContainer>
+      <CardNumWrapper>
+        <CardNumInput
+          ref={inputRef}
+          type="text"
+          placeholder="카드번호 입력"
+          value={formatCardNumber(value)}
+          readOnly
+          onClick={handleFocus}
+        />
+        {cardCompany && (
+          <CardBrandContainer>
+            {cardCompany.imageUrl && (
+              <CardBrandImage
+                src={cardCompany.imageUrl}
+                alt={cardCompany.brand}
+              />
+            )}
+          </CardBrandContainer>
+        )}
+      </CardNumWrapper>
+    </CardNumberInputContainer>
   )
 }
 

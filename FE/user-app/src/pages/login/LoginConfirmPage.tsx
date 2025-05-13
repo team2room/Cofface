@@ -21,7 +21,6 @@ const InputSection = tw.div`
 const ConfirmButton = tw.button`
   bg-main hover:bg-hover text-white w-full p-2 mt-10 rounded-md disabled:bg-gray disabled:text-littleDarkGray
 `
-
 const ErrorMessage = tw.div`
   text-destructive text-sm mt-2 animate-fade-in
 `
