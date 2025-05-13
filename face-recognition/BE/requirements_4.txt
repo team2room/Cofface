@@ -1,2 +1,0 @@
-pyrealsense2
-pyglet
