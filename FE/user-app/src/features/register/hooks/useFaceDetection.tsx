@@ -6,7 +6,7 @@ import {
   CapturedImage,
   FaceDetectionState,
   RotationState,
-} from '@/interfaces/RegisterInterfaces'
+} from '@/interfaces/FaceRegisterInterfaces'
 import {
   calculateFaceRotation,
   checkFaceInCustomOval,

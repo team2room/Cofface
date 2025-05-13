@@ -1,7 +1,7 @@
 import DetailHeader from '@/components/DetailHeader'
 import { FaceRegisterCheckModal } from '@/features/register/components/intro/FaceRegisterCheckModal'
 import { FaceRegisterMainButton } from '@/features/register/components/intro/FaceRegisterMainButton'
-import { FaceRegisterMainButtonProps } from '@/interfaces/RegisterInterfaces'
+import { FaceRegisterMainButtonProps } from '@/interfaces/FaceRegisterInterfaces'
 import { Text } from '@/styles/typography'
 import { useEffect, useState } from 'react'
 import tw from 'twin.macro'
