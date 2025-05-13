@@ -10,6 +10,7 @@ import { Text } from '@/styles/typography'
 import { useNavigate } from 'react-router-dom'
 import { useLogout } from '@/features/userLogin/hooks/useLogout'
 import { useExtendSession } from '@/features/userLogin/hooks/useExtendSession'
+import { useUserStore } from '@/stores/loginStore'
 
 const Container = tw.div`flex flex-col min-h-screen bg-white px-7 my-4`
 
@@ -19,10 +20,11 @@ export default function OrderPage() {
   const navigate = useNavigate()
   const { logout } = useLogout()
   const { extend } = useExtendSession()
+  const { isMember } = useUserStore()
 
   const [step, setStep] = useState<Step>('menu')
 
-  const [remainingSeconds, setRemainingSeconds] = useState(120)
+  const [remainingSeconds, setRemainingSeconds] = useState(10)
   const [showTimeoutModal, setShowTimeoutModal] = useState(false)
   const [logoutCountdown, setLogoutCountdown] = useState(5)
 
@@ -61,7 +63,7 @@ export default function OrderPage() {
         setLogoutCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(logoutTimerRef.current!)
-            handleLogoutClick()
+            handleTimeoutCancel()
             return 0
           }
           return prev - 1
@@ -75,17 +77,44 @@ export default function OrderPage() {
     }
   }, [showTimeoutModal])
 
-  const handleLogoutClick = async () => {
-    await logout(1)
+  const handleTimeoutCancel = async () => {
+    if (isMember) {
+      await logout(1)
+    }
     navigate('/user')
   }
 
   const handleExtendClick = async () => {
-    await extend(1)
-    setRemainingSeconds(120)
+    if (isMember) {
+      await extend(1)
+    }
+    setRemainingSeconds(10)
     startTimer()
     setShowTimeoutModal(false)
   }
+
+  // 모달 내용
+  const dialogDescription = isMember ? (
+    <Text variant="body1" weight="bold">
+      연장하시겠습니까?
+      <br />
+      <Text variant="title4" weight="extrabold" className="text-red-600">
+        {logoutCountdown}
+      </Text>
+      초 후 자동 로그아웃됩니다.
+    </Text>
+  ) : (
+    <Text variant="body1" weight="bold">
+      시간이 초과되었어요.
+      <br />
+      <Text variant="title4" weight="extrabold" className="text-red-600">
+        {logoutCountdown}
+      </Text>
+      초 후 초기화면으로 돌아갑니다.
+    </Text>
+  )
+
+  const dialogCancelText = isMember ? '로그아웃' : '처음으로'
 
   return (
     <>
@@ -108,19 +137,10 @@ export default function OrderPage() {
             시간 초과😥
           </Text>
         }
-        description={
-          <Text variant="body1" weight="bold">
-            연장하시겠습니까?
-            <br />
-            <Text variant="title4" weight="extrabold" className="text-red-600">
-              {logoutCountdown}
-            </Text>
-            초 후 자동 로그아웃됩니다.
-          </Text>
-        }
-        cancelText="로그아웃"
+        description={dialogDescription}
+        cancelText={dialogCancelText}
         confirmText="연장하기"
-        onCancel={handleLogoutClick}
+        onCancel={handleTimeoutCancel}
         onConfirm={handleExtendClick}
       />
     </>

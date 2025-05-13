@@ -10,7 +10,7 @@ export const usePhoneLogin = () => {
       const { accessToken, user } = await phoneLogin({
         phoneNumber,
       })
-      setLogin(accessToken, user)
+      setLogin(accessToken, user, 'phone')
     },
     [setLogin],
   )

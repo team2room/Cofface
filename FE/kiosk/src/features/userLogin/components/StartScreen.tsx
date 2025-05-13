@@ -2,7 +2,7 @@ import { Text } from '@/styles/typography'
 import tw from 'twin.macro'
 import CustomDialog from '@/components/CustomDialog'
 import { useState } from 'react'
-import { useLoginStore } from '@/stores/loginStore'
+import { useLoginStore, useUserStore } from '@/stores/loginStore'
 import { useNavigate } from 'react-router-dom'
 import { usePhoneLogin } from '../hooks/usePhoneLogin'
 
@@ -91,6 +91,7 @@ export default function StartScreen() {
       alert('전화번호가 일치합니다')
       navigate('/order')
     } catch (err) {
+      resetPhoneNumber()
       alert('일치하는 전화번호가 없습니다')
     }
   }
@@ -121,7 +122,12 @@ export default function StartScreen() {
             회원 주문
           </Text>
         </Button>
-        <Button onClick={() => navigate('/order')}>
+        <Button
+          onClick={() => {
+            useUserStore.getState().setGuest()
+            navigate('/order')
+          }}
+        >
           <Text variant="title2" weight="bold">
             비회원 주문
           </Text>
@@ -141,6 +147,7 @@ export default function StartScreen() {
             setModalState('phone')
           } else {
             setShowModal(false)
+            resetPhoneNumber()
             setModalState('waiting')
           }
         }}
@@ -149,6 +156,7 @@ export default function StartScreen() {
             handlePhoneLogin()
           } else if (modalState === 'success') {
             setShowModal(false)
+            resetPhoneNumber()
             navigate('/order')
           } else {
             setModalState('phone')
