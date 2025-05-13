@@ -8,11 +8,12 @@
             kiosk_id as kioskId,
             total_amount as totalAmount,
             order_date as orderDate,
-            payment_method as paymentMethod,
-            payment_status as paymentStatus,
             is_stamp_used as isStampUsed,
             order_status as orderStatus,
             is_takeout as isTakeout,
+            is_guest as isGuest,
+            age as age,
+            gender as gender,
             is_delete as isDelete
         FROM orders
         WHERE order_id = #{orderId}
@@ -25,11 +26,12 @@
                kiosk_id as kioskId,
                total_amount as totalAmount,
                order_date as orderDate,
-               payment_method as paymentMethod,
-               payment_status as paymentStatus,
                is_stamp_used as isStampUsed,
                order_status as orderStatus,
                is_takeout as isTakeout,
+               is_guest as isGuest,
+               age as age,
+               gender as gender,
                is_delete as isDelete
         FROM orders
         WHERE order_id = #{orderId}
@@ -43,11 +45,12 @@
             kiosk_id as kioskId,
             total_amount as totalAmount,
             order_date as orderDate,
-            payment_method as paymentMethod,
-            payment_status as paymentStatus,
             is_stamp_used as isStampUsed,
             order_status as orderStatus,
             is_takeout as isTakeout,
+            is_guest as isGuest,
+            age as age,
+            gender as gender,
             is_delete as isDelete
         FROM orders
         WHERE user_id = #{userId}
@@ -62,11 +65,12 @@
             kiosk_id as kioskId,
             total_amount as totalAmount,
             order_date as orderDate,
-            payment_method as paymentMethod,
-            payment_status as paymentStatus,
             is_stamp_used as isStampUsed,
             order_status as orderStatus,
             is_takeout as isTakeout,
+            is_guest as isGuest,
+            age as age,
+            gender as gender,
             is_delete as isDelete
         FROM orders
         WHERE kiosk_id = #{kioskId}
@@ -74,33 +78,35 @@
         ORDER BY order_date DESC
     </select>
 
-    <!-- 수정: useGeneratedKeys와 keyProperty 제거 (수동으로 ID 생성하므로) -->
-    <insert id="insertOrder" parameterType="com.ssafy.orderme.payment.model.Order">
+    <insert id="insertOrder" parameterType="com.ssafy.orderme.payment.model.Order"
+            useGeneratedKeys="true" keyProperty="orderId">
         INSERT INTO orders (
-        order_id, <!-- 이제 직접 값을 넣습니다 -->
-        user_id,
-        kiosk_id,
-        total_amount,
-        order_date,
-        payment_method,
-        payment_status,
-        is_stamp_used,
-        order_status,
-        is_takeout,
-        is_delete
+            user_id,
+            kiosk_id,
+            total_amount,
+            order_date,
+            is_stamp_used,
+            order_status,
+            is_takeout,
+            is_guest,
+            age,
+            gender,
+            is_delete,
+            order_number
         ) VALUES (
-        #{orderId}, <!-- 직접 생성한 고유 ID 사용 -->
-        #{userId},
-        #{kioskId},
-        #{totalAmount},
-        #{orderDate},
-        #{paymentMethod},
-        #{paymentStatus},
-        #{isStampUsed},
-        #{orderStatus},
-        #{isTakeout},
-        #{isDelete}
-        )
+                     #{userId},
+                     #{kioskId},
+                     #{totalAmount},
+                     #{orderDate},
+                     #{isStampUsed},
+                     #{orderStatus},
+                     #{isTakeout},
+                     #{isGuest},
+                     #{age},
+                     #{gender},
+                     #{isDelete},
+                     #{orderNumber}
+                 )
     </insert>
 
     <update id="updateOrder" parameterType="com.ssafy.orderme.payment.model.Order">
@@ -110,11 +116,12 @@
             kiosk_id = #{kioskId},
             total_amount = #{totalAmount},
             order_date = #{orderDate},
-            payment_method = #{paymentMethod},
-            payment_status = #{paymentStatus},
             is_stamp_used = #{isStampUsed},
             order_status = #{orderStatus},
             is_takeout = #{isTakeout},
+            is_guest = #{isGuest},
+            age = #{age},
+            gender = #{gender},
             is_delete = #{isDelete}
         WHERE order_id = #{orderId}
     </update>
@@ -126,17 +133,85 @@
         WHERE order_id = #{orderId}
     </update>
 
-    <update id="updatePaymentStatus">
-        UPDATE orders
-        SET
-            payment_status = #{paymentStatus}
-        WHERE order_id = #{orderId}
-    </update>
-
     <update id="softDeleteOrder">
         UPDATE orders
         SET
             is_delete = 1
         WHERE order_id = #{orderId}
     </update>
+
+    <!-- 사용자별 최근 주문 목록 조회 -->
+    <select id="findRecentByUserId" resultType="com.ssafy.orderme.payment.model.Order">
+        SELECT
+            order_id as orderId,
+            user_id as userId,
+            kiosk_id as kioskId,
+            total_amount as totalAmount,
+            order_date as orderDate,
+            is_stamp_used as isStampUsed,
+            order_status as orderStatus,
+            is_takeout as isTakeout,
+            is_guest as isGuest,
+            age as age,
+            gender as gender,
+            is_delete as isDelete
+        FROM orders
+        WHERE user_id = #{userId}
+          AND is_delete = 0
+        ORDER BY order_date DESC
+            LIMIT #{limit}
+    </select>
+
+    <!-- 사용자별, 매장별 최근 주문 목록 조회 -->
+    <select id="findRecentByUserIdAndStoreId" resultType="com.ssafy.orderme.payment.model.Order">
+        SELECT
+            order_id as orderId,
+            user_id as userId,
+            kiosk_id as kioskId,
+            total_amount as totalAmount,
+            order_date as orderDate,
+            is_stamp_used as isStampUsed,
+            order_status as orderStatus,
+            is_takeout as isTakeout,
+            is_guest as isGuest,
+            age as age,
+            gender as gender,
+            is_delete as isDelete
+        FROM orders
+        WHERE user_id = #{userId}
+          AND kiosk_id = #{storeId}
+          AND is_delete = 0
+        ORDER BY order_date DESC
+            LIMIT #{limit}
+    </select>
+
+    <!-- 주문 ID와 매장 ID로 주문 조회 (매장 검증 포함) -->
+    <select id="findByIdAndStoreId" resultType="com.ssafy.orderme.payment.model.Order">
+        SELECT
+            order_id as orderId,
+            user_id as userId,
+            kiosk_id as kioskId,
+            total_amount as totalAmount,
+            order_date as orderDate,
+            is_stamp_used as isStampUsed,
+            order_status as orderStatus,
+            is_takeout as isTakeout,
+            is_guest as isGuest,
+            age as age,
+            gender as gender,
+            is_delete as isDelete
+        FROM orders
+        WHERE order_id = #{orderId}
+          AND kiosk_id = #{storeId}
+          AND is_delete = 0
+    </select>
+
+    <!-- 특정 매장의 해당 날짜 주문 수 조회 -->
+    <select id="countOrdersByStoreAndDate" resultType="int">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE kiosk_id = #{kioskId}
+          AND DATE(order_date) = DATE(#{orderDate})
+          AND is_delete = false
+    </select>
 </mapper>

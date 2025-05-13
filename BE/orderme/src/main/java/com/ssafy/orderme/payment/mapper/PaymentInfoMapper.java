@@ -8,6 +8,12 @@ import java.util.List;
 
 @Mapper
 public interface PaymentInfoMapper {
+    // ID로 결제 정보 조회
+    PaymentInfo findById(Integer paymentInfoId);
+
+    // 사용자 ID로 기본 결제 정보 조회
+    PaymentInfo findDefaultByUserId(String userId);
+
     // 카드 등록
     void registerCard(PaymentInfo paymentInfo);
 

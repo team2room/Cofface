@@ -3,6 +3,7 @@ package com.ssafy.orderme.payment.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.orderme.payment.dto.request.PaymentApprovalRequest;
 import com.ssafy.orderme.payment.dto.request.PaymentRequest;
+import com.ssafy.orderme.payment.dto.response.PaymentResponseDto;
 import com.ssafy.orderme.payment.mapper.OrderMapper;
 import com.ssafy.orderme.payment.mapper.PaymentMapper;
 import com.ssafy.orderme.payment.model.Order;
@@ -62,19 +63,26 @@ public class PaymentService {
         // 외부 결제 시스템에 사용할 고유 주문 ID 생성
         String orderIdForToss = generateOrderId();
 
+        // 주문일시
+        LocalDateTime orderDate = LocalDateTime.now();
+
+        // 해당 매장의 오늘 주문 수 조회 (+1 하면 현재 주문의 순번이 됨)
+        int todayOrderCount = orderMapper.countOrdersByStoreAndDate(request.getKioskId(), orderDate) + 1;
+
+        // A-{순번} 형식의 주문번호 생성
+        String orderNumber = "A-" + todayOrderCount;
+
         // 주문 정보 저장
         Order order = Order.builder()
                 .userId(userId)
                 .kioskId(request.getKioskId())
                 .totalAmount(request.getTotalAmount())
                 .orderDate(LocalDateTime.now())
-                .paymentMethod(request.getPaymentMethod())
-                .paymentStatus("READY")
                 .isStampUsed(request.getIsStampUsed() != null ? request.getIsStampUsed() : false)
                 .orderStatus("PENDING")
                 .isTakeout(request.getIsTakeout() != null ? request.getIsTakeout() : false)
                 .isDelete(false)
-                .orderId(orderIdForToss) // DB에 저장될 주문 ID를 생성한 고유 ID로 설정
+                .orderNumber(orderNumber)
                 .build();
 
         orderMapper.insertOrder(order);
@@ -84,7 +92,7 @@ public class PaymentService {
 
     // 결제 승인 처리
     @Transactional
-    public Payment approvePayment(PaymentApprovalRequest request){
+    public PaymentResponseDto approvePayment(PaymentApprovalRequest request){
         try{
             // 토스페이먼츠 결제 승인 API 호출
             String tossPaymentsUrl = "https://api.tosspayments.com/v1/payments/confirm";
@@ -118,26 +126,25 @@ public class PaymentService {
 
             // 응답에서 필요한 정보 추출
             String paymentKey = (String) responseBody.get("paymentKey");
-            String orderId = (String) responseBody.get("orderId");
+            Integer orderId = Integer.parseInt((String) responseBody.get("orderId"));
             String status = (String) responseBody.get("status");
             Double amount = Double.valueOf(responseBody.get("totalAmount").toString());
 
             // DB에서 주문 조회
-            Order order = orderMapper.findByOrderId(orderId);
+            Order order = orderMapper.findById(orderId);
             if (order == null) {
                 throw new RuntimeException("해당 주문 정보를 찾을 수 없습니다: " + orderId);
             }
 
-            // 주문 상태 업데이트
-            order.setPaymentStatus("COMPLETED");
+            // 주문 상태만 업데이트
             order.setOrderStatus("ACCEPTED");
             orderMapper.updateOrder(order);
 
             // 결제 정보 저장
             Payment payment = Payment.builder()
-                    .orderId(Integer.parseInt(order.getOrderId().replace("ORDER-", "")))
+                    .orderId(orderId)
                     .amount(amount)
-                    .paymentType(order.getPaymentMethod())
+                    .paymentType(request.getPaymentType())
                     .status(status)
                     .paymentDate(LocalDateTime.now())
                     .paymentKey(paymentKey)
@@ -145,29 +152,45 @@ public class PaymentService {
 
             paymentMapper.insertPayment(payment);
 
-            return payment;
+            return PaymentResponseDto.builder()
+                    .orderId(order.getOrderId())
+                    .orderNumber(order.getOrderNumber())
+                    .paymentKey(payment.getPaymentKey())
+                    .status(payment.getStatus())
+                    .amount(payment.getAmount())
+                    .build();
         }catch (Exception e){
             log.error("결제 승인 처리 중 오류 발생", e);
             throw new RuntimeException("결제 승인 처리에 실패했습니다", e);
         }
-
     }
 
     @Transactional
-    public void handlePaymentFailure(String orderId, String errorCode, String errorMessage){
+    public void handlePaymentFailure(Integer orderId, String errorCode, String errorMessage){
         try{
             // 주문 조회
-            Order order = orderMapper.findByOrderId(orderId);
+            Order order = orderMapper.findById(orderId);
 
             if (order == null) {
                 log.error("결제 실패 처리: 주문을 찾을 수 없음 - {}", orderId);
                 return;
             }
 
-            // 주문 상태 업데이트
-            order.setPaymentStatus("FAILED");
+            // 주문 상태만 업데이트
             order.setOrderStatus("CANCELED");
             orderMapper.updateOrder(order);
+
+            // 실패한 결제 정보 저장
+            Payment payment = Payment.builder()
+                    .orderId(orderId)
+                    .amount(order.getTotalAmount().doubleValue())
+                    .paymentType("UNKNOWN") // 실패한 경우 알 수 없음
+                    .status("FAILED")
+                    .paymentDate(LocalDateTime.now())
+                    .paymentKey(errorCode) // 에러 코드를 키로 저장
+                    .build();
+
+            paymentMapper.insertPayment(payment);
 
             // 실패 로그 기록
             log.info("결제 실패 처리 완료: orderId={}, errorCode={}, errorMessage={}",
@@ -178,7 +201,6 @@ public class PaymentService {
     }
 
     // 주문 조회
-    public Order getOrderById(String orderId) {
-        return orderMapper.findByOrderId(orderId);
-    }
-}
+    public Order getOrderById(Integer orderId) {
+        return orderMapper.findById(orderId);
+    }}

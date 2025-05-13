@@ -2,6 +2,32 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ssafy.orderme.payment.mapper.PaymentInfoMapper">
 
+    <!-- ID로 결제 정보 조회 -->
+    <select id="findById" resultType="com.ssafy.orderme.payment.model.PaymentInfo">
+        SELECT
+            payment_info_id as paymentInfoId,
+            user_id as userId,
+            card_number as cardNumber,
+            card_expiry as cardExpiry,
+            is_default as isDefault
+        FROM payment_info
+        WHERE payment_info_id = #{paymentInfoId}
+    </select>
+
+    <!-- 사용자 ID로 기본 결제 정보 조회 -->
+    <select id="findDefaultByUserId" resultType="com.ssafy.orderme.payment.model.PaymentInfo">
+        SELECT
+            payment_info_id as paymentInfoId,
+            user_id as userId,
+            card_number as cardNumber,
+            card_expiry as cardExpiry,
+            is_default as isDefault
+        FROM payment_info
+        WHERE user_id = #{userId}
+          AND is_default = true
+            LIMIT 1
+    </select>
+
     <!-- 카드 등록 -->
     <insert id="registerCard" parameterType="com.ssafy.orderme.payment.model.PaymentInfo" useGeneratedKeys="true" keyProperty="paymentInfoId">
         INSERT INTO payment_info (
