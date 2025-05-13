@@ -49,7 +49,7 @@
     </resultMap>
 
     <!-- 매장의 모든 메뉴 조회 (FK 없이 JOIN) -->
-    <select id="findAllByStoreId" parameterType="Long" resultMap="MenuResultMap">
+    <select id="findAllByStoreId" parameterType="Integer" resultMap="MenuResultMap">
         SELECT
             m.menu_id,
             m.menu_name,
@@ -82,7 +82,7 @@
     </select>
 
     <!-- 메뉴 ID로 메뉴 상세 정보 조회 (FK 없이 JOIN) -->
-    <select id="findById" parameterType="Long" resultMap="MenuResultMap">
+    <select id="findById" parameterType="Integer" resultMap="MenuResultMap">
         SELECT
             m.menu_id, m.menu_name, m.price, m.category_id,
             c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
@@ -93,7 +93,7 @@
     </select>
 
     <!-- 메뉴 ID로 옵션 카테고리 목록 조회 (FK 없이 JOIN) -->
-    <select id="findOptionCategoriesByMenuId" parameterType="Long" resultMap="OptionCategoryResultMap">
+    <select id="findOptionCategoriesByMenuId" parameterType="Integer" resultMap="OptionCategoryResultMap">
         SELECT
             oc.category_id, oc.category_name, oc.is_required, oc.display_order,
             oc.is_sold_out, oc.is_deleted, oc.deleted_at
@@ -105,7 +105,7 @@
     </select>
 
     <!-- 옵션 카테고리 ID로 옵션 아이템 목록 조회 -->
-    <select id="findOptionItemsByCategoryId" parameterType="Long" resultMap="OptionItemResultMap">
+    <select id="findOptionItemsByCategoryId" parameterType="Integer" resultMap="OptionItemResultMap">
         SELECT
             item_id, category_id, option_name, additional_price,
             is_default, display_order, is_deleted, deleted_at

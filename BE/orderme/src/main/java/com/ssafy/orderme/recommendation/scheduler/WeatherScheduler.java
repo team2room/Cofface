@@ -1,7 +1,7 @@
 package com.ssafy.orderme.recommendation.scheduler;
 
 import com.ssafy.orderme.kiosk.model.Store;
-import com.ssafy.orderme.kiosk.service.StoreService;
+import com.ssafy.orderme.kiosk.service.StoreServices;
 import com.ssafy.orderme.recommendation.dto.response.WeatherApiResponse;
 import com.ssafy.orderme.recommendation.model.GeoLocation;
 import com.ssafy.orderme.recommendation.service.GeocodingService;
@@ -23,7 +23,7 @@ public class WeatherScheduler {
     private RestTemplate restTemplate;
 
     @Autowired
-    private StoreService storeService;
+    private StoreServices storeServices;
 
     @Autowired
     private GeocodingService geocodingService;
@@ -38,7 +38,7 @@ public class WeatherScheduler {
     @Scheduled(cron = "0 0 9 * * *")
     public void updateWeatherData() {
         try {
-            List<Store> stores = storeService.getAllStores();
+            List<Store> stores = storeServices.getAllStores();
 
             for (Store store : stores) {
                 String address = store.getAddress();
@@ -56,7 +56,7 @@ public class WeatherScheduler {
                     String weatherCondition = response.getWeather().get(0).getMain(); // 날씨 상태 (Rainy, Sunny 등)
 
                     // Redis에 저장
-                    weatherService.saveWeatherToRedis(store.getStoreId(), weatherCondition);
+                    weatherService.saveWeatherToRedis(store.getStoreId().intValue(), weatherCondition);
                 }
             }
         } catch (Exception e) {

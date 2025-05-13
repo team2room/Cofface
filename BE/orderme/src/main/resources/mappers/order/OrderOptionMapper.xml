@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.orderme.order.mapper.OrderOptionMapper">
+    <!-- 주문 메뉴 ID로 주문 옵션 목록 조회 -->
+    <select id="findByOrderMenuId" resultType="com.ssafy.orderme.order.model.OrderOption">
+        SELECT
+            order_option_id as orderOptionId,
+            order_menu_id as orderMenuId,
+            option_item_id as optionItemId,
+            option_name as optionName,
+            option_price as optionPrice,
+            quantity,
+            is_deleted as isDeleted,
+            deleted_at as deletedAt
+        FROM orderoption
+        WHERE order_menu_id = #{orderMenuId}
+          AND is_deleted = 0
+        ORDER BY order_option_id
+    </select>
+
+    <!-- 주문 옵션 ID로 조회 -->
+    <select id="findById" resultType="com.ssafy.orderme.order.model.OrderOption">
+        SELECT
+            order_option_id as orderOptionId,
+            order_menu_id as orderMenuId,
+            option_item_id as optionItemId,
+            option_name as optionName,
+            option_price as optionPrice,
+            quantity,
+            is_deleted as isDeleted,
+            deleted_at as deletedAt
+        FROM orderoption
+        WHERE order_option_id = #{orderOptionId}
+    </select>
+
+    <!-- 주문 옵션 추가 -->
+    <insert id="insertOrderOption" parameterType="com.ssafy.orderme.order.model.OrderOption"
+            useGeneratedKeys="true" keyProperty="orderOptionId">
+        INSERT INTO orderoption (
+            order_menu_id,
+            option_item_id,
+            option_name,
+            option_price,
+            quantity,
+            is_deleted
+        ) VALUES (
+                     #{orderMenuId},
+                     #{optionItemId},
+                     #{optionName},
+                     #{optionPrice},
+                     #{quantity},
+                     #{isDeleted}
+                 )
+    </insert>
+
+    <!-- 주문 옵션 수정 -->
+    <update id="updateOrderOption" parameterType="com.ssafy.orderme.order.model.OrderOption">
+        UPDATE orderoption
+        SET
+            option_item_id = #{optionItemId},
+            option_name = #{optionName},
+            option_price = #{optionPrice},
+            quantity = #{quantity},
+            is_deleted = #{isDeleted}
+        WHERE order_option_id = #{orderOptionId}
+    </update>
+
+    <!-- 주문 옵션 삭제 (소프트 딜리트) -->
+    <update id="softDeleteOrderOption">
+        UPDATE orderoption
+        SET
+            is_deleted = 1,
+            deleted_at = NOW()
+        WHERE order_option_id = #{orderOptionId}
+    </update>
+
+    <!-- 주문 메뉴별 주문 옵션 삭제 (소프트 딜리트) -->
+    <update id="softDeleteByOrderMenuId">
+        UPDATE orderoption
+        SET
+            is_deleted = 1,
+            deleted_at = NOW()
+        WHERE order_menu_id = #{orderMenuId}
+          AND is_deleted = 0
+    </update>
+</mapper>

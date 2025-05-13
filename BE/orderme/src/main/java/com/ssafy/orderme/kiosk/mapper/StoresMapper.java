@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 @Mapper
-public interface StoreMapper {
+public interface StoresMapper {
 
     /**
      * 모든 매장 목록 조회

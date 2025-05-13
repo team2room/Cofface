@@ -52,7 +52,7 @@ public class KioskController {
      */
     @GetMapping("/home")
     public ResponseEntity<ApiResponse<RecommendedMenuResponse>> getHomeRecommendations(
-            @RequestParam Long storeId,
+            @RequestParam Integer storeId,
             @RequestHeader(value = "Authorization", required = false) String token,
             @RequestParam(required = false) Integer age,
             @RequestParam(required = false) String gender) {
@@ -84,7 +84,7 @@ public class KioskController {
      * 전체 메뉴 목록 조회
      */
     @GetMapping("/menus")
-    public ResponseEntity<ApiResponse<List<MenuResponse>>> getAllMenus(@RequestParam Long storeId) {
+    public ResponseEntity<ApiResponse<List<MenuResponse>>> getAllMenus(@RequestParam Integer storeId) {
         List<MenuResponse> menus = menuService.getAllMenusByStoreId(storeId);
         return ResponseEntity.ok(ApiResponse.success("메뉴 목록 조회 성공", menus));
     }
@@ -94,8 +94,8 @@ public class KioskController {
      */
     @GetMapping("/menus/category/{categoryId}")
     public ResponseEntity<ApiResponse<List<MenuResponse>>> getMenusByCategoryId(
-            @RequestParam Long storeId,
-            @PathVariable Long categoryId) {
+            @RequestParam Integer storeId,
+            @PathVariable Integer categoryId) {
         List<MenuResponse> menus = menuService.getMenusByCategoryId(storeId, categoryId);
         return ResponseEntity.ok(ApiResponse.success("카테고리별 메뉴 목록 조회 성공", menus));
     }
@@ -104,7 +104,7 @@ public class KioskController {
      * 메뉴 상세 정보 조회 (옵션 포함)
      */
     @GetMapping("/menus/{menuId}")
-    public ResponseEntity<ApiResponse<MenuDetailResponse>> getMenuDetail(@PathVariable Long menuId) {
+    public ResponseEntity<ApiResponse<MenuDetailResponse>> getMenuDetail(@PathVariable Integer menuId) {
         MenuDetailResponse menu = menuService.getMenuDetail(menuId);
         if (menu == null) {
             return ResponseEntity.ok(ApiResponse.error(HttpStatus.NOT_FOUND, "메뉴를 찾을 수 없습니다."));
@@ -116,8 +116,8 @@ public class KioskController {
      * 매장의 모든 카테고리 목록 조회
      */
     @GetMapping("/categories")
-    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getCategories(@RequestParam Long storeId) {
-        List<CategoryResponse> categories = categoryService.getAllCategoriesByStoreId(storeId);
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getCategories(@RequestParam Integer storeId) {
+        List<CategoryResponse> categories = categoryService.getAllCategoriesByStoreId(storeId.longValue());
         return ResponseEntity.ok(ApiResponse.success("카테고리 목록 조회 성공", categories));
     }
 
@@ -127,13 +127,13 @@ public class KioskController {
      */
     @PostMapping("/update-recommendation-data")
     public ResponseEntity<ApiResponse<Void>> updateRecommendationData(
-            @RequestParam Long storeId,
-            @RequestParam List<Long> menuIds,
+            @RequestParam Integer storeId,
+            @RequestParam List<Integer> menuIds,
             @RequestParam(required = false) String gender,
-            @RequestParam(required = false) String ageGroup) { // Integer age -> String ageGroup
+            @RequestParam(required = false) String ageGroup) {
 
         // 각 메뉴에 대해 인기도 및 날씨 선호도 업데이트
-        for (Long menuId : menuIds) {
+        for (Integer menuId : menuIds) {
             // 메뉴 인기도 업데이트
             recommendationService.updateMenuPopularity(menuId, storeId);
 

@@ -27,7 +27,7 @@ public class WeatherRecommendationService {
     /**
      * 날씨 기반 추천 메뉴 조회 (기존 메소드 유지)
      */
-    public List<MenuResponse> getMenusByWeather(Long storeId) {
+    public List<MenuResponse> getMenusByWeather(Integer storeId) {  // Long -> Integer
         // 기존 메소드는 excludeMenuIds를 null로 전달하여 새 메소드 호출
         return getMenusByWeather(storeId, null);
     }
@@ -35,7 +35,7 @@ public class WeatherRecommendationService {
     /**
      * 날씨 기반 추천 메뉴 조회 (새 메소드)
      */
-    public List<MenuResponse> getMenusByWeather(Long storeId, List<Long> excludeMenuIds) {
+    public List<MenuResponse> getMenusByWeather(Integer storeId, List<Integer> excludeMenuIds) {  // Long -> Integer
         try {
             // Redis에서 현재 날씨 정보 가져오기
             String weatherKey = "weather:" + storeId;
@@ -69,7 +69,7 @@ public class WeatherRecommendationService {
     /**
      * 현재 날씨 상태 조회
      */
-    public String getCurrentWeather(Long storeId) {
+    public String getCurrentWeather(Integer storeId) {  // Long -> Integer
         try {
             String weatherKey = "weather:" + storeId;
             String currentWeather = redisTemplate.opsForValue().get(weatherKey);
@@ -84,7 +84,7 @@ public class WeatherRecommendationService {
     /**
      * 날씨별 메뉴 선호도 업데이트 (주문 시 호출)
      */
-    public void updateWeatherPreference(Long menuId, Long storeId) {
+    public void updateWeatherPreference(Integer menuId, Integer storeId) {  // Long -> Integer
         try {
             String weatherKey = "weather:" + storeId;
             String currentWeather = redisTemplate.opsForValue().get(weatherKey);
@@ -100,7 +100,7 @@ public class WeatherRecommendationService {
     /**
      * 날씨 정보 Redis에 저장
      */
-    public void saveWeatherToRedis(Long storeId, String weatherCondition) {
+    public void saveWeatherToRedis(Integer storeId, String weatherCondition) {  // Long -> Integer
         String weatherKey = "weather:" + storeId;
         redisTemplate.opsForValue().set(weatherKey, weatherCondition);
         // 24시간 동안 유효

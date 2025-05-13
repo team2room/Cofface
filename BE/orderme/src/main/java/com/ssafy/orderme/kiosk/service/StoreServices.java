@@ -1,6 +1,6 @@
 package com.ssafy.orderme.kiosk.service;
 
-import com.ssafy.orderme.kiosk.mapper.StoreMapper;
+import com.ssafy.orderme.kiosk.mapper.StoresMapper;
 import com.ssafy.orderme.kiosk.model.Store;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -8,13 +8,13 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class StoreService {
+public class StoreServices {
 
-    private final StoreMapper storeMapper;
+    private final StoresMapper storesMapper;
 
     @Autowired
-    public StoreService(StoreMapper storeMapper) {
-        this.storeMapper = storeMapper;
+    public StoreServices(StoresMapper storesMapper) {
+        this.storesMapper = storesMapper;
     }
 
     /**
@@ -22,7 +22,7 @@ public class StoreService {
      * @return 매장 목록
      */
     public List<Store> getAllStores() {
-        return storeMapper.findAll();
+        return storesMapper.findAll();
     }
 
     /**
@@ -31,6 +31,6 @@ public class StoreService {
      * @return 매장 정보
      */
     public Store getStoreById(Long storeId) {
-        return storeMapper.findById(storeId);
+        return storesMapper.findById(storeId);
     }
 }

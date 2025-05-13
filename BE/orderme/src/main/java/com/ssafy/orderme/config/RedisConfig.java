@@ -37,8 +37,18 @@ public class RedisConfig {
         return template;
     }
 
+    // 방법 1: Bean 이름 변경 (권장)
+    @Bean(name = "redisRestTemplate")
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
+    // 또는 방법 2: Bean 삭제 - 아래 주석 처리된 코드 제거
+    // AppConfig에 이미 정의되어 있으므로 이 부분을 제거해도 됩니다.
+    /*
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
     }
+    */
 }

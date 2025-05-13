@@ -41,6 +41,9 @@ public class UserService {
         return userMapper.selectByPhoneNumber(phoneNumber);
     }
 
+    // 사용자 ID로 사용자 조회
+    public User findById(String userId){ return userMapper.selectById(userId); }
+
     // 회원가입
     @Transactional
     public User createUser(String name, String idNumberFront, String idNumberGender,

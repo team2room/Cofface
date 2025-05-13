@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
  * 옵션 카테고리 모델 클래스
  */
 public class OptionCategory {
-    private Long categoryId;      // 카테고리 ID
+    private Integer categoryId;      // 카테고리 ID - Long에서 Integer로 변경
     private String categoryName;  // 카테고리 이름
     private Boolean isRequired;   // 필수 여부
     private Integer displayOrder; // 표시 순서
@@ -15,11 +15,11 @@ public class OptionCategory {
     private LocalDateTime deletedAt; // 삭제 시간
 
     // Getter와 Setter 메서드
-    public Long getCategoryId() {
+    public Integer getCategoryId() {  // 반환 타입 변경: Long -> Integer
         return categoryId;
     }
 
-    public void setCategoryId(Long categoryId) {
+    public void setCategoryId(Integer categoryId) {  // 파라미터 타입 변경: Long -> Integer
         this.categoryId = categoryId;
     }
 

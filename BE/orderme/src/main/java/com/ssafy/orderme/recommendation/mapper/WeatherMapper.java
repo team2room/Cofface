@@ -10,14 +10,14 @@ import java.util.List;
 @Mapper
 public interface WeatherMapper {
 
-    List<Menu> findMenusByWeather(@Param("storeId") Long storeId,
+    List<Menu> findMenusByWeather(@Param("storeId") Integer storeId,
                                   @Param("weatherCondition") String weatherCondition,
                                   @Param("limit") int limit);
 
-    void updateWeatherPreference(@Param("storeId") Long storeId,
+    void updateWeatherPreference(@Param("storeId") Integer storeId,
                                  @Param("weatherCondition") String weatherCondition,
-                                 @Param("menuId") Long menuId);
+                                 @Param("menuId") Integer menuId);
 
-    List<WeatherPreference> findWeatherPreferences(@Param("storeId") Long storeId,
+    List<WeatherPreference> findWeatherPreferences(@Param("storeId") Integer storeId,
                                                    @Param("weatherCondition") String weatherCondition);
 }

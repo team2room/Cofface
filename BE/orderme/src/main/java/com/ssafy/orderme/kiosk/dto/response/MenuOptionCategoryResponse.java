@@ -10,7 +10,7 @@ public class MenuOptionCategoryResponse {
     private Boolean isRequired;            // 필수 여부
     private List<String> optionNames;      // 옵션 이름 목록
     private List<Integer> additionalPrices;// 추가 가격 목록
-    private List<Long> optionIds;          // 옵션 ID 목록
+    private List<Integer> optionIds;        // 옵션 ID 목록 - Long에서 Integer로 변경
     private List<Boolean> isDefault;       // 기본 옵션 여부 목록
     private Integer maxSelections;         // 최대 선택 가능 수
 
@@ -47,11 +47,11 @@ public class MenuOptionCategoryResponse {
         this.additionalPrices = additionalPrices;
     }
 
-    public List<Long> getOptionIds() {
+    public List<Integer> getOptionIds() {  // 반환 타입 변경: List<Long> -> List<Integer>
         return optionIds;
     }
 
-    public void setOptionIds(List<Long> optionIds) {
+    public void setOptionIds(List<Integer> optionIds) {
         this.optionIds = optionIds;
     }
 

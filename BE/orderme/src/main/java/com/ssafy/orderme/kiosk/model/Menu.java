@@ -6,11 +6,11 @@ import java.time.LocalDateTime;
  * 메뉴 정보 모델 클래스
  */
 public class Menu {
-    private Long menuId;        // 메뉴 ID
-    private Long storeId;       // 매장 ID
+    private Integer menuId;        // 메뉴 ID
+    private Integer storeId;       // 매장 ID
     private String menuName;    // 메뉴 이름
     private Integer price;      // 가격
-    private Long categoryId;    // 카테고리 ID
+    private Integer categoryId;    // 카테고리 ID - Long에서 Integer로 변경
     private Category category;  // 카테고리 정보
     private Boolean isSoldOut;  // 품절 여부
     private String imageUrl;    // 이미지 URL
@@ -18,19 +18,19 @@ public class Menu {
     private Boolean isDeleted;  // 삭제 여부
     private LocalDateTime deletedAt; // 삭제 시간
 
-    public Long getMenuId() {
+    public Integer getMenuId() {
         return menuId;
     }
 
-    public void setMenuId(Long menuId) {
+    public void setMenuId(Integer menuId) {
         this.menuId = menuId;
     }
 
-    public Long getStoreId() {
+    public Integer getStoreId() {
         return storeId;
     }
 
-    public void setStoreId(Long storeId) {
+    public void setStoreId(Integer storeId) {
         this.storeId = storeId;
     }
 
@@ -50,11 +50,11 @@ public class Menu {
         this.price = price;
     }
 
-    public Long getCategoryId() {
+    public Integer getCategoryId() {
         return categoryId;
     }
 
-    public void setCategoryId(Long categoryId) {
+    public void setCategoryId(Integer categoryId) {
         this.categoryId = categoryId;
     }
 
