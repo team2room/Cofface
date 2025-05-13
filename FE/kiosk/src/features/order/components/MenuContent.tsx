@@ -7,24 +7,26 @@ import CustomButton from '@/components/CustomButton'
 import OrderSection from '@/features/order/components/Menu/OrderSection'
 import ReceiptModal from '@/features/order/components/Receipt/ReceiptDialog'
 import { useAllMenu } from '../hooks/useAllMenu'
+import { useCategory } from '../hooks/useCategory'
 
 const MenuButton = tw.button`w-80 border border-main rounded-xl px-8 py-1 my-4 mx-auto shadow-md`
 
 export default function MenuContent({ onNext }: { onNext: () => void }) {
-  const { menus, loading } = useAllMenu(1)
+  const { menus, loading: menuLoading } = useAllMenu(1)
+  const { category, loading: categoryLoading } = useCategory(1)
 
   const [showAllMenu, setShowAllMenu] = useState(false)
   const total = 19000
 
   const [receiptOpen, setReceiptOpen] = useState(false)
 
-  if (loading) return <div>메뉴 불러오는 중...</div>
+  if (menuLoading || categoryLoading) return <div>불러오는 중...</div>
 
   return (
     <>
       {/* 추천 메뉴 or 전체 메뉴 */}
       {showAllMenu ? (
-        <AllMenuSection menuItems={menus} />
+        <AllMenuSection menuItems={menus} categories={category} />
       ) : (
         <RecommendSection
           recentMenus={recentMenus}
@@ -152,87 +154,3 @@ const orderList = [
     quantity: 1,
   },
 ]
-
-// // menuItems
-// const menuItems: MenuItem[] = [
-//   {
-//     name: '디카페인 카페모카',
-//     price: 2500,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '디카페인 헬카페라떼',
-//     price: 4500,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '콜드브루 아메리카노',
-//     price: 3000,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '콜드브루 아메리카노',
-//     price: 3000,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '디카페인 카페모카',
-//     price: 2500,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '디카페인 헬카페라떼',
-//     price: 4500,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '콜드브루 아메리카노',
-//     price: 3000,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '콜드브루 아메리카노',
-//     price: 3000,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '디카페인 카페모카',
-//     price: 2500,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '디카페인 헬카페라떼',
-//     price: 4500,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '콜드브루 아메리카노',
-//     price: 3000,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '콜드브루 아메리카노',
-//     price: 3000,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '디카페인 카페모카',
-//     price: 2500,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '디카페인 헬카페라떼',
-//     price: 4500,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '콜드브루 아메리카노',
-//     price: 3000,
-//     image: 'https://picsum.photos/200',
-//   },
-//   {
-//     name: '콜드브루 아메리카노',
-//     price: 3000,
-//     image: 'https://picsum.photos/200',
-//   },
-// ]

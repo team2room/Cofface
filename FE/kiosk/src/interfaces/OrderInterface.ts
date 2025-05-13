@@ -1,3 +1,4 @@
+// 메뉴 관련
 export interface MenuItem {
   menuId: number
   menuName: string
@@ -19,6 +20,15 @@ export interface RecommendSectionProps {
   customMenus: MenuItem[]
 }
 
+// 메뉴 카테고리
+export interface Category {
+  categoryId: number
+  categoryName: string
+  displayOrder: number
+  isActive: boolean
+}
+
+// 선택 상품
 export interface OrderItem {
   name: string
   price: number
@@ -29,7 +39,7 @@ export interface OrderSectionProps {
   orders: OrderItem[]
 }
 
-// 옵션 모달에서 사용되는 인터페이스
+// 옵션 모달 관련
 export interface MenuOption {
   optionCategory: string
   isRequired: boolean
