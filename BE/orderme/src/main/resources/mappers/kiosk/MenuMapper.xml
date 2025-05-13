@@ -73,7 +73,7 @@
         SELECT
             m.menu_id, m.menu_name, m.price, m.category_id,
             c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
-        FROM Menus m
+        FROM menus m
                  JOIN categories c ON m.category_id = c.category_id
         WHERE c.store_id = #{storeId}
           AND m.category_id = #{categoryId}
@@ -86,7 +86,7 @@
         SELECT
             m.menu_id, m.menu_name, m.price, m.category_id,
             c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
-        FROM Menus m
+        FROM menus m
                  LEFT JOIN categories c ON m.category_id = c.category_id
         WHERE m.menu_id = #{menuId}
           AND m.is_deleted = 0
