@@ -4,10 +4,10 @@ import { Text } from '@/styles/typography'
 import { RecommendSectionProps } from '@/interfaces/OrderInterface'
 
 const Container = tw.div`w-full`
-const UpSection = tw.section`bg-[#FFF1EF] px-16 py-5 rounded-xl flex`
+const UpSection = tw.section`min-h-[620px] bg-[#FFF1EF] px-16 py-5 rounded-xl flex`
 const UpLeft = tw.div`grid grid-cols-2 gap-4`
 const UpRight = tw.div`flex flex-col justify-start items-start p-12`
-const DownSection = tw.section`bg-[#FFF8EC] px-16 py-5 rounded-xl flex mt-4`
+const DownSection = tw.section`min-h-[620px] bg-[#FFF8EC] px-16 py-5 rounded-xl flex mt-4`
 const DownLeft = tw.div`w-1/2 flex flex-col justify-start items-end text-end p-12`
 const DownRight = tw.div`grid grid-cols-2 gap-4`
 
@@ -26,9 +26,6 @@ export default function RecommendSection({
               boxShadowColor={'#FDCBC4'}
             />
           ))}
-          {/* {recentMenus.map((item, idx) => (
-            <MenuCard key={`recent-${idx}`} item={item} />
-          ))} */}
         </UpLeft>
         <UpRight>
           <Text variant="title4" weight="bold" className="mb-1">
@@ -58,9 +55,6 @@ export default function RecommendSection({
           </Text>
         </DownLeft>
         <DownRight>
-          {/* {customMenus.slice(0, 4).map((item, idx) => (
-            <MenuCard key={`custom-${idx}`} item={item} />
-          ))} */}
           {customMenus.map((item, idx) => (
             <MenuCard
               key={`custom-${idx}`}

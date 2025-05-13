@@ -1,5 +1,6 @@
 import {
   AlertDialog,
+  AlertDialogTitle,
   AlertDialogContent,
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog'
@@ -115,7 +116,9 @@ export default function OptionModal({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
+      {/* <AlertDialogTitle></AlertDialogTitle> */}
       <AlertDialogContent className="w-[95%]">
+        <AlertDialogTitle></AlertDialogTitle>
         <Text variant="title4" weight="extrabold" className="text-center my-4">
           옵션을 선택해 주세요
         </Text>
@@ -126,7 +129,10 @@ export default function OptionModal({
         </Text>
         <FirstSection>
           <div className="flex flex-row items-center gap-6">
-            <img src={menu.imageUrl} alt={menu.menuName} className="w-80" />
+            <div className="w-80 bg-white">
+              <img src={menu.imageUrl} alt={menu.menuName} className="w-80" />
+            </div>
+
             <RequiredOption>
               {/* 수량 */}
               <OptionRow>
@@ -201,7 +207,7 @@ export default function OptionModal({
               color="darkGray"
               className="ml-2"
             >
-              (제품가격 + 옵션가격)
+              (제품가격 + 옵션가격) X 수량
             </Text>
           </div>
           <div>

@@ -15,8 +15,8 @@ const Tab = styled.button<{ selected: boolean }>`
       ? tw`border-b-4 border-littleDark`
       : tw`border-b-2 text-littleDarkGray`}
 `
-const Section = tw.div`bg-[#F6F6F6] p-5 rounded-xl`
-const List = tw.div`h-[1042px] overflow-auto  grid grid-cols-4 gap-4 p-1`
+const Section = tw.div`h-[1080px] bg-[#F6F6F6] p-5 rounded-xl`
+const List = tw.div`max-h-[1042px] overflow-auto  grid grid-cols-4 gap-4 p-1`
 
 export default function AllMenuSection({
   menuItems,
