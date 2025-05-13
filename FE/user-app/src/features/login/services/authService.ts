@@ -33,9 +33,8 @@ export const loginConfirm = async (
 export const refreshTokens = async (
   refreshToken: string,
 ): Promise<RefreshTokenResponseProps> => {
-  const response = await axios.post(
-    `${BASE_URL}/api/auth/refresh`,
-    refreshToken,
-  )
+  const response = await axios.post(`${BASE_URL}/api/auth/refresh`, {
+    refreshToken: refreshToken,
+  })
   return response.data.data
 }

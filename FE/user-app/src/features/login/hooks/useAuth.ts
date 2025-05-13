@@ -61,7 +61,7 @@ export function useAuth() {
     [authStore, navigate],
   )
 
-  // 인증번호 확인 및 로그인 완료료
+  // 인증번호 확인 및 로그인 완료
   const confirmLogin = useCallback(
     async (
       verificationId: string,

@@ -170,7 +170,7 @@ export default function LoginConfirmPage() {
       )
 
       // 로그인 성공 시 홈 페이지로 이동
-      navigate('/home', { replace: true })
+      navigate('/home', { replace: true, state: null })
     } catch (err) {
       console.error('로그인 확인 실패:', err)
       setShowConfirmButton(false) // 오류 시 버튼 숨김
