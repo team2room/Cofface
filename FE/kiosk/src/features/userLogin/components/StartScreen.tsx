@@ -29,7 +29,8 @@ const ButtonGroup = tw.div`
 `
 
 const Button = tw.button`
-  px-8 py-4 rounded-lg w-[397px] h-[234px] bg-[#FEFEFE] shadow-[1px_4px_10px_6px_rgba(0,0,0,0.10)]
+  px-8 py-4 rounded-lg w-[397px] h-[234px] bg-[#FEFEFE] shadow-[1px_4px_10px_6px_rgba(0,0,0,0.10)] 
+  hover:scale-105 transition-transform duration-200
 `
 
 export default function StartScreen() {
@@ -49,7 +50,7 @@ export default function StartScreen() {
     modalContent = {
       title: (
         <Text variant="title4" weight="extrabold" color="gray">
-          PhoneSign --------------------------- ORDER.ME
+          PhoneSign --------------------- ORDER.ME
         </Text>
       ),
       description: (
@@ -64,7 +65,7 @@ export default function StartScreen() {
     modalContent = {
       title: (
         <Text variant="title4" weight="extrabold" color="gray">
-          FaceSign ----------------------------- ORDER.ME
+          FaceSign ----------------------- ORDER.ME
         </Text>
       ),
       description: {

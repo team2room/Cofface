@@ -6,6 +6,9 @@ import styled from '@emotion/styled'
 import CustomDialog from '@/components/CustomDialog'
 import PayMethodButton from './pay/PayMethodButton'
 import { usePayModal } from '../hooks/usePayModal'
+import { useCouponInfo } from '../hooks/useCoupon'
+import { useUserStore } from '@/stores/loginStore'
+import { usePayStore } from '@/stores/payStore'
 
 const Content = tw.div`w-full flex flex-col items-center justify-center flex-1 gap-12 mb-60`
 const Section = tw.div`w-[984px] bg-lightLight px-10 py-16 mb-12`
@@ -27,12 +30,21 @@ const ColQty = tw.div`w-1/6 text-center`
 const ColPrice = tw.div`w-1/3 text-right`
 
 export default function PayContent() {
+  const { isMember } = useUserStore()
+  const { couponInfo, loading: couponLoading } = useCouponInfo(1)
   const [couponApplied, setCouponApplied] = useState(false)
-  const couponCount = 1
+
+  const { totalAmount, menuOrders, setIsStampUsed, setTotalAmount } =
+    usePayStore()
+  const originalAmount = totalAmount
+  const totalQuantity =
+    menuOrders?.reduce((sum, item) => sum + item.quantity, 0) ?? 0
 
   const [modalState, setModalState] = useState<'face' | 'qr'>('face')
   const modalContent = usePayModal(modalState)
   const [showModal, setShowModal] = useState(false)
+
+  if (couponLoading) return <div>쿠폰 정보를 불러오는 중...</div>
 
   return (
     <>
@@ -40,7 +52,18 @@ export default function PayContent() {
         <div>
           {/* 쿠폰 버튼 */}
           <div className="w-full flex justify-end mb-4">
-            <Button disabled={false} onClick={() => setCouponApplied(true)}>
+            <Button
+              disabled={!isMember || couponInfo?.couponCount === 0}
+              onClick={() => {
+                setCouponApplied(true)
+                setIsStampUsed(true)
+                if (couponInfo?.discountAmount) {
+                  setTotalAmount(
+                    (originalAmount ?? 0) - couponInfo.discountAmount,
+                  )
+                }
+              }}
+            >
               <Text variant="body2" weight="bold">
                 쿠폰 1장 적용하기
               </Text>
@@ -57,12 +80,12 @@ export default function PayContent() {
               </ColName>
               <ColQty>
                 <Text variant="body1" weight="bold" color="lightBlack">
-                  4개
+                  {totalQuantity}개
                 </Text>
               </ColQty>
               <ColPrice>
                 <Text variant="body1" weight="extrabold" color="main">
-                  14,000
+                  {originalAmount?.toLocaleString()}
                   <span className="text-lightBlack">원</span>
                 </Text>
               </ColPrice>
@@ -74,7 +97,7 @@ export default function PayContent() {
                 쿠폰 사용
               </Text>
               <Text variant="body2" weight="extrabold" color="littleDarkGray">
-                (보유 쿠폰 {couponCount}장)
+                (보유 쿠폰 {couponInfo?.couponCount ?? 0}장)
               </Text>
             </CouponRow>
 
@@ -85,15 +108,19 @@ export default function PayContent() {
                   <IoCloseCircle
                     size={40}
                     className="text-littleDarkGray cursor-pointer"
-                    onClick={() => setCouponApplied(false)}
+                    onClick={() => {
+                      setCouponApplied(false)
+                      setIsStampUsed(false)
+                      setTotalAmount(originalAmount ?? 0)
+                    }}
                   />
                   <Text variant="body2" weight="semibold">
-                    적립 10회 할인
+                    적립 10회 할인 쿠폰
                   </Text>
                 </div>
 
                 <Text variant="body2" weight="bold" color="main">
-                  -1,500
+                  {couponInfo?.discountAmount}
                   <span className="text-lightBlack">원</span>
                 </Text>
               </CouponBox>
@@ -108,7 +135,7 @@ export default function PayContent() {
                 최종 결제 금액
               </Text>
               <Text variant="title4" weight="extrabold" color="main">
-                12,500
+                {totalAmount?.toLocaleString()}
                 <span className="text-lightBlack">원</span>
               </Text>
             </FinalPriceRow>

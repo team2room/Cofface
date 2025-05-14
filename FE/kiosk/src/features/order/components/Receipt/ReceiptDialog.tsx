@@ -1,5 +1,6 @@
 import {
   AlertDialog,
+  AlertDialogTitle,
   AlertDialogContent,
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog'
@@ -8,6 +9,7 @@ import { Text } from '@/styles/typography'
 import CustomButton from '@/components/CustomButton'
 import ReceiptItemList from './ReceiptItemList'
 import { useOrderStore } from '@/stores/orderStore'
+import { usePayStore } from '@/stores/payStore'
 
 const Content = tw.div`h-[1150px] bg-lightLight p-4 mt-4 mb-12 flex flex-col justify-between`
 const HeaderRow = tw.div`flex justify-between p-2 border-y-2 border-dark`
@@ -29,6 +31,7 @@ export default function ReceiptModal({
   onNext,
 }: ReceiptModalProps) {
   const orders = useOrderStore((state) => state.orders)
+  const payStore = usePayStore()
 
   const totalQuantity = orders.reduce((sum, item) => sum + item.quantity, 0)
 
@@ -36,9 +39,19 @@ export default function ReceiptModal({
     return total + item.totalPrice * item.quantity
   }, 0)
 
+  const menuOrders = orders.map((item) => ({
+    menuId: item.menuId,
+    quantity: item.quantity,
+    options: item.options?.map((opt) => ({
+      optionItemId: opt.optionId,
+      quantity: 1,
+    })),
+  }))
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="w-[95%]">
+        <AlertDialogTitle></AlertDialogTitle>
         <Text variant="title4" weight="extrabold" className="text-center my-4">
           주문 정보를 확인해 주세요
         </Text>
@@ -114,6 +127,11 @@ export default function ReceiptModal({
             text={'다음'}
             variant="main"
             onClick={() => {
+              payStore.setInitialPayData({
+                kioskId: 1,
+                totalAmount: totalPrice,
+                menuOrders,
+              })
               onOpenChange(false)
               onNext()
             }}

@@ -55,7 +55,7 @@ export default function MenuContent({ onNext }: { onNext: () => void }) {
       {/* 결제하기 버튼 */}
       <CustomButton
         text={`${totalPrice.toLocaleString()}원 결제하기`}
-        variant={'main'}
+        variant={orders.length === 0 ? 'disabled' : 'main'}
         onClick={() => setReceiptOpen(true)}
       />
 
@@ -69,38 +69,38 @@ export default function MenuContent({ onNext }: { onNext: () => void }) {
   )
 }
 
-const recentMenus = [
-  {
-    menuId: 3,
-    menuName: '바닐라 라떼',
-    price: 5500,
-    categoryId: 1,
-    categoryName: '커피',
-    isSoldOut: false,
-    imageUrl: 'https://picsum.photos/200',
-    description: '달콤한 바닐라 시럽이 더해진 부드러운 라떼',
-  },
-  {
-    menuId: 1,
-    menuName: '아메리카노',
-    price: 4500,
-    categoryId: 1,
-    categoryName: '커피',
-    isSoldOut: false,
-    imageUrl: 'https://picsum.photos/200',
-    description: '깊고 진한 에스프레소의 풍미가 살아있는 아메리카노',
-  },
-  {
-    menuId: 5,
-    menuName: '에스프레소',
-    price: 4000,
-    categoryId: 1,
-    categoryName: '커피',
-    isSoldOut: false,
-    imageUrl: 'https://picsum.photos/200',
-    description: '진하고 향기로운 에스프레소 한 잔',
-  },
-]
+// const recentMenus = [
+//   {
+//     menuId: 3,
+//     menuName: '바닐라 라떼',
+//     price: 5500,
+//     categoryId: 1,
+//     categoryName: '커피',
+//     isSoldOut: false,
+//     imageUrl: 'https://picsum.photos/200',
+//     description: '달콤한 바닐라 시럽이 더해진 부드러운 라떼',
+//   },
+//   {
+//     menuId: 1,
+//     menuName: '아메리카노',
+//     price: 4500,
+//     categoryId: 1,
+//     categoryName: '커피',
+//     isSoldOut: false,
+//     imageUrl: 'https://picsum.photos/200',
+//     description: '깊고 진한 에스프레소의 풍미가 살아있는 아메리카노',
+//   },
+//   {
+//     menuId: 5,
+//     menuName: '에스프레소',
+//     price: 4000,
+//     categoryId: 1,
+//     categoryName: '커피',
+//     isSoldOut: false,
+//     imageUrl: 'https://picsum.photos/200',
+//     description: '진하고 향기로운 에스프레소 한 잔',
+//   },
+// ]
 
 // const customMenus = [
 //   {
