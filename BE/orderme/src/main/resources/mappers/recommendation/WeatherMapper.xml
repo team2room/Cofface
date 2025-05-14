@@ -8,8 +8,8 @@
             m.menu_id, m.menu_name, m.price, m.category_id,
             c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
         FROM menus m
-                 JOIN WeatherPreference wp ON m.menu_id = wp.menu_id
-                 LEFT JOIN Categories c ON m.category_id = c.category_id
+                 JOIN weatherpreference wp ON m.menu_id = wp.menu_id
+                 LEFT JOIN categories c ON m.category_id = c.category_id
         WHERE wp.store_id = #{storeId}
           AND wp.weather_condition = #{weatherCondition}
           AND m.is_deleted = false
