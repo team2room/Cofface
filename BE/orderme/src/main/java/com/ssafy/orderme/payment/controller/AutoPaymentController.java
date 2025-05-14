@@ -2,7 +2,9 @@ package com.ssafy.orderme.payment.controller;
 
 import com.ssafy.orderme.common.ApiResponse;
 import com.ssafy.orderme.payment.dto.request.AutoPaymentRequest;
+import com.ssafy.orderme.payment.dto.request.SetDefaultCardRequest;
 import com.ssafy.orderme.payment.dto.response.CardCompanyResponse;
+import com.ssafy.orderme.payment.dto.response.PaymentInfoResponse;
 import com.ssafy.orderme.payment.dto.response.PaymentResponseDto;
 import com.ssafy.orderme.payment.model.CardRegistrationRequest;
 import com.ssafy.orderme.payment.model.Payment;
@@ -89,14 +91,14 @@ public class AutoPaymentController {
         return ResponseEntity.ok(ApiResponse.success("결제가 성공적으로 승인되었습니다.", response));
     }
 
-    // 유저의 카드 정보 조회
+    // 유저의 카드 정보 조회 (카드사 정보 포함)
     @GetMapping("/cards")
     public ResponseEntity<ApiResponse<?>> getCardList(HttpServletRequest httpRequest) {
         try {
             String token = httpRequest.getHeader("Authorization").replace("Bearer ", "");
             String userId = jwtTokenProvider.getUserId(token);
 
-            List<PaymentInfo> cards = autoPaymentService.getCardList(userId);
+            List<PaymentInfoResponse> cards = autoPaymentService.getCardListWithCardInfo(userId);
             return ResponseEntity.ok(ApiResponse.success(cards));
         } catch (Exception e) {
             log.error("카드 목록 조회 실패", e);
@@ -125,6 +127,32 @@ public class AutoPaymentController {
             log.error("카드 삭제 실패", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error(500, "카드 삭제에 실패했습니다."));
+        }
+    }
+
+    /**
+     * 대표 카드 변경
+     */
+    @PutMapping("/default-card")
+    public ResponseEntity<ApiResponse<?>> setDefaultCard(
+            @RequestBody SetDefaultCardRequest request,
+            HttpServletRequest httpRequest) {
+        try {
+            // 토큰에서 사용자 ID 추출
+            String token = httpRequest.getHeader("Authorization").replace("Bearer ", "");
+            String userId = jwtTokenProvider.getUserId(token);
+
+            // 대표 카드 변경 처리
+            autoPaymentService.setDefaultCard(request.getPaymentInfoId(), userId);
+
+            return ResponseEntity.ok(ApiResponse.success("대표 카드가 변경되었습니다."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(400, e.getMessage()));
+        } catch (Exception e) {
+            log.error("대표 카드 변경 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(500, "대표 카드 변경에 실패했습니다."));
         }
     }
 }

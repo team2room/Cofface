@@ -219,6 +219,23 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("관리자 로그인이 완료되었습니다.",responseData));
     }
 
+    // 앱 로그아웃 (리프레시 토큰도 함께 무효화)
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<?>> logout(
+            @RequestHeader("Authorization") String token,
+            @RequestBody(required = false) RefreshTokenRequest request) {
+
+        // 액세스 토큰 무효화
+        jwtTokenProvider.invalidateToken(token.replace("Bearer ", ""));
+
+        // 리프레시 토큰이 제공된 경우 함께 무효화
+        if (request != null && request.getRefreshToken() != null) {
+            jwtTokenProvider.invalidateToken(request.getRefreshToken());
+        }
+
+        return ResponseEntity.ok(ApiResponse.success("로그아웃되었습니다."));
+    }
+
     // 관리자 회원가입(비밀번호 암호화)
     @PostMapping("/admin/register")
     public ResponseEntity<ApiResponse<?>> adminRegister(@RequestBody AdminRegisterRequest request) {
