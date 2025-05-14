@@ -108,6 +108,7 @@ public class AutoPaymentService {
                 .isTakeout(request.getIsTakeout() != null ? request.getIsTakeout() : false)
                 .isGuest(false) // 등록된 사용자이므로 게스트 아님
                 .isDelete(false)
+                .weather(request.getWeather())
                 // orderNumber는 데이터베이스에 저장하지 않음
                 .build();
 

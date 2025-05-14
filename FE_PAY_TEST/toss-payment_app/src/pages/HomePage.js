@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { isAuthenticated, logout } from '../utils/authUtils';
+import { isAuthenticated } from '../utils/authUtils';
+import { logout } from '../api/authApi';
 import '../styles/Home.css';
 
 const HomePage = () => {
@@ -60,10 +61,10 @@ const HomePage = () => {
         
         <h3>테스트 전화번호</h3>
         <p>
-          로그인에 사용할 수 있는 테스트용 전화번호입니다. (백엔드에 등록된 번호 사용)
+          로그인에 사용할 수 있는 테스트용 전화번호입니다.
         </p>
         <ul>
-          <li>010-1234-5678 (예시)</li>
+          <li>010-1234-5678 (예시, 백엔드에 등록된 번호 사용)</li>
         </ul>
       </div>
     </div>

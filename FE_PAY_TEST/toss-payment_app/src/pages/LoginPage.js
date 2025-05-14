@@ -52,8 +52,6 @@ const LoginPage = () => {
       // 전화번호 로그인 API 호출
       const response = await phoneLogin(cleanPhoneNumber);
       
-      console.log('로그인 응답:', response);
-      
       // 로그인 성공 처리
       if (response.success) {
         // 토큰 및 사용자 정보 저장

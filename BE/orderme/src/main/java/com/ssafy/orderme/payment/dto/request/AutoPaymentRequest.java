@@ -18,5 +18,6 @@ public class AutoPaymentRequest {
     private Boolean isStampUsed; // 스탬프 사용 여부
     private Boolean isTakeout; // 포장 여부
     private Integer paymentInfoId; // 사용할 결제 수단 ID (null이면 기본 결제 수단 사용)
+    private String weather; // 날씨
     private List<MenuOrderRequest> menuOrders; // 주문한 메뉴 목록
 }

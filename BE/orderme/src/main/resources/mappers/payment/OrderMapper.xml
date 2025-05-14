@@ -14,7 +14,9 @@
             is_guest as isGuest,
             age as age,
             gender as gender,
-            is_delete as isDelete
+            is_delete as isDelete,
+            toss_order_id as tossOrderId,
+            weather as weather
         FROM orders
         WHERE order_id = #{orderId}
     </select>
@@ -92,7 +94,9 @@
             age,
             gender,
             is_delete,
-            order_number
+            order_number,
+            toss_order_id,
+            weather
         ) VALUES (
                      #{userId},
                      #{kioskId},
@@ -105,7 +109,9 @@
                      #{age},
                      #{gender},
                      #{isDelete},
-                     #{orderNumber}
+                     #{orderNumber},
+                     #{tossOrderId},
+                     #{weather}
                  )
     </insert>
 
@@ -122,7 +128,9 @@
             is_guest = #{isGuest},
             age = #{age},
             gender = #{gender},
-            is_delete = #{isDelete}
+            is_delete = #{isDelete},
+            toss_order_id = #{tossOrderId},
+            weather = #{weather}
         WHERE order_id = #{orderId}
     </update>
 
@@ -212,6 +220,28 @@
         FROM orders
         WHERE kiosk_id = #{kioskId}
           AND DATE(order_date) = DATE(#{orderDate})
+          AND is_delete = false
+    </select>
+
+    <!-- tossOrderId로 주문 찾기 -->
+    <select id="findByTossOrderId" resultType="com.ssafy.orderme.payment.model.Order">
+        SELECT
+            order_id as orderId,
+            user_id as userId,
+            kiosk_id as kioskId,
+            total_amount as totalAmount,
+            order_date as orderDate,
+            is_stamp_used as isStampUsed,
+            order_status as orderStatus,
+            is_takeout as isTakeout,
+            is_guest as isGuest,
+            age as age,
+            gender as gender,
+            is_delete as isDelete,
+            order_number as orderNumber,
+            toss_order_id as tossOrderId
+        FROM orders
+        WHERE toss_order_id = #{tossOrderId}
           AND is_delete = false
     </select>
 </mapper>
