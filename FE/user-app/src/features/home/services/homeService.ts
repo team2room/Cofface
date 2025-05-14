@@ -1,9 +1,10 @@
 import { VisitedStoreInfo } from '@/interfaces/HomeInterfaces'
 import apiRequester from '@/services/api'
 
-export const getVisitedStoreInfo = async (): Promise<VisitedStoreInfo> => {
+export const getVisitedStoreInfo = async (): Promise<VisitedStoreInfo[]> => {
   try {
     const response = await apiRequester.get('/api/stores/visited')
+    console.log(response.data.data)
     return response.data.data
   } catch (error) {
     console.error('Visited Store 정보 조회 중 오류 발생:', error)

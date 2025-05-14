@@ -69,6 +69,7 @@ export default {
   			lightBlack: '#434343',
   			lightModal: 'rgba(0, 0, 0, 0.3)',
   			darkDark: '#772745',
+				brightModal: 'rgba(255, 255, 255, 0.7)',
 				hover: 'FF2175',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',

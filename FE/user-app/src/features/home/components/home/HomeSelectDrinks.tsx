@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import tw from 'twin.macro'
 import styled from '@emotion/styled'
 import { colors } from '@/styles/colors'
 import { Text } from '@/styles/typography'
+import { useVisitedStoreStore } from '@/stores/visitedStoreStore'
+import { VisitedStoreInfo } from '@/interfaces/HomeInterfaces'
 import iconStrawberry from '@/assets/icons/icon-strawberry.png'
 import iconCookie from '@/assets/icons/icon-cookie.png'
 import iconGreentea from '@/assets/icons/icon-greentea.png'
@@ -17,7 +20,7 @@ const Container = tw.div`
 `
 
 const SelectionWrapper = tw.div`
-  flex justify-end my-10 w-full
+  flex justify-end my-5 w-full
 `
 
 const IconsContainer = tw.div`
@@ -34,7 +37,7 @@ const IconButton = styled.button<{ isSelected: boolean }>`
 `
 
 const DrinkImageWrapper = tw.div`
-  relative w-64 h-96 flex justify-center items-center
+  relative w-96 h-96 justify-center items-center
 `
 
 const DrinkImage = styled.img<{ isActive: boolean }>`
@@ -44,39 +47,42 @@ const DrinkImage = styled.img<{ isActive: boolean }>`
 
 // 각각의 얼음 아이템을 위한 컴포넌트
 const IceImage = styled.img<{
-  visitLevel: number
-  maxLevel: number
+  isVisible: boolean
   left: number
   size: number
   rotate: number
   isActive: boolean
+  topPosition: number
+  storeId: number
 }>`
-  ${tw`absolute transition-all duration-500 z-10`}
-  opacity: ${(props) => (props.isActive ? 1 : 0)};
+  ${tw`absolute transition-all duration-500 z-10 cursor-pointer`}
+  opacity: ${(props) => (props.isActive && props.isVisible ? 1 : 0)};
   width: ${(props) => props.size}px;
   height: ${(props) => props.size}px;
   transform: rotate(${(props) => props.rotate}deg);
   left: ${(props) => props.left}%;
-  /* 방문 횟수에 따라 얼음의 위치 계산 (값이 클수록 위로) */
-  top: ${(props) => {
-    // 방문 횟수(visitLevel)에 따라 top 위치를 계산
-    // maxLevel은 최대 방문 횟수(30)
-    // 최소 위치는 80%(하단), 최대 위치는 10%(상단)
-    const minPosition = 84 // 가장 아래 위치 (%)
-    const maxPosition = 32 // 가장 위 위치 (%)
-    const range = minPosition - maxPosition
+  top: ${(props) => `${props.topPosition}%`};
+`
 
-    // 방문 횟수의 비율을 계산 (0~1 사이 값)
-    const ratio = Math.min(props.visitLevel / props.maxLevel, 1)
-
-    // 위치 계산: 비율이 높을수록 위로 올라감
-    return `${minPosition - ratio * range}%`
-  }};
+// 카페 이름을 표시하는 레이블
+const CafeLabel = styled.div<{
+  isVisible: boolean
+  left: number
+  topPosition: number
+  isActive: boolean
+  storeId: number
+}>`
+  ${tw`absolute z-20 bg-brightModal rounded-full px-2 py-1 shadow-md transition-all duration-500 cursor-pointer flex`}
+  opacity: ${(props) => (props.isActive && props.isVisible ? 1 : 0)};
+  left: ${(props) => props.left + 20}%;
+  top: ${(props) =>
+    `${props.topPosition + 7}%`}; // 얼음 위치보다 약간 위에 표시
+  transform: translate(-50%, -50%);
 `
 
 // 블러 처리를 위한 오버레이 컴포넌트
 const LockedOverlay = styled.div`
-  ${tw`absolute inset-0 flex flex-col items-center justify-center z-10 w-full`}
+  ${tw`absolute inset-0 flex flex-col items-center justify-center z-20 w-full`}
   backdrop-filter: blur(12px);
   background-color: rgba(255, 255, 255, 0.3);
 `
@@ -97,10 +103,13 @@ interface DrinkOption {
 
 interface IceInfo {
   id: string
-  visitCount: number // 이 얼음이 나타내는 방문 횟수
+  minVisitCount: number
+  maxVisitCount: number
+  height: number
   left: number
   size: number
   rotate: number
+  labelLeft: number
 }
 
 interface IsLockedProps {
@@ -108,7 +117,15 @@ interface IsLockedProps {
 }
 
 export function HomeSelectDrinks({ locked = false }: IsLockedProps) {
+  const navigate = useNavigate()
   const [selectedDrink, setSelectedDrink] = useState('strawberry')
+  const { visitedStores, selectedStore, fetchVisitedStores, selectStore } =
+    useVisitedStoreStore()
+
+  // 방문 매장 정보 가져오기
+  useEffect(() => {
+    fetchVisitedStores()
+  }, [fetchVisitedStores])
 
   const drinkOptions: DrinkOption[] = [
     {
@@ -128,60 +145,95 @@ export function HomeSelectDrinks({ locked = false }: IsLockedProps) {
     },
   ]
 
-  // 7개의 얼음 정보 (각 범위내 횟수별 얼음 위치)
+  // 각 얼음의 구간별 정보 정의
   const iceInfo: IceInfo[] = useMemo(() => {
     return [
       {
         id: 'ice-1',
-        visitCount: 1,
-        left: 40,
-        size: 40,
+        minVisitCount: 1,
+        maxVisitCount: 2,
+        height: 1,
+        left: 42,
+        size: 46,
         rotate: 30,
+        labelLeft: 42,
       },
       {
         id: 'ice-2',
-        visitCount: 5,
-        left: 56,
-        size: 42,
+        minVisitCount: 3,
+        maxVisitCount: 5,
+        height: 5,
+        left: 54,
+        size: 48,
         rotate: 80,
+        labelLeft: 54,
       },
       {
         id: 'ice-3',
-        visitCount: 10,
-        left: 40,
-        size: 48,
+        minVisitCount: 6,
+        maxVisitCount: 10,
+        height: 10,
+        left: 42,
+        size: 52,
         rotate: 150,
+        labelLeft: 42,
       },
       {
         id: 'ice-4',
-        visitCount: 15,
-        left: 58,
-        size: 50,
-        rotate: 220,
+        minVisitCount: 11,
+        maxVisitCount: 15,
+        height: 15,
+        left: 54,
+        size: 54,
+        rotate: 250,
+        labelLeft: 54,
       },
       {
         id: 'ice-5',
-        visitCount: 20,
+        minVisitCount: 16,
+        maxVisitCount: 20,
+        height: 20,
         left: 40,
-        size: 52,
-        rotate: 180,
+        size: 58,
+        rotate: 160,
+        labelLeft: 40,
       },
       {
         id: 'ice-6',
-        visitCount: 25,
-        left: 60,
-        size: 58,
+        minVisitCount: 21,
+        maxVisitCount: 25,
+        height: 24,
+        left: 56,
+        size: 60,
         rotate: 110,
+        labelLeft: 56,
       },
       {
         id: 'ice-7',
-        visitCount: 27,
+        minVisitCount: 26,
+        maxVisitCount: 30,
+        height: 27,
         left: 40,
-        size: 40,
+        size: 48,
         rotate: 200,
+        labelLeft: 40,
       },
     ]
   }, [])
+
+  // 방문 횟수에 따른 얼음 위치 계산 함수
+  const calculateIcePosition = (height: number) => {
+    const maxLevel = 30 // 최대 방문 횟수
+    const minPosition = 84 // 가장 아래 위치 (%)
+    const maxPosition = 32 // 가장 위 위치 (%)
+    const range = minPosition - maxPosition
+
+    // 방문 횟수의 비율을 계산 (0~1 사이 값)
+    const ratio = Math.min(height / maxLevel, 1)
+
+    // 위치 계산: 비율이 높을수록 위로 올라감
+    return minPosition - ratio * range
+  }
 
   // 컴포넌트 마운트 시 strawberry 기본 선택 상태 설정
   useEffect(() => {
@@ -191,6 +243,87 @@ export function HomeSelectDrinks({ locked = false }: IsLockedProps) {
   const handleDrinkSelect = (drinkId: string) => {
     if (locked) return // 잠금 상태에서는 선택 불가
     setSelectedDrink(drinkId)
+  }
+
+  // 방문 매장 페이지로 이동
+  const navigateToStore = (storeId: number) => {
+    if (locked) return // 잠금 상태에서는 이동 불가
+    navigate(`/store/${storeId}`)
+  }
+
+  // 방문 횟수에 따라 표시할 얼음 결정
+  const getVisibleIceInfo = (visitCount: number) => {
+    if (visitCount <= 0) return null
+    const ice = iceInfo.find(
+      (ice) =>
+        visitCount >= ice.minVisitCount && visitCount <= ice.maxVisitCount,
+    )
+    return ice || null
+  }
+
+  // 각 얼음 단계에 해당하는 매장 찾기
+  const findStoreForIceLevel = (
+    minCount: number,
+    maxCount: number,
+  ): VisitedStoreInfo | null => {
+    if (!visitedStores || visitedStores.length === 0) return null
+    return (
+      visitedStores.find(
+        (store) => store.visitCount >= minCount && store.visitCount <= maxCount,
+      ) || null
+    )
+  }
+
+  // 각 얼음 단계별로 매장과 얼음 렌더링
+  const renderIcesWithStores = () => {
+    return drinkOptions.map((drink) => (
+      <React.Fragment key={`${drink.id}-ice-container`}>
+        {iceInfo.map((ice) => {
+          // 이 얼음 레벨에 해당하는 매장 찾기
+          const store = findStoreForIceLevel(
+            ice.minVisitCount,
+            ice.maxVisitCount,
+          )
+
+          // 매장이 없으면 렌더링하지 않음
+          if (!store) return null
+
+          // 얼음 위치 계산
+          const topPosition = calculateIcePosition(ice.height)
+
+          return (
+            <React.Fragment key={`${drink.id}-${ice.id}-fragment`}>
+              <IceImage
+                key={`${drink.id}-${ice.id}`}
+                src={imgIce}
+                alt={`얼음 레벨 ${ice.id}`}
+                isVisible={true}
+                left={ice.left}
+                size={ice.size}
+                rotate={ice.rotate}
+                topPosition={topPosition}
+                isActive={selectedDrink === drink.id}
+                storeId={store.storeId}
+                onClick={() => navigateToStore(store.storeId)}
+              />
+              <CafeLabel
+                key={`${drink.id}-${ice.id}-label`}
+                isVisible={true}
+                left={ice.labelLeft}
+                topPosition={topPosition}
+                isActive={selectedDrink === drink.id}
+                storeId={store.storeId}
+                onClick={() => navigateToStore(store.storeId)}
+              >
+                <Text variant="caption2" weight="bold" color="dark">
+                  {store.storeName}
+                </Text>
+              </CafeLabel>
+            </React.Fragment>
+          )
+        })}
+      </React.Fragment>
+    ))
   }
 
   return (
@@ -209,24 +342,10 @@ export function HomeSelectDrinks({ locked = false }: IsLockedProps) {
         </IconsContainer>
       </SelectionWrapper>
       <DrinkImageWrapper>
-        {drinkOptions.map((drink) => (
-          <>
-            {iceInfo.map((ice) => (
-              <IceImage
-                key={`${drink.id}-${ice.id}`}
-                src={imgIce}
-                alt={`${ice.visitCount}회 방문`}
-                visitLevel={ice.visitCount}
-                maxLevel={30}
-                left={ice.left}
-                size={ice.size}
-                rotate={ice.rotate}
-                isActive={selectedDrink === drink.id}
-                onClick={() => {}}
-              />
-            ))}
-          </>
-        ))}
+        {/* 모든 얼음 레벨과 매장 렌더링 */}
+        {renderIcesWithStores()}
+
+        {/* 음료 이미지 렌더링 */}
         {drinkOptions.map((drink) => (
           <DrinkImage
             key={drink.id}

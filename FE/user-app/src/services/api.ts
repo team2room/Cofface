@@ -7,7 +7,9 @@ const TOKEN_NAME = 'accessToken'
 
 // axios 인스턴스 생성
 const apiRequester: AxiosInstance = axios.create({
-  baseURL: BASE_URL as string,
+  //NOTE - 목 api 때문에,, 나중에 수정하기
+  // baseURL: BASE_URL as string
+  baseURL: process.env.NODE_ENV === 'development' ? '' : (BASE_URL as string),
   timeout: 5000,
 })
 
