@@ -1,20 +1,21 @@
 package com.ssafy.orderme.kiosk.controller;
 
 import com.ssafy.orderme.common.ApiResponse;
+import com.ssafy.orderme.kiosk.dto.response.CategoryResponse;
 import com.ssafy.orderme.kiosk.dto.response.MenuDetailResponse;
 import com.ssafy.orderme.kiosk.dto.response.MenuResponse;
+import com.ssafy.orderme.kiosk.dto.response.PreferenceOptionCategoryResponse;
 import com.ssafy.orderme.kiosk.dto.response.RecommendedMenuResponse;
+import com.ssafy.orderme.kiosk.service.CategoryService;
 import com.ssafy.orderme.kiosk.service.MenuService;
+import com.ssafy.orderme.kiosk.service.PreferenceService;
 import com.ssafy.orderme.recommendation.service.RecommendationService;
-import com.ssafy.orderme.recommendation.service.WeatherRecommendationService;
 import com.ssafy.orderme.security.JwtTokenProvider;
 import com.ssafy.orderme.user.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.ssafy.orderme.kiosk.service.CategoryService;
-import com.ssafy.orderme.kiosk.dto.response.CategoryResponse;
 
 import java.util.List;
 
@@ -30,19 +31,19 @@ public class KioskController {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserMapper userMapper;
     private final RecommendationService recommendationService;
-    private final WeatherRecommendationService weatherRecommendationService;
+    private final PreferenceService preferenceService;
 
     @Autowired
     public KioskController(MenuService menuService, CategoryService categoryService,
                            JwtTokenProvider jwtTokenProvider, UserMapper userMapper,
                            RecommendationService recommendationService,
-                           WeatherRecommendationService weatherRecommendationService) {
+                           PreferenceService preferenceService) {
         this.menuService = menuService;
         this.categoryService = categoryService;
         this.jwtTokenProvider = jwtTokenProvider;
         this.userMapper = userMapper;
         this.recommendationService = recommendationService;
-        this.weatherRecommendationService = weatherRecommendationService;
+        this.preferenceService = preferenceService;
     }
 
     /**
@@ -132,21 +133,27 @@ public class KioskController {
             @RequestParam(required = false) String gender,
             @RequestParam(required = false) String ageGroup) {
 
-        // 각 메뉴에 대해 인기도 및 날씨 선호도 업데이트
+        // 각 메뉴에 대해 인기도 업데이트
         for (Integer menuId : menuIds) {
             // 메뉴 인기도 업데이트
             recommendationService.updateMenuPopularity(menuId, storeId);
 
-            // 날씨 선호도 업데이트
-            weatherRecommendationService.updateWeatherPreference(menuId, storeId);
-
             // 성별, 나이 정보가 있는 경우 선호도 업데이트
             if (gender != null && ageGroup != null) {
-                // 나이/성별 기반 선호도 업데이트 (age 계산 부분 제거)
+                // 나이/성별 기반 선호도 업데이트
                 recommendationService.updateGenderAgePreference(menuId, storeId, gender, ageGroup);
             }
         }
 
         return ResponseEntity.ok(ApiResponse.success("추천 데이터 업데이트 성공"));
+    }
+
+    /**
+     * 콜드 스타트 유저를 위한 선호 옵션 카테고리 및 아이템 목록 조회
+     */
+    @GetMapping("/preferences/options")
+    public ResponseEntity<ApiResponse<List<PreferenceOptionCategoryResponse>>> getPreferenceOptions() {
+        List<PreferenceOptionCategoryResponse> options = preferenceService.getPreferenceOptions();
+        return ResponseEntity.ok(ApiResponse.success("선호 옵션 목록 조회 성공", options));
     }
 }

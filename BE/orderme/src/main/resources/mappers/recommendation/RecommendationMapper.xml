@@ -22,14 +22,20 @@
     <select id="findMostPopularMenus" resultMap="com.ssafy.orderme.kiosk.mapper.MenuMapper.MenuResultMap">
         SELECT
             m.menu_id, m.menu_name, m.price, m.category_id,
-            c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
+            c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at,
+            COUNT(om.order_menu_id) as order_count
         FROM Menus m
                  LEFT JOIN Categories c ON m.category_id = c.category_id
+                 LEFT JOIN OrderMenu om ON m.menu_id = om.menu_id
+                 LEFT JOIN Orders o ON om.order_id = o.order_id
         WHERE c.store_id = #{storeId}
           AND m.is_deleted = false
           AND m.is_sold_out = false
-        ORDER BY m.popularity DESC
-            LIMIT #{limit}
+          AND (o.kiosk_id = #{storeId} OR o.kiosk_id IS NULL)
+        GROUP BY m.menu_id, m.menu_name, m.price, m.category_id,
+                 c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
+        ORDER BY order_count DESC, m.menu_name
+            LIMIT 1
     </select>
 
     <select id="findUserPreferredMenus" resultMap="com.ssafy.orderme.kiosk.mapper.MenuMapper.MenuResultMap">
@@ -47,6 +53,67 @@
         GROUP BY m.menu_id, m.menu_name, m.price, m.category_id,
                  c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
         ORDER BY COUNT(*) DESC
+            LIMIT #{limit}
+    </select>
+
+    <select id="findPopularMenusByGenderAndAgeRange" resultMap="com.ssafy.orderme.kiosk.mapper.MenuMapper.MenuResultMap">
+        SELECT
+            m.menu_id, m.menu_name, m.price, m.category_id,
+            c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at,
+            COUNT(om.menu_id) as order_count
+        FROM Menus m
+                 JOIN Categories c ON m.category_id = c.category_id
+                 JOIN OrderMenu om ON m.menu_id = om.menu_id
+                 JOIN Orders o ON om.order_id = o.order_id
+        WHERE c.store_id = #{storeId}
+          AND o.gender = #{gender}
+          AND o.age BETWEEN #{minAge} AND #{maxAge}
+          AND m.is_deleted = false
+          AND m.is_sold_out = false
+        GROUP BY m.menu_id, m.menu_name, m.price, m.category_id,
+                 c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
+        ORDER BY order_count DESC, m.menu_name
+            LIMIT #{limit}
+    </select>
+
+    <select id="findPopularMenusByWeatherGenderAndAgeRange" resultMap="com.ssafy.orderme.kiosk.mapper.MenuMapper.MenuResultMap">
+        SELECT
+            m.menu_id, m.menu_name, m.price, m.category_id,
+            c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at,
+            COUNT(om.menu_id) as order_count
+        FROM Menus m
+                 JOIN Categories c ON m.category_id = c.category_id
+                 JOIN OrderMenu om ON m.menu_id = om.menu_id
+                 JOIN Orders o ON om.order_id = o.order_id
+        WHERE c.store_id = #{storeId}
+          AND o.weather = #{weather}
+          AND o.gender = #{gender}
+          AND o.age BETWEEN #{minAge} AND #{maxAge}
+          AND m.is_deleted = false
+          AND m.is_sold_out = false
+        GROUP BY m.menu_id, m.menu_name, m.price, m.category_id,
+                 c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
+        ORDER BY order_count DESC, m.menu_name
+            LIMIT #{limit}
+    </select>
+
+    <!-- 날씨만 기준으로 인기 메뉴 조회 (새로 추가) -->
+    <select id="findPopularMenusByWeatherOnly" resultMap="com.ssafy.orderme.kiosk.mapper.MenuMapper.MenuResultMap">
+        SELECT
+            m.menu_id, m.menu_name, m.price, m.category_id,
+            c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at,
+            COUNT(om.menu_id) as order_count
+        FROM Menus m
+                 JOIN Categories c ON m.category_id = c.category_id
+                 JOIN OrderMenu om ON m.menu_id = om.menu_id
+                 JOIN Orders o ON om.order_id = o.order_id
+        WHERE c.store_id = #{storeId}
+          AND o.weather = #{weather}
+          AND m.is_deleted = false
+          AND m.is_sold_out = false
+        GROUP BY m.menu_id, m.menu_name, m.price, m.category_id,
+                 c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
+        ORDER BY order_count DESC, m.menu_name
             LIMIT #{limit}
     </select>
 
@@ -71,5 +138,4 @@
                                  order_count = order_count + 1,
                                  last_updated = NOW()
     </insert>
-
 </mapper>

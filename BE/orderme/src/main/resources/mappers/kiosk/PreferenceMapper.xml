@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.orderme.kiosk.mapper.PreferenceMapper">
+
+    <resultMap id="optionCategoryMap" type="com.ssafy.orderme.kiosk.dto.response.PreferenceOptionCategoryResponse">
+        <id property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <collection property="optionItems" ofType="com.ssafy.orderme.kiosk.dto.response.PreferenceOptionItemResponse">
+            <id property="itemId" column="item_id"/>
+            <result property="optionName" column="option_name"/>
+            <result property="additionalPrice" column="additional_price"/>
+        </collection>
+    </resultMap>
+
+    <select id="getPreferenceOptionCategories" resultMap="optionCategoryMap">
+        SELECT oc.category_id, oc.category_name,
+               oi.item_id, oi.option_name, oi.additional_price
+        FROM OptionCategories oc
+                 JOIN OptionItems oi ON oc.category_id = oi.category_id
+        WHERE oc.category_id IN (1, 2, 3, 4)
+          AND oc.is_deleted = false
+          AND oi.is_deleted = false
+        ORDER BY oc.display_order, oi.display_order
+    </select>
+</mapper>

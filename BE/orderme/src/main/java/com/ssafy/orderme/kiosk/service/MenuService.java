@@ -6,7 +6,6 @@ import com.ssafy.orderme.kiosk.model.Menu;
 import com.ssafy.orderme.kiosk.model.OptionCategory;
 import com.ssafy.orderme.kiosk.model.OptionItem;
 import com.ssafy.orderme.recommendation.service.RecommendationService;
-import com.ssafy.orderme.recommendation.service.WeatherRecommendationService;
 import com.ssafy.orderme.user.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,17 +21,14 @@ public class MenuService {
 
     private final MenuMapper menuMapper;
     private final RecommendationService recommendationService;
-    private final WeatherRecommendationService weatherRecommendationService;
     private final UserMapper userMapper;
 
     @Autowired
     public MenuService(MenuMapper menuMapper,
                        RecommendationService recommendationService,
-                       WeatherRecommendationService weatherRecommendationService,
                        UserMapper userMapper) {
         this.menuMapper = menuMapper;
         this.recommendationService = recommendationService;
-        this.weatherRecommendationService = weatherRecommendationService;
         this.userMapper = userMapper;
     }
 
@@ -154,8 +150,6 @@ public class MenuService {
                 .collect(Collectors.toList());
     }
 
-
-
     /**
      * 회원 사용자의 추천 메뉴 조회
      * - 자주 주문한 메뉴 3개
@@ -179,8 +173,8 @@ public class MenuService {
                 .limit(3)
                 .collect(Collectors.toList());
 
-        // 현재 날씨 정보 가져오기
-        String currentWeather = weatherRecommendationService.getCurrentWeather(storeId);
+        // 현재 날씨 정보 - 임의 값 설정
+        String currentWeather = "Clear";
 
         RecommendedMenuResponse response = RecommendedMenuResponse.builder()
                 .frequentMenus(convertToMenuResponseList(frequentMenus))
@@ -227,26 +221,6 @@ public class MenuService {
                 }
             }
         }
-        // 성별/나이대별 메뉴가 부족하면 날씨 기반 메뉴로 보충
-        if (recommendedMenus.size() < 3) {
-            List<MenuResponse> weatherMenuResponses = weatherRecommendationService.getMenusByWeather(storeId);
-            List<Menu> weatherMenus = convertToMenus(weatherMenuResponses);
-
-            // 이미 추가된 메뉴와 중복되지 않는 메뉴만 추가
-            Set<Integer> recommendedMenuIds = recommendedMenus.stream()
-                    .map(Menu::getMenuId)
-                    .collect(Collectors.toSet());
-
-            for (Menu menu : weatherMenus) {
-                if (!popularMenuIds.contains(menu.getMenuId()) &&
-                        !recommendedMenuIds.contains(menu.getMenuId())) {
-                    recommendedMenus.add(menu);
-                }
-                if (recommendedMenus.size() >= 3) {
-                    break;
-                }
-            }
-        }
 
         // 그래도 3개가 안되면 인기 메뉴 4위 이하로 채움
         if (recommendedMenus.size() < 3) {
@@ -272,8 +246,8 @@ public class MenuService {
             }
         }
 
-        // 현재 날씨 정보 가져오기
-        String currentWeather = weatherRecommendationService.getCurrentWeather(storeId);
+        // 임의의 날씨 정보 설정
+        String currentWeather = "Clear";
 
         RecommendedMenuResponse response = RecommendedMenuResponse.builder()
                 .frequentMenus(convertToMenuResponseList(popularMenus))
