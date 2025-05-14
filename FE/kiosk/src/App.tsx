@@ -5,6 +5,7 @@ import AdminLoginPage from './pages/adminLogin/AdminLoginPage'
 import UserLoginPage from './pages/userLogin/UserLoginPage'
 import GlobalRippleEffect from './styles/RippleEffect'
 import OrderPage from './pages/order/OrderPage'
+import LoadingPage from './pages/LoadingPage'
 
 function App() {
   return (
@@ -20,6 +21,9 @@ function App() {
 
         {/* 메뉴 화면 */}
         <Route path="/order" element={<OrderPage />} />
+
+        {/* 로딩 화면 */}
+        <Route path="/loading" element={<LoadingPage />} />
       </Routes>
     </>
   )

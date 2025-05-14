@@ -9,6 +9,7 @@ import { usePayModal } from '../hooks/usePayModal'
 import { useCouponInfo } from '../hooks/useCoupon'
 import { useUserStore } from '@/stores/loginStore'
 import { usePayStore } from '@/stores/payStore'
+import { useNavigate } from 'react-router-dom'
 
 const Content = tw.div`w-full flex flex-col items-center justify-center flex-1 gap-12 mb-60`
 const Section = tw.div`w-[984px] bg-lightLight px-10 py-16 mb-12`
@@ -30,6 +31,7 @@ const ColQty = tw.div`w-1/6 text-center`
 const ColPrice = tw.div`w-1/3 text-right`
 
 export default function PayContent() {
+  const navigate = useNavigate()
   const { isMember } = useUserStore()
   const { couponInfo, loading: couponLoading } = useCouponInfo(1)
   const [couponApplied, setCouponApplied] = useState(false)
@@ -149,9 +151,13 @@ export default function PayContent() {
           </Text>
         </div>
         <PayMethodButton
-          onSelect={(type) => {
-            setModalState(type)
-            setShowModal(true)
+          onSelect={async (type) => {
+            if (type === 'face') {
+              navigate('/loading?type=progress')
+            } else {
+              setModalState('qr')
+              setShowModal(true)
+            }
           }}
         />
       </Content>
