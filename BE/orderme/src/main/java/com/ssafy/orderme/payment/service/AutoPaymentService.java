@@ -8,6 +8,7 @@ import com.ssafy.orderme.payment.dto.request.AutoPaymentRequest;
 import com.ssafy.orderme.payment.dto.request.MenuOrderRequest;
 import com.ssafy.orderme.payment.dto.request.OptionOrderRequest;
 import com.ssafy.orderme.payment.dto.response.CardCompanyResponse;
+import com.ssafy.orderme.payment.dto.response.PaymentInfoResponse;
 import com.ssafy.orderme.payment.dto.response.PaymentResponseDto;
 import com.ssafy.orderme.payment.mapper.OrderMapper;
 import com.ssafy.orderme.payment.mapper.PaymentInfoMapper;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -319,10 +321,61 @@ public class AutoPaymentService {
     }
 
     /**
-     * 카드 목록 조회
+     * 카드 목록 조회 (카드사 정보 포함)
      */
-    public List<PaymentInfo> getCardList(String userId) {
-        return paymentInfoMapper.getCardList(userId);
+    public List<PaymentInfoResponse> getCardListWithCardInfo(String userId) {
+        List<PaymentInfo> cards = paymentInfoMapper.getCardList(userId);
+        List<PaymentInfoResponse> responseList = new ArrayList<>();
+
+        for (PaymentInfo card : cards) {
+            // 카드 번호 앞 6자리로 카드사 정보 식별
+            String cardPrefix = card.getCardNumber().substring(0, 6);
+            CardInfo cardInfo = cardService.identifyCard(cardPrefix);
+
+            // 카드사 이미지 URL 가져오기
+            String imageUrl = "";
+            for (CardService.CardBrand brand : cardService.getBinRanges().values()) {
+                if (brand.getBrand().equals(cardInfo.getBrand())) {
+                    imageUrl = brand.getImageUrl();
+                    break;
+                }
+            }
+
+            // 응답 DTO 생성
+            PaymentInfoResponse response = PaymentInfoResponse.builder()
+                    .paymentInfoId(card.getPaymentInfoId())
+                    .userId(card.getUserId())
+                    .cardNumber(card.getCardNumber())
+                    .cardExpiry(card.getCardExpiry())
+                    .isDefault(card.getIsDefault())
+                    .brand(cardInfo.getBrand())
+                    .type(cardInfo.getType())
+                    .imageUrl(imageUrl)
+                    .build();
+
+            responseList.add(response);
+        }
+
+        return responseList;
+    }
+
+    /**
+     * 대표 카드 변경
+     */
+    @Transactional
+    public boolean setDefaultCard(Integer paymentInfoId, String userId) {
+        // 1. 카드가 존재하는지 확인
+        if (!paymentInfoMapper.existsCard(paymentInfoId, userId)) {
+            throw new IllegalArgumentException("해당 카드 정보를 찾을 수 없습니다.");
+        }
+
+        // 2. 기존 기본 카드 설정 해제
+        paymentInfoMapper.unsetDefaultCards(userId);
+
+        // 3. 새로운 기본 카드 설정
+        paymentInfoMapper.setDefaultCard(paymentInfoId, userId);
+
+        return true;
     }
 
     /**
