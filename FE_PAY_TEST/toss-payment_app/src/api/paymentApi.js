@@ -50,7 +50,7 @@ export const approvePayment = async (paymentData) => {
 // 결제 실패 처리 API
 export const handlePaymentFailure = async (orderId, errorCode, errorMessage) => {
   try {
-    const response = await axiosInstance.post('/api/payments/failure', null, {
+    const response = await axiosInstance.post('/api/payments/fail', null, {
       params: {
         orderId,
         errorCode,

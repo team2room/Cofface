@@ -5,10 +5,7 @@ import com.ssafy.orderme.kiosk.mapper.MenuMapper;
 import com.ssafy.orderme.kiosk.model.Menu;
 import com.ssafy.orderme.order.mapper.*;
 import com.ssafy.orderme.order.model.*;
-import com.ssafy.orderme.payment.dto.request.MenuOrderRequest;
-import com.ssafy.orderme.payment.dto.request.OptionOrderRequest;
-import com.ssafy.orderme.payment.dto.request.PaymentApprovalRequest;
-import com.ssafy.orderme.payment.dto.request.PaymentRequest;
+import com.ssafy.orderme.payment.dto.request.*;
 import com.ssafy.orderme.payment.dto.response.PaymentResponseDto;
 import com.ssafy.orderme.payment.mapper.OrderMapper;
 import com.ssafy.orderme.payment.mapper.PaymentInfoMapper;
@@ -22,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -64,7 +62,7 @@ public class PaymentService {
     private String generateTossOrderId() {
         // ORDER-xxxx-xxxx-xxxx 형식으로 고유한 ID 생성 (최소 6자, 최대 64자)
         String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-        return "ORDER-" + uuid;
+        return uuid;
     }
 
     // 주문번호 생성 메서드
@@ -120,31 +118,35 @@ public class PaymentService {
             // 토스페이먼츠 결제 승인 API 호출 (v2 API 엔드포인트)
             String tossPaymentsUrl = "https://api.tosspayments.com/v1/payments/confirm";
 
-            // 요청 데이터 세팅
-            Map<String, Object> payloadMap = new HashMap<>();
-            payloadMap.put("paymentKey", request.getPaymentKey());
-            payloadMap.put("orderId", request.getOrderId());
-            payloadMap.put("amount", request.getAmount());
-
             // 요청 헤더 설정 (시크릿 키 Base64 인코딩)
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             String encodedAuth = Base64.getEncoder().encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8));
             headers.set("Authorization", "Basic " + encodedAuth);
 
-            // HTTP 요청 생성
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payloadMap, headers);
+            // 요청 데이터 세팅
+            PaymentConfirmRequest confirmRequest = PaymentConfirmRequest.builder()
+                    .paymentKey(request.getPaymentKey())
+                    .orderId(request.getOrderId())
+                    .amount(request.getAmount())
+                    .build();
 
             // API 호출 및 응답 처리
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    tossPaymentsUrl,
-                    HttpMethod.POST,
-                    entity,
-                    Map.class
-            );
+            ResponseEntity<Map> responseEntity;
+            try {
+                responseEntity = restTemplate.exchange(
+                        tossPaymentsUrl,
+                        HttpMethod.POST,
+                        new HttpEntity<>(confirmRequest, headers),
+                        Map.class
+                );
+            } catch (HttpClientErrorException e) {
+                log.error("토스페이먼츠 API 오류: {}", e.getResponseBodyAsString());
+                throw e;
+            }
 
             // 응답 처리
-            Map<String, Object> responseBody = response.getBody();
+            Map<String, Object> responseBody = responseEntity.getBody();
             log.info("토스페이먼츠 V2 응답: {}", responseBody);
 
             // V2 API 응답 구조에서 정보 추출
@@ -152,15 +154,19 @@ public class PaymentService {
             String tossOrderId = (String) responseBody.get("orderId");
             String status = (String) responseBody.get("status");
 
-            // V2 API에서는 totalAmount가 다른 위치에 있을 수 있음
-            BigDecimal  amount;
-            if (responseBody.containsKey("totalAmount")) {
-                amount = new BigDecimal(responseBody.get("totalAmount").toString());
-            } else if (responseBody.containsKey("amount")) {
-                amount = new BigDecimal(responseBody.get("amount").toString());
+            // Integer/Long 변환 문제 해결
+            Object amountObj = responseBody.get("totalAmount");
+            Long amount;
+            if (amountObj instanceof Integer) {
+                amount = ((Integer) amountObj).longValue();
+            } else if (amountObj instanceof Long) {
+                amount = (Long) amountObj;
+            } else if (amountObj instanceof Double) {
+                amount = ((Double) amountObj).longValue();
             } else {
-                // 결제 금액 정보가 없으면 요청으로 받은 금액 사용
-                amount = request.getAmount();
+                // 만약 다른 타입이라면 로그 남기고 문자열로 변환 후 처리
+                log.warn("예상치 못한 amount 타입: {}", amountObj.getClass().getName());
+                amount = Long.valueOf(String.valueOf(amountObj));
             }
 
             // tossOrderId로 주문 찾기 (새 메서드 필요)
@@ -383,4 +389,5 @@ public class PaymentService {
     // 주문 조회
     public Order getOrderById(Integer orderId) {
         return orderMapper.findById(orderId);
-    }}
+    }
+}

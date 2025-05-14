@@ -246,6 +246,7 @@ const PaymentPage = () => {
       await paymentWidget.requestPayment({
         orderId: orderId.toString(),
         orderName: `커피 주문 (${cart.length}건)`,
+        amount: totalAmount,
         customerName: getUser()?.name || '고객',
         customerEmail: getUser()?.email,
         customerMobilePhone: getUser()?.phoneNumber,
