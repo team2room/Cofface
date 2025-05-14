@@ -8,10 +8,19 @@ export const useAutoPay = () => {
   const [result, setResult] = useState<null | any>(null)
   const [error, setError] = useState<null | string>(null)
 
+  const store = usePayStore.getState()
+  const payData: PayData = {
+    kioskId: store.kioskId!,
+    totalAmount: store.totalAmount!,
+    isStampUsed: store.isStampUsed!,
+    isTakeout: store.isTakeout!,
+    paymentInfoId: store.paymentInfoId ?? null,
+    menuOrders: store.menuOrders!,
+  }
+
   const startPayment = async () => {
     setLoading(true)
     try {
-      const payData = usePayStore.getState() as PayData
       console.log('try 진입', payData)
       const res = await postAutoPay(payData)
       setResult(res)
