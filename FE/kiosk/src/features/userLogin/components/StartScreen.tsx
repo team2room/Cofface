@@ -2,7 +2,7 @@ import { Text } from '@/styles/typography'
 import tw from 'twin.macro'
 import CustomDialog from '@/components/CustomDialog'
 import { useState } from 'react'
-import { useLoginStore } from '@/stores/loginStore'
+import { useLoginStore, useUserStore } from '@/stores/loginStore'
 import { useNavigate } from 'react-router-dom'
 import { usePhoneLogin } from '../hooks/usePhoneLogin'
 
@@ -15,21 +15,22 @@ const ImageWrapper = tw.div`
 `
 
 // 풀 배경
-// const FullImg = tw.img`
-//   absolute top-0 left-0 w-full h-full object-cover
-// `
+const FullImg = tw.img`
+  absolute top-0 left-0 w-full h-full object-cover
+`
 
 // 중간 배경
-const MiddleImg = tw.img`
-  absolute top-40 w-[908px] h-[1224px] object-cover
-`
+// const MiddleImg = tw.img`
+//   absolute top-40 w-[908px] h-[1224px] object-cover
+// `
 
 const ButtonGroup = tw.div`
   absolute bottom-40 w-full flex justify-center gap-20 z-10
 `
 
 const Button = tw.button`
-  px-8 py-4 rounded-lg w-[397px] h-[234px] bg-[#FEFEFE] shadow-[1px_4px_10px_6px_rgba(0,0,0,0.10)]
+  px-8 py-4 rounded-lg w-[397px] h-[234px] bg-[#FEFEFE] shadow-[1px_4px_10px_6px_rgba(0,0,0,0.10)] 
+  hover:scale-105 transition-transform duration-200
 `
 
 export default function StartScreen() {
@@ -49,7 +50,7 @@ export default function StartScreen() {
     modalContent = {
       title: (
         <Text variant="title4" weight="extrabold" color="gray">
-          PhoneSign --------------------------- ORDER.ME
+          PhoneSign --------------------- ORDER.ME
         </Text>
       ),
       description: (
@@ -64,7 +65,7 @@ export default function StartScreen() {
     modalContent = {
       title: (
         <Text variant="title4" weight="extrabold" color="gray">
-          FaceSign ----------------------------- ORDER.ME
+          FaceSign ----------------------- ORDER.ME
         </Text>
       ),
       description: {
@@ -91,6 +92,7 @@ export default function StartScreen() {
       alert('전화번호가 일치합니다')
       navigate('/order')
     } catch (err) {
+      resetPhoneNumber()
       alert('일치하는 전화번호가 없습니다')
     }
   }
@@ -98,15 +100,11 @@ export default function StartScreen() {
   return (
     <>
       <ImageWrapper>
-        <MiddleImg
-          src="https://picsum.photos/200"
-          alt="Spring Garden"
-          draggable={false}
-        />
+        <FullImg src="/시작광고.png" alt="Spring Garden" draggable={false} />
       </ImageWrapper>
 
       <TopLeftText>
-        <Text variant="title4" weight="extrabold" color="littleDarkGray">
+        <Text variant="title4" weight="heavy" color="main">
           ORDER.ME
         </Text>
       </TopLeftText>
@@ -121,7 +119,12 @@ export default function StartScreen() {
             회원 주문
           </Text>
         </Button>
-        <Button onClick={() => navigate('/order')}>
+        <Button
+          onClick={() => {
+            useUserStore.getState().setGuest()
+            navigate('/order')
+          }}
+        >
           <Text variant="title2" weight="bold">
             비회원 주문
           </Text>
@@ -141,6 +144,7 @@ export default function StartScreen() {
             setModalState('phone')
           } else {
             setShowModal(false)
+            resetPhoneNumber()
             setModalState('waiting')
           }
         }}
@@ -149,6 +153,7 @@ export default function StartScreen() {
             handlePhoneLogin()
           } else if (modalState === 'success') {
             setShowModal(false)
+            resetPhoneNumber()
             navigate('/order')
           } else {
             setModalState('phone')

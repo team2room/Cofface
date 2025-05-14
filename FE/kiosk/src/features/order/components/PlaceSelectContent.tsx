@@ -1,5 +1,6 @@
 import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
+import { usePayStore } from '@/stores/payStore'
 
 const Content = tw.div`flex flex-col items-center justify-center flex-1 gap-12`
 const ImageButton = tw.button`
@@ -10,6 +11,8 @@ const ImageButton = tw.button`
 const EmojiImage = tw.img`w-[328px] h-[328px]`
 
 export default function PlaceSelectContent({ onNext }: { onNext: () => void }) {
+  const payStore = usePayStore()
+
   return (
     <Content>
       <div className="my-20">
@@ -19,14 +22,24 @@ export default function PlaceSelectContent({ onNext }: { onNext: () => void }) {
       </div>
 
       <div className="flex flex-col gap-20 mb-60">
-        <ImageButton onClick={onNext}>
+        <ImageButton
+          onClick={() => {
+            payStore.setIsTakeout(false)
+            onNext()
+          }}
+        >
           <EmojiImage src="/매장.png" alt="매장" />
           <Text variant="title4" weight="extrabold" color="lightBlack">
             매장에서 먹고가기
           </Text>
         </ImageButton>
 
-        <ImageButton onClick={onNext}>
+        <ImageButton
+          onClick={() => {
+            payStore.setIsTakeout(true)
+            onNext()
+          }}
+        >
           <EmojiImage src="/포장.png" alt="포장" />
           <Text variant="title4" weight="extrabold" color="lightBlack">
             포장하기

@@ -1,7 +1,13 @@
+// 메뉴 관련
 export interface MenuItem {
-  name: string
+  menuId: number
+  menuName: string
   price: number
-  image?: string
+  categoryId: number
+  categoryName: string
+  isSoldOut: boolean
+  imageUrl: string
+  description: string
 }
 
 export interface MenuCardProps {
@@ -9,34 +15,42 @@ export interface MenuCardProps {
   boxShadowColor: string
 }
 
+export interface AllMenuSectionProps {
+  menuItems: MenuItem[]
+  categories: Category[]
+}
+
 export interface RecommendSectionProps {
   recentMenus: MenuItem[]
   customMenus: MenuItem[]
 }
 
-export interface OrderItem {
-  name: string
-  price: number
-  quantity: number
+// 메뉴 카테고리
+export interface Category {
+  categoryId: number
+  categoryName: string
+  displayOrder: number
+  isActive: boolean
 }
 
-export interface OrderSectionProps {
-  orders: OrderItem[]
-}
-
-// 옵션 모달에서 사용되는 인터페이스
+// 옵션 모달 관련
 export interface MenuOption {
   optionCategory: string
   isRequired: boolean
   optionNames: string[]
   additionalPrices: number[]
   optionIds: number[]
+  isDefault: boolean[]
   maxSelections: number
 }
 
-export interface MenuData {
+export interface MenuItemDetail {
+  menuId: number
   menuName: string
   price: number
+  categoryId: number
+  categoryName: string
+  isSoldOut: boolean
   imageUrl: string
   description: string
   options: MenuOption[]
@@ -47,18 +61,22 @@ export interface OptionModalProps {
   onOpenChange: (open: boolean) => void
   onCancel?: () => void
   onConfirm?: () => void
-  menu: MenuData
+  menu: MenuItemDetail
 }
 
-// 옵션 포함 주문 정보
-export interface OrderOption {
-  name: string
-  price: number // 0이면 추가금 없음
+// 선택 상품
+export interface SelectedOption {
+  category: string
+  value: string
+  price: number
+  optionId: number
 }
 
-export interface RealOrderItem {
+export interface OrderItem {
+  menuId: number
   name: string
-  quantity: number
   basePrice: number
-  options: OrderOption[]
+  quantity: number
+  options: SelectedOption[]
+  totalPrice: number
 }

@@ -1,31 +1,45 @@
 import AllMenuSection from '@/features/order/components/Menu/AllMenuSection'
 import RecommendSection from '@/features/order/components/Menu/RecommendSection'
-import { MenuItem } from '@/interfaces/OrderInterface'
 import { useState } from 'react'
 import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
 import CustomButton from '@/components/CustomButton'
 import OrderSection from '@/features/order/components/Menu/OrderSection'
 import ReceiptModal from '@/features/order/components/Receipt/ReceiptDialog'
+import { useAllMenu } from '../hooks/useAllMenu'
+import { useCategory } from '../hooks/useCategory'
+import { useOrderStore } from '@/stores/orderStore'
+import { useRecommendMenu } from '../hooks/useRecommendMenu'
 
 const MenuButton = tw.button`w-80 border border-main rounded-xl px-8 py-1 my-4 mx-auto shadow-md`
 
 export default function MenuContent({ onNext }: { onNext: () => void }) {
-  const [showAllMenu, setShowAllMenu] = useState(false)
-  const total = 19000
+  const { menus, loading: menuLoading } = useAllMenu(1)
+  const { category, loading: categoryLoading } = useCategory(1)
+  const {
+    recentMenus,
+    customMenus,
+    loading: recommendLoading,
+  } = useRecommendMenu(1)
 
+  const [showAllMenu, setShowAllMenu] = useState(false)
   const [receiptOpen, setReceiptOpen] = useState(false)
+
+  const orders = useOrderStore((state) => state.orders)
+  const totalPrice = orders.reduce((total, item) => {
+    return total + item.totalPrice * item.quantity
+  }, 0)
+
+  if (menuLoading || categoryLoading || recommendLoading)
+    return <div>불러오는 중...</div>
 
   return (
     <>
       {/* 추천 메뉴 or 전체 메뉴 */}
       {showAllMenu ? (
-        <AllMenuSection menuItems={menuItems} />
+        <AllMenuSection menuItems={menus} categories={category} />
       ) : (
-        <RecommendSection
-          recentMenus={recentMenus}
-          customMenus={recommendedMenus}
-        />
+        <RecommendSection recentMenus={recentMenus} customMenus={customMenus} />
       )}
 
       {/* 추천 메뉴 <-> 전체 메뉴 전환 버튼 */}
@@ -36,12 +50,12 @@ export default function MenuContent({ onNext }: { onNext: () => void }) {
       </MenuButton>
 
       {/* 주문 내역 */}
-      <OrderSection orders={orderList} />
+      <OrderSection />
 
       {/* 결제하기 버튼 */}
       <CustomButton
-        text={`${total.toLocaleString()}원 결제하기`}
-        variant={'main'}
+        text={`${totalPrice.toLocaleString()}원 결제하기`}
+        variant={orders.length === 0 ? 'disabled' : 'main'}
         onClick={() => setReceiptOpen(true)}
       />
 
@@ -55,118 +69,78 @@ export default function MenuContent({ onNext }: { onNext: () => void }) {
   )
 }
 
-const recentMenus = [
-  { name: '왕메가사과유자', price: 5500 },
-  { name: '딸기라떼', price: 4000 },
-  { name: '(HOT)상큼 리치 티', price: 3000 },
-  { name: '청포도샤워크러쉬', price: 5500 },
-]
+// const recentMenus = [
+//   {
+//     menuId: 3,
+//     menuName: '바닐라 라떼',
+//     price: 5500,
+//     categoryId: 1,
+//     categoryName: '커피',
+//     isSoldOut: false,
+//     imageUrl: 'https://picsum.photos/200',
+//     description: '달콤한 바닐라 시럽이 더해진 부드러운 라떼',
+//   },
+//   {
+//     menuId: 1,
+//     menuName: '아메리카노',
+//     price: 4500,
+//     categoryId: 1,
+//     categoryName: '커피',
+//     isSoldOut: false,
+//     imageUrl: 'https://picsum.photos/200',
+//     description: '깊고 진한 에스프레소의 풍미가 살아있는 아메리카노',
+//   },
+//   {
+//     menuId: 5,
+//     menuName: '에스프레소',
+//     price: 4000,
+//     categoryId: 1,
+//     categoryName: '커피',
+//     isSoldOut: false,
+//     imageUrl: 'https://picsum.photos/200',
+//     description: '진하고 향기로운 에스프레소 한 잔',
+//   },
+// ]
 
-const recommendedMenus = [
-  { name: '왕메가사과유자', price: 5500 },
-  { name: '딸기라떼', price: 4000 },
-  { name: '(HOT)상큼 리치 티', price: 3000 },
-  { name: '청포도샤워크러쉬', price: 5500 },
-]
-
-const orderList = [
-  {
-    name: '코코넛 커피 스무디',
-    price: 5000,
-    quantity: 2,
-  },
-  {
-    name: '디카페인 카페모카',
-    price: 2500,
-    quantity: 1,
-  },
-  {
-    name: '디카페인 카페모카',
-    price: 2500,
-    quantity: 1,
-  },
-]
-
-// menuItems
-const menuItems: MenuItem[] = [
-  {
-    name: '디카페인 카페모카',
-    price: 2500,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '디카페인 헬카페라떼',
-    price: 4500,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '콜드브루 아메리카노',
-    price: 3000,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '콜드브루 아메리카노',
-    price: 3000,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '디카페인 카페모카',
-    price: 2500,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '디카페인 헬카페라떼',
-    price: 4500,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '콜드브루 아메리카노',
-    price: 3000,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '콜드브루 아메리카노',
-    price: 3000,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '디카페인 카페모카',
-    price: 2500,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '디카페인 헬카페라떼',
-    price: 4500,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '콜드브루 아메리카노',
-    price: 3000,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '콜드브루 아메리카노',
-    price: 3000,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '디카페인 카페모카',
-    price: 2500,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '디카페인 헬카페라떼',
-    price: 4500,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '콜드브루 아메리카노',
-    price: 3000,
-    image: 'https://picsum.photos/200',
-  },
-  {
-    name: '콜드브루 아메리카노',
-    price: 3000,
-    image: 'https://picsum.photos/200',
-  },
-]
+// const customMenus = [
+//   {
+//     menuId: 4,
+//     menuName: '카라멜 마끼아또',
+//     price: 5800,
+//     categoryId: 1,
+//     categoryName: '커피',
+//     isSoldOut: false,
+//     imageUrl: 'https://picsum.photos/200',
+//     description: '달콤한 카라멜과 바닐라 시럽, 에스프레소가 층을 이루는 음료',
+//   },
+//   {
+//     menuId: 2,
+//     menuName: '카페 라떼',
+//     price: 5000,
+//     categoryId: 1,
+//     categoryName: '커피',
+//     isSoldOut: false,
+//     imageUrl: 'https://picsum.photos/200',
+//     description: '부드러운 우유와 에스프레소의 조화로운 맛',
+//   },
+//   {
+//     menuId: 6,
+//     menuName: '디카페인 아메리카노',
+//     price: 5000,
+//     categoryId: 2,
+//     categoryName: '디카페인',
+//     isSoldOut: false,
+//     imageUrl: 'https://picsum.photos/200',
+//     description: '카페인 걱정 없이 즐기는 풍부한 맛의 아메리카노',
+//   },
+//   {
+//     menuId: 7,
+//     menuName: '디카페인 카페 라떼',
+//     price: 5500,
+//     categoryId: 2,
+//     categoryName: '디카페인',
+//     isSoldOut: false,
+//     imageUrl: 'https://picsum.photos/200',
+//     description: '카페인을 줄인 에스프레소와 우유의 부드러운 조화',
+//   },
+// ]

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLogout } from '@/features/userLogin/hooks/useLogout'
 import { useUserStore } from '@/stores/loginStore'
 
-const HeaderContainer = tw.div`w-full flex justify-between items-center my-4`
+const HeaderContainer = tw.div`w-full flex justify-between items-center mt-4 mb-8`
 const TimeBox = tw.div`flex w-[250px] justify-center border-b-2 border-gray`
 
 interface HeaderProps {
@@ -16,9 +16,12 @@ export default function Header({ remainingSeconds }: HeaderProps) {
   const { logout } = useLogout()
   const token = useUserStore((state) => state.token)
   const userName = useUserStore((state) => state.user?.name)
+  const { isMember } = useUserStore()
 
   const handleHomeClick = async () => {
-    await logout(1)
+    if (isMember) {
+      await logout(1)
+    }
     navigate('/user')
   }
 

@@ -1,13 +1,15 @@
 import {
   AlertDialog,
+  AlertDialogTitle,
   AlertDialogContent,
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog'
 import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
 import CustomButton from '@/components/CustomButton'
-import { RealOrderItem } from '@/interfaces/OrderInterface'
 import ReceiptItemList from './ReceiptItemList'
+import { useOrderStore } from '@/stores/orderStore'
+import { usePayStore } from '@/stores/payStore'
 
 const Content = tw.div`h-[1150px] bg-lightLight p-4 mt-4 mb-12 flex flex-col justify-between`
 const HeaderRow = tw.div`flex justify-between p-2 border-y-2 border-dark`
@@ -28,19 +30,28 @@ export default function ReceiptModal({
   onOpenChange,
   onNext,
 }: ReceiptModalProps) {
-  const totalQuantity = dummyOrderItems.reduce(
-    (sum, item) => sum + item.quantity,
-    0,
-  )
+  const orders = useOrderStore((state) => state.orders)
+  const payStore = usePayStore()
 
-  const totalPrice = dummyOrderItems.reduce((total, item) => {
-    const optionsTotal = item.options.reduce((sum, opt) => sum + opt.price, 0)
-    return total + (item.basePrice + optionsTotal) * item.quantity
+  const totalQuantity = orders.reduce((sum, item) => sum + item.quantity, 0)
+
+  const totalPrice = orders.reduce((total, item) => {
+    return total + item.totalPrice * item.quantity
   }, 0)
+
+  const menuOrders = orders.map((item) => ({
+    menuId: item.menuId,
+    quantity: item.quantity,
+    options: item.options?.map((opt) => ({
+      optionItemId: opt.optionId,
+      quantity: 1,
+    })),
+  }))
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="w-[95%]">
+        <AlertDialogTitle></AlertDialogTitle>
         <Text variant="title4" weight="extrabold" className="text-center my-4">
           주문 정보를 확인해 주세요
         </Text>
@@ -68,7 +79,7 @@ export default function ReceiptModal({
             </HeaderRow>
 
             {/* 상품 목록 */}
-            <ReceiptItemList items={dummyOrderItems} />
+            <ReceiptItemList items={orders} />
           </div>
 
           {/* 총합 */}
@@ -116,6 +127,11 @@ export default function ReceiptModal({
             text={'다음'}
             variant="main"
             onClick={() => {
+              payStore.setInitialPayData({
+                kioskId: 1,
+                totalAmount: totalPrice,
+                menuOrders,
+              })
               onOpenChange(false)
               onNext()
             }}
@@ -125,34 +141,3 @@ export default function ReceiptModal({
     </AlertDialog>
   )
 }
-
-export const dummyOrderItems: RealOrderItem[] = [
-  {
-    name: '라이트 바닐라 아몬드라떼',
-    quantity: 1,
-    basePrice: 4000,
-    options: [
-      { name: '차가운 (ICE)', price: 0 },
-      { name: '중간 사이즈 (M)', price: 0 },
-    ],
-  },
-  {
-    name: '디카페인 카페모카',
-    quantity: 2,
-    basePrice: 5000,
-    options: [
-      { name: '차가운 (ICE)', price: 0 },
-      { name: '중간 사이즈 (M)', price: 0 },
-      { name: '얼음 적게', price: 0 },
-    ],
-  },
-  {
-    name: '디카페인 왕메가카페라떼',
-    quantity: 1,
-    basePrice: 4500,
-    options: [
-      { name: '차가운 (ICE)', price: 0 },
-      { name: '큰 사이즈 (L)', price: 500 },
-    ],
-  },
-]
