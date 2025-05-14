@@ -142,11 +142,11 @@
             COUNT(DISTINCT om.order_id) AS order_count
         FROM ordermenu om
                  JOIN orders o ON om.order_id = o.order_id
-                 JOIN users u ON o.user_id = u.id
+                 JOIN users u ON o.user_id = u.user_id
                  JOIN menus m ON om.menu_id = m.menu_id
                  LEFT JOIN categories c ON m.category_id = c.category_id
         WHERE o.kiosk_id = #{storeId}
-          AND u.id = #{userId}
+          AND u.user_id = #{userId}
           AND m.is_deleted = 0
           AND o.is_delete = 0
         GROUP BY m.menu_id, m.menu_name, m.price, m.category_id,
