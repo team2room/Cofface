@@ -15,7 +15,7 @@ public class Menu {
     private Integer menuId;
     private Integer categoryId;
     private String menuName;
-    private BigDecimal price;
+    private Integer price;
     private Boolean isSoldOut;
     private String imageUrl;
     private String description;

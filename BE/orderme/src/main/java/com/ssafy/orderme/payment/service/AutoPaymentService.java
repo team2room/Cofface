@@ -157,17 +157,17 @@ public class AutoPaymentService {
             }
 
             // 메뉴 가격 계산 (옵션 포함)
-            BigDecimal menuPrice = menu.getPrice();
-            BigDecimal totalPrice = menuPrice.multiply(BigDecimal.valueOf(menuOrder.getQuantity()));
+            Integer menuPrice = menu.getPrice();
+            int totalPrice = menuPrice * menuOrder.getQuantity();
 
             // 주문 메뉴 생성
             OrderMenu orderMenu = OrderMenu.builder()
                     .orderId(orderId)
                     .menuId(menu.getMenuId())
                     .menuName(menu.getMenuName())
-                    .menuPrice(menuPrice.intValue())
+                    .menuPrice(menuPrice)
                     .quantity(menuOrder.getQuantity())
-                    .totalPrice(totalPrice.intValue())
+                    .totalPrice((int) totalPrice)
                     .isDeleted(false)
                     .build();
 
