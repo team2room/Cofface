@@ -5,6 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Period;
 
 import java.util.Date;
 
@@ -33,5 +36,14 @@ public class User {
                 .password(password)
                 .gender(gender)
                 .build();
+    }
+
+    public Integer getAge() {
+        if (birthDate == null) {
+            return null;
+        }
+        // Date를 LocalDate로 변환
+        LocalDate birthLocalDate = new java.sql.Date(birthDate.getTime()).toLocalDate();
+        return Period.between(birthLocalDate, LocalDate.now()).getYears();
     }
 }

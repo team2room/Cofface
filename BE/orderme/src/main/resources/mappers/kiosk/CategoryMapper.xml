@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.orderme.kiosk.mapper.CategoryMapper">
+    <!-- 카테고리 조회 결과를 Category 객체에 매핑 -->
+    <resultMap id="CategoryResultMap" type="com.ssafy.orderme.kiosk.model.Category">
+        <id property="categoryId" column="category_id" />
+        <result property="storeId" column="store_id" />
+        <result property="categoryName" column="category_name" />
+        <result property="displayOrder" column="display_order" />
+        <result property="isActive" column="is_active" />
+        <result property="isDeleted" column="is_deleted" />
+        <result property="deletedAt" column="deleted_at" />
+    </resultMap>
+
+    <!-- 매장의 모든 카테고리 조회 -->
+    <select id="findAllByStoreId" parameterType="Long" resultMap="CategoryResultMap">
+        SELECT
+            category_id, store_id, category_name, display_order,
+            is_active, is_deleted, deleted_at
+        FROM categories
+        WHERE store_id = #{storeId}
+          AND is_deleted = FALSE
+          AND is_active = TRUE
+        ORDER BY display_order
+    </select>
+
+    <!-- 카테고리 ID로 카테고리 정보 조회 -->
+    <select id="findById" parameterType="Long" resultMap="CategoryResultMap">
+        SELECT
+            category_id, store_id, category_name, display_order,
+            is_active, is_deleted, deleted_at
+        FROM categories
+        WHERE category_id = #{categoryId}
+          AND is_deleted = FALSE
+    </select>
+</mapper>

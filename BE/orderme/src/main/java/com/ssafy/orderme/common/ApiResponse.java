@@ -1,46 +1,91 @@
 package com.ssafy.orderme.common;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.springframework.http.HttpStatus;
 
-@Data
-@Builder
+@Getter
 @NoArgsConstructor
-@AllArgsConstructor
 public class ApiResponse<T> {
     private int status;
     private boolean success;
     private String message;
     private T data;
 
-    public static <T> ApiResponse<T> success(String message, T data){
+    @Builder
+    public ApiResponse(int status, boolean success, String message, T data) {
+        this.status = status;
+        this.success = success;
+        this.message = message;
+        this.data = data;
+    }
+
+    public static <T> ApiResponse<T> success(String message, T data) {
         return ApiResponse.<T>builder()
-                .status(200)
+                .status(HttpStatus.OK.value())
                 .success(true)
                 .message(message)
                 .data(data)
                 .build();
     }
 
-    public static <T> ApiResponse<T> success(T data){
-        return success("요청이 성공했습니다.",data);
+    public static <T> ApiResponse<T> success(T data) {
+        return success("요청이 성공했습니다", data);
     }
 
-    public static ApiResponse<?> success(String message) {
+    public static <T> ApiResponse<T> success(String message) {
         return success(message, null);
     }
 
-    public static ApiResponse<?> error(int statusCode, String message) {
-        return ApiResponse.builder()
-                .status(statusCode)
+    public static <T> ApiResponse<T> success(HttpStatus httpStatus, String message, T data) {
+        return ApiResponse.<T>builder()
+                .status(httpStatus.value())
+                .success(true)
+                .message(message)
+                .data(data)
+                .build();
+    }
+
+    public static <T> ApiResponse<T> created(T data) {
+        return ApiResponse.<T>builder()
+                .status(HttpStatus.CREATED.value())
+                .success(true)
+                .message("리소스가 생성되었습니다")
+                .data(data)
+                .build();
+    }
+
+    public static <T> ApiResponse<T> created(String message, T data) {
+        return ApiResponse.<T>builder()
+                .status(HttpStatus.CREATED.value())
+                .success(true)
+                .message(message)
+                .data(data)
+                .build();
+    }
+
+    public static <T> ApiResponse<T> error(HttpStatus httpStatus, String message) {
+        return ApiResponse.<T>builder()
+                .status(httpStatus.value())
                 .success(false)
                 .message(message)
                 .data(null)
                 .build();
     }
 
-    public static ApiResponse<?> error(int statusCode, String message, Object errorData) {
-        return ApiResponse.builder()
-                .status(statusCode)
+    public static <T> ApiResponse<T> error(int status, String message) {
+        return ApiResponse.<T>builder()
+                .status(status)
+                .success(false)
+                .message(message)
+                .data(null)
+                .build();
+    }
+
+    public static <T> ApiResponse<T> error(int status, String message, T errorData) {
+        return ApiResponse.<T>builder()
+                .status(status)
                 .success(false)
                 .message(message)
                 .data(errorData)
