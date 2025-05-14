@@ -48,7 +48,7 @@ public class PaymentController {
         response.put("success", true);
         response.put("data", data);
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     // 주문 생성 (결제 준비)
