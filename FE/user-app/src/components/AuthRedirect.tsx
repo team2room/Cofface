@@ -14,6 +14,13 @@ export const AuthRedirect = () => {
       // 초기화되지 않았으면 초기화 수행
       if (!initialized) {
         await initialize()
+        return
+      }
+
+      // 이미 인증된 상태라면 추가 체크 불필요
+      if (isAuthenticated) {
+        setChecking(false)
+        return
       }
 
       // 액세스 토큰이 없지만 리프레시 토큰이 있는 경우 토큰 갱신 시도
@@ -21,7 +28,11 @@ export const AuthRedirect = () => {
       const refreshTokenValue = getCookie('refreshToken')
 
       if (!accessToken && refreshTokenValue) {
-        await refreshToken()
+        try {
+          await refreshToken()
+        } catch (error) {
+          console.log('토큰 갱신 실패:', error)
+        }
       }
 
       setChecking(false)

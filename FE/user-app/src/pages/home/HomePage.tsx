@@ -1,7 +1,7 @@
-import { HomeMainButton } from '@/features/home/components/HomeMainButton'
-import { HomeSelectDrinks } from '@/features/home/components/HomeSelectDrinks'
-import { HomeTitleLock } from '@/features/home/components/HomeTitleLock'
-import { HomeTitleUnlock } from '@/features/home/components/HomeTitleUnlock'
+import { HomeMainButton } from '@/features/home/components/home/HomeMainButton'
+import { HomeSelectDrinks } from '@/features/home/components/home/HomeSelectDrinks'
+import { HomeTitleLock } from '@/features/home/components/home/HomeTitleLock'
+import { HomeTitleUnlock } from '@/features/home/components/home/HomeTitleUnlock'
 import { HomeMainButtonProps } from '@/interfaces/HomeInterfaces'
 import { Text } from '@/styles/typography'
 import { Settings } from 'iconoir-react'
@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom'
 import phone from '@/assets/phone.png'
 import wallet from '@/assets/wallet.png'
 import scrollDown from '@/assets/scroll-down.gif'
+import { useAuthStore } from '@/stores/authStore'
 
 const Container = tw.div`
   w-full
@@ -25,7 +26,7 @@ const Container = tw.div`
 `
 
 const PageContainter = tw.div`
-  w-full h-screen overflow-hidden fixed top-0 left-0
+  w-full h-screen overflow-hidden fixed top-0 left-0 overscroll-none
 `
 
 // 스크롤 시 자연스럽게 움직이는 애니메이션 컨테이너
@@ -34,6 +35,7 @@ const SmoothScrollContainer = styled.div<{ isScrolled: boolean }>`
   transform: translateY(${(props) => (props.isScrolled ? '-100vh' : '0')});
   height: 100vh;
   will-change: transform;
+  overscroll-behavior: none;
 `
 
 const HomeNav = tw.div`
@@ -52,7 +54,8 @@ const ButtonWrapper = tw.div`
 `
 
 export default function HomePage() {
-  const name = '이혜령'
+  const { user } = useAuthStore()
+  const name = user?.name || '오늘도'
   const locked = false
 
   const [isScrolled, setIsScrolled] = useState(false)
@@ -189,20 +192,12 @@ export default function HomePage() {
           {locked ? <HomeTitleLock /> : <HomeTitleUnlock />}
           <HomeSelectDrinks locked={locked} />
           <ScrollDown onClick={handleScrollDown}>
-            <img
-              className="w-16"
-              src={scrollDown}
-              alt="스크롤 다운"
-            />
+            <img className="w-16" src={scrollDown} alt="스크롤 다운" />
           </ScrollDown>
         </Container>
         <Container>
           <ScrollUp onClick={handleScrollUp}>
-            <img
-              className="w-16"
-              src={scrollDown}
-              alt="스크롤 업"
-            />
+            <img className="w-16" src={scrollDown} alt="스크롤 업" />
           </ScrollUp>
           <ButtonWrapper>
             {mainButtonProps.map((buttonProps, index) => (

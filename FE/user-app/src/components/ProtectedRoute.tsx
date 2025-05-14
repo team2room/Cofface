@@ -17,6 +17,12 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     // 초기화되지 않았으면 초기화 수행
     if (!initialized) {
       initialize()
+      return
+    }
+
+    // 이미 인증된 상태면 추가 처리 불필요
+    if (isAuthenticated) {
+      return
     }
 
     // 액세스 토큰이 없지만 리프레시 토큰이 있는 경우

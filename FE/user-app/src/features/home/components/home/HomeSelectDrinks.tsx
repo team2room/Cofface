@@ -128,7 +128,7 @@ export function HomeSelectDrinks({ locked = false }: IsLockedProps) {
     },
   ]
 
-  // 5개의 얼음 정보 (각 얼음이 나타내는 방문 횟수 설정)
+  // 7개의 얼음 정보 (각 범위내 횟수별 얼음 위치)
   const iceInfo: IceInfo[] = useMemo(() => {
     return [
       {
@@ -152,20 +152,34 @@ export function HomeSelectDrinks({ locked = false }: IsLockedProps) {
         size: 48,
         rotate: 150,
       },
-      // {
-      //   id: 'ice-4',
-      //   visitCount: 20,
-      //   left: 60,
-      //   size: 42,
-      //   rotate: 220,
-      // },
-      // {
-      //   id: 'ice-5',
-      //   visitCount: 30,
-      //   left: 50,
-      //   size: 48,
-      //   rotate: 210,
-      // },
+      {
+        id: 'ice-4',
+        visitCount: 15,
+        left: 58,
+        size: 50,
+        rotate: 220,
+      },
+      {
+        id: 'ice-5',
+        visitCount: 20,
+        left: 40,
+        size: 52,
+        rotate: 180,
+      },
+      {
+        id: 'ice-6',
+        visitCount: 25,
+        left: 60,
+        size: 58,
+        rotate: 110,
+      },
+      {
+        id: 'ice-7',
+        visitCount: 27,
+        left: 40,
+        size: 40,
+        rotate: 200,
+      },
     ]
   }, [])
 

@@ -21,7 +21,6 @@ const InputSection = tw.div`
 const ConfirmButton = tw.button`
   bg-main hover:bg-hover text-white w-full p-2 mt-10 rounded-md disabled:bg-gray disabled:text-littleDarkGray
 `
-
 const ErrorMessage = tw.div`
   text-destructive text-sm mt-2 animate-fade-in
 `
@@ -170,7 +169,7 @@ export default function LoginConfirmPage() {
       )
 
       // 로그인 성공 시 홈 페이지로 이동
-      navigate('/home', { replace: true })
+      navigate('/home', { replace: true, state: null })
     } catch (err) {
       console.error('로그인 확인 실패:', err)
       setShowConfirmButton(false) // 오류 시 버튼 숨김
