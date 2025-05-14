@@ -7,7 +7,7 @@
         SELECT
             m.menu_id, m.menu_name, m.price, m.category_id,
             c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
-        FROM Menus m
+        FROM menus m
                  JOIN WeatherPreference wp ON m.menu_id = wp.menu_id
                  LEFT JOIN Categories c ON m.category_id = c.category_id
         WHERE wp.store_id = #{storeId}
@@ -20,7 +20,7 @@
 
     <!-- 날씨별 메뉴 선호도 업데이트 -->
     <update id="updateWeatherPreference">
-        INSERT INTO WeatherPreference (store_id, weather_condition, menu_id, order_count, last_updated)
+        INSERT INTO weatherpreference (store_id, weather_condition, menu_id, order_count, last_updated)
         VALUES (#{storeId}, #{weatherCondition}, #{menuId}, 1, NOW())
             ON DUPLICATE KEY UPDATE
                                  order_count = order_count + 1,
@@ -36,7 +36,7 @@
             menu_id as menuId,
             order_count as orderCount,
             last_updated as lastUpdated
-        FROM WeatherPreference
+        FROM weatherpreference
         WHERE store_id = #{storeId}
           AND weather_condition = #{weatherCondition}
         ORDER BY order_count DESC
