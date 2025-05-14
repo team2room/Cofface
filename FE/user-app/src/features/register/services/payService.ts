@@ -43,14 +43,28 @@ export const getCardCompany = async (
   }
 }
 
-export const deleteCard = async (cardId: string): Promise<any> => {
+export const deleteCard = async (paymentInfoId: number): Promise<any> => {
   try {
     const response = await apiRequester.delete(
-      `/api/auto-payments/card?paymentInfoId=${cardId}`,
+      `/api/auto-payments/card?paymentInfoId=${paymentInfoId}`,
     )
     return response.data
   } catch (error) {
     console.error('카드 삭제 중 오류 발생:', error)
+    throw error
+  }
+}
+
+export const changeDefaultCard = async (
+  paymentInfoId: number,
+): Promise<any> => {
+  try {
+    const response = await apiRequester.put('api/auto-payments/default-card', {
+      paymentInfoId: paymentInfoId,
+    })
+    return response.data
+  } catch (error) {
+    console.error('대표카드 변경 중 오류 발생:', error)
     throw error
   }
 }

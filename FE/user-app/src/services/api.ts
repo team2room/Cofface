@@ -7,9 +7,7 @@ const TOKEN_NAME = 'accessToken'
 
 // axios 인스턴스 생성
 const apiRequester: AxiosInstance = axios.create({
-  //NOTE - 목 api 때문에,, 나중에 수정하기
-  // baseURL: BASE_URL as string
-  baseURL: process.env.NODE_ENV === 'development' ? '' : (BASE_URL as string),
+  baseURL: BASE_URL as string,
   timeout: 5000,
 })
 
@@ -104,3 +102,35 @@ apiRequester.interceptors.response.use(
 )
 
 export default apiRequester
+
+// import axios, { AxiosInstance } from 'axios'
+
+// // axios 인스턴스 생성
+// const apiRequester: AxiosInstance = axios.create({
+//   baseURL: '', // 개발 환경에서는 빈 문자열로 설정하여 상대 경로 사용
+//   timeout: 5000,
+// })
+
+// // 디버깅용 인터셉터
+// apiRequester.interceptors.request.use(
+//   (config) => {
+//     console.log('API 요청:', config.method, config.url)
+//     return config
+//   },
+//   (error) => {
+//     return Promise.reject(error)
+//   },
+// )
+
+// apiRequester.interceptors.response.use(
+//   (response) => {
+//     console.log('API 응답 성공:', response.config.url, response.data)
+//     return response
+//   },
+//   (error) => {
+//     console.error('API 응답 오류:', error.config?.url, error)
+//     return Promise.reject(error)
+//   },
+// )
+
+// export default apiRequester

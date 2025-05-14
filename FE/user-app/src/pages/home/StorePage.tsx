@@ -80,6 +80,9 @@ export function StorePage() {
         ])
 
         console.log(`[StorePage] 매장 ${storeIdNum}의 데이터 요청 완료`)
+        console.log(`[StorePage] 스탬프 정보:`, stampData)
+        console.log(`[StorePage] 상위 주문:`, topOrdersData?.length || 0)
+        console.log(`[StorePage] 최근 주문:`, recentOrdersData?.length || 0)
 
         setStampInfo(stampData)
         setTopOrders(topOrdersData)

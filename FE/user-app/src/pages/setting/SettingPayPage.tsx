@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import tw from 'twin.macro'
 import { useCallback, useEffect, useState } from 'react'
 import {
+  changeDefaultCard,
   deleteCard,
   getCardInfo,
 } from '@/features/register/services/payService'
@@ -65,14 +66,11 @@ export function SettingPayPage() {
     }
   }
 
-  //TODO - 대표카드 설정 api 붙이기
   // 대표카드 설정
-  const handleSetAsDefault = async (cardId: string) => {
+  const handleSetAsDefault = async (cardId: number) => {
     try {
       // API 요청
-      // await apiRequester.put(
-      //   `/api/auto-payments/default?paymentInfoId=${cardId}`,
-      // )
+      await changeDefaultCard(cardId)
 
       // UI 즉시 업데이트 (로컬 상태 변경)
       setCards((prevCards) =>
@@ -88,7 +86,7 @@ export function SettingPayPage() {
   }
 
   // 카드 삭제
-  const handleDeleteCard = async (cardId: string) => {
+  const handleDeleteCard = async (cardId: number) => {
     try {
       setIsLoading(true)
       // API 요청

@@ -283,14 +283,6 @@ const mockRecentOrders: Record<number, RecentOrderInfo[]> = {
   ],
 }
 
-// API 응답 타입 정의
-// interface ApiResponse<T> {
-//   status: number
-//   success: boolean
-//   message: string
-//   data: T
-// }
-
 // API 요청을 가로채서 모킹 응답을 반환하는 핸들러 정의
 export const handlers = [
   // 방문 매장 목록 조회 API
@@ -300,18 +292,13 @@ export const handlers = [
     // 500ms 지연
     await new Promise((resolve) => setTimeout(resolve, 500))
 
-    // 이중 data 구조로 응답
-    return HttpResponse.json(
-      {
-        data: {
-          status: 200,
-          success: true,
-          message: '요청이 성공했습니다.',
-          data: mockVisitedStores,
-        },
-      },
-      { status: 200 },
-    )
+    // 단일 data 구조로 응답
+    return HttpResponse.json({
+      status: 200,
+      success: true,
+      message: '요청이 성공했습니다.',
+      data: mockVisitedStores,
+    })
   }),
 
   // 스탬프 정보 조회 API
@@ -321,37 +308,24 @@ export const handlers = [
 
     console.log(`[MSW] 스탬프 정보 요청 가로챔 - 매장 ID: ${storeId}`)
 
-    // 500ms 지연
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
     // 존재하는 매장 ID인지 확인
     if (!storeId || !mockStampInfos[storeId]) {
-      // 404 에러 응답 (이중 data 구조)
-      return HttpResponse.json(
-        {
-          data: {
-            status: 404,
-            success: false,
-            message: '스탬프 정보를 찾을 수 없습니다.',
-            data: null,
-          },
-        },
-        { status: 200 }, // 실제 HTTP 상태는 200으로 유지하고 내부 상태를 404로 설정
-      )
+      // 404 에러 응답 (단일 data 구조)
+      return HttpResponse.json({
+        status: 404,
+        success: false,
+        message: '스탬프 정보를 찾을 수 없습니다.',
+        data: null,
+      })
     }
 
-    // 성공 응답 (이중 data 구조)
-    return HttpResponse.json(
-      {
-        data: {
-          status: 200,
-          success: true,
-          message: '요청이 성공했습니다.',
-          data: mockStampInfos[storeId],
-        },
-      },
-      { status: 200 },
-    )
+    // 성공 응답 (단일 data 구조)
+    return HttpResponse.json({
+      status: 200,
+      success: true,
+      message: '요청이 성공했습니다.',
+      data: mockStampInfos[storeId],
+    })
   }),
 
   // 상위 주문 메뉴 조회 API
@@ -361,36 +335,23 @@ export const handlers = [
 
     console.log(`[MSW] 상위 주문 메뉴 요청 가로챔 - 매장 ID: ${storeId}`)
 
-    // 500ms 지연
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
     // ID가 없거나 해당 매장 정보가 없는 경우 빈 배열 반환 (이중 data 구조)
     if (!storeId || !mockTopOrders[storeId]) {
-      return HttpResponse.json(
-        {
-          data: {
-            status: 200,
-            success: true,
-            message: '요청이 성공했습니다.',
-            data: [],
-          },
-        },
-        { status: 200 },
-      )
+      return HttpResponse.json({
+        status: 200,
+        success: true,
+        message: '요청이 성공했습니다.',
+        data: [],
+      })
     }
 
     // 성공 응답 (이중 data 구조)
-    return HttpResponse.json(
-      {
-        data: {
-          status: 200,
-          success: true,
-          message: '요청이 성공했습니다.',
-          data: mockTopOrders[storeId],
-        },
-      },
-      { status: 200 },
-    )
+    return HttpResponse.json({
+      status: 200,
+      success: true,
+      message: '요청이 성공했습니다.',
+      data: mockTopOrders[storeId],
+    })
   }),
 
   // 최근 주문 내역 조회 API
@@ -400,36 +361,23 @@ export const handlers = [
 
     console.log(`[MSW] 최근 주문 내역 요청 가로챔 - 매장 ID: ${storeId}`)
 
-    // 500ms 지연
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
     // ID가 없거나 해당 매장 정보가 없는 경우 빈 배열 반환 (이중 data 구조)
     if (!storeId || !mockRecentOrders[storeId]) {
-      return HttpResponse.json(
-        {
-          data: {
-            status: 200,
-            success: true,
-            message: '요청이 성공했습니다.',
-            data: [],
-          },
-        },
-        { status: 200 },
-      )
+      return HttpResponse.json({
+        status: 200,
+        success: true,
+        message: '요청이 성공했습니다.',
+        data: [],
+      })
     }
 
     // 성공 응답 (이중 data 구조)
-    return HttpResponse.json(
-      {
-        data: {
-          status: 200,
-          success: true,
-          message: '요청이 성공했습니다.',
-          data: mockRecentOrders[storeId],
-        },
-      },
-      { status: 200 },
-    )
+    return HttpResponse.json({
+      status: 200,
+      success: true,
+      message: '요청이 성공했습니다.',
+      data: mockRecentOrders[storeId],
+    })
   }),
 ]
 // 서비스 워커 생성
@@ -442,7 +390,7 @@ export async function startMSW(): Promise<void> {
     try {
       // onUnhandledRequest 옵션을 추가하여 모든 요청 로깅
       await worker.start({
-        onUnhandledRequest: 'warn', // 가로채지 않은 요청에 대해 경고
+        onUnhandledRequest: 'bypass', // 가로채지 않은 요청에 대해 경고
         serviceWorker: {
           url: '/mockServiceWorker.js', // 서비스 워커 파일 경로 명시적 지정
         },

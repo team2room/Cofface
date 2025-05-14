@@ -65,13 +65,13 @@ export default function TopOrdersSection({ topOrders }: TopOrdersSectionProps) {
             <BadgeContainer>
               {getBadgeType(index) ? (
                 <Badge type={getBadgeType(index)!}>
-                  <Text variant="caption2" weight="bold" color="white">
+                  <Text variant="caption1" weight="bold" color="white">
                     {index + 1}
                   </Text>
                 </Badge>
               ) : (
                 <Text
-                  variant="caption2"
+                  variant="caption1"
                   weight="bold"
                   color="darkGray"
                   className="ml-2 mr-6"
@@ -79,7 +79,7 @@ export default function TopOrdersSection({ topOrders }: TopOrdersSectionProps) {
                   {index + 1}
                 </Text>
               )}
-              <Text variant="body1" weight="medium" color="darkGray">
+              <Text variant="body1" weight="medium" color="lightBlack">
                 {order.menuName}
               </Text>
             </BadgeContainer>

@@ -54,7 +54,6 @@ export default function LoginConfirmPage() {
 
   // 필수 정보가 없으면 로그인 페이지로 리다이렉트
   useEffect(() => {
-    console.log('LoginConfirmPage에서 location state 확인:', locationState)
     if (!locationState) {
       console.error('location.state가 없습니다')
       navigate('/login/verify', { replace: true })
@@ -148,16 +147,6 @@ export default function LoginConfirmPage() {
     }
 
     try {
-      console.log('인증 확인 요청 데이터:', {
-        verificationId: locationState.verificationId,
-        phoneNumber: locationState.phoneNumber,
-        verificationCode: code,
-        name: locationState.name,
-        idNumberFront: locationState.idNumberFront,
-        idNumberGender: locationState.idNumberGender,
-        password,
-      })
-
       await verifyLogin(
         locationState.verificationId,
         locationState.phoneNumber,

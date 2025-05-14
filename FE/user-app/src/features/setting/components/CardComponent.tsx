@@ -46,8 +46,8 @@ interface CardListProps {
   error: string | null
   onAddCard: () => void
   isSettingMode: boolean
-  onSetAsDefault: (cardId: string) => void
-  onDeleteCard: (cardId: string) => void
+  onSetAsDefault: (cardId: number) => void
+  onDeleteCard: (cardId: number) => void
 }
 
 export function CardList({
@@ -91,16 +91,12 @@ export function CardList({
         ? cards.map((card) => (
             <CardItemContainer key={card.paymentInfoId}>
               <div className="flex items-center gap-3">
-                <img
-                  src="https://picsum.photos/90/60"
-                  className="rounded-md"
-                  alt="카드 이미지"
-                />
+                <img src={card.imageUrl} className="w-8" alt="카드 이미지" />
                 <div className="flex flex-col gap-1">
                   <Text variant="body1" weight="bold">
-                    카드 ({getLastFourDigits(card.cardNumber)})
+                    {card.brand} 카드 ({getLastFourDigits(card.cardNumber)})
                   </Text>
-                  <Text variant="caption2" weight="semibold" color="littleDark">
+                  <Text variant="caption1" weight="semibold" color="littleDark">
                     {formatExpiryDate(card.cardExpiry)}
                   </Text>
                 </div>

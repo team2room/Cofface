@@ -47,8 +47,6 @@ export function useAuth() {
 
         setLoginInfo(newLoginInfo)
 
-        console.log('로그인 정보 저장:', newLoginInfo)
-
         // 인증번호 확인 페이지로 이동
         navigate('/login/confirm', { state: newLoginInfo })
 
@@ -128,7 +126,7 @@ export function useAuth() {
   )
 
   // 로그아웃
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     authStore.logout()
     navigate('/login', { replace: true })
   }, [authStore, navigate])

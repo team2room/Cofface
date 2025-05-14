@@ -5,6 +5,7 @@ import {
   loginRequest,
   loginConfirm,
   refreshTokens,
+  logoutRequest,
 } from '@/features/login/services/authService'
 import { setCookie, getCookie, removeCookie } from '@/utils/cookieAuth'
 
@@ -203,15 +204,21 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => {
-        removeCookie('accessToken')
-        removeCookie('refreshToken')
+      logout: async () => {
+        try {
+          await logoutRequest(getCookie('refreshToken'))
 
-        set({
-          user: null,
-          isAuthenticated: false,
-          error: null,
-        })
+          removeCookie('accessToken')
+          removeCookie('refreshToken')
+
+          set({
+            user: null,
+            isAuthenticated: false,
+            error: null,
+          })
+        } catch (error) {
+          console.log('로그아웃 중 에러', error)
+        }
       },
     }),
     {

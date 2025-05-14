@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import AuthRedirect from './components/AuthRedirect'
 import ProtectedRoute from './components/ProtectedRoute'
 import HomePage from './pages/home/HomePage'
@@ -14,22 +13,8 @@ import { SettingPage } from './pages/setting/SettingPage'
 import { SettingPayPage } from './pages/setting/SettingPayPage'
 import Fonts from './styles/fonts'
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
-// import { testMSW } from './mocks/testStore'
 
 function App() {
-  // 개발 환경에서 MSW 테스트 실행
-  // useEffect(() => {
-  //   if (process.env.NODE_ENV === 'development') {
-  //     // MSW가 정상적으로 작동하는지 테스트
-  //     testMSW().then((success) => {
-  //       if (success) {
-  //         console.log('MSW가 올바르게 설정되었습니다.')
-  //       } else {
-  //         console.warn('MSW 설정이 올바르지 않을 수 있습니다.')
-  //       }
-  //     })
-  //   }
-  // }, [])
   return (
     <>
       <Fonts />

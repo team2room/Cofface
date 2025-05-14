@@ -38,15 +38,15 @@ export default function OrderHistorySection({
       {recentOrders.length > 0 ? (
         recentOrders.map((order, index) => (
           <OrderItem key={index}>
-            <div className="flex gap-4 items-center">
-              <Text variant="caption1" weight="bold" color="lightBlack">
+            <div className="flex gap-5 items-center">
+              <Text variant="body1" weight="bold" color="lightBlack">
                 {formatDate(order.orderDate)}
               </Text>
-              <Text variant="caption1" weight="medium" color="darkGray">
+              <Text variant="body1" weight="medium" color="darkGray">
                 {order.orderSummary}
               </Text>
             </div>
-            <Text variant="caption1" weight="bold" color="lightBlack">
+            <Text variant="body1" weight="bold" color="lightBlack">
               {order.totalAmount.toLocaleString()} 원
             </Text>
           </OrderItem>

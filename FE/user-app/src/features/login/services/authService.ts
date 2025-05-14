@@ -7,34 +7,60 @@ import {
 } from '@/interfaces/LoginInterfaces'
 import { BASE_URL } from '@/config'
 import axios from 'axios'
+import apiRequester from '@/services/api'
 
 export const loginRequest = async (
   loginRequestProps: LoginRequestProps,
 ): Promise<LoginResponseProps> => {
-  const response = await axios.post(
-    `${BASE_URL}/api/auth/verify/request`,
-    loginRequestProps,
-  )
-  console.log('인증번호 요청 응답:', response.data.data)
-  return response.data.data
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/api/auth/verify/request`,
+      loginRequestProps,
+    )
+    return response.data.data
+  } catch (error) {
+    console.error('인증번호 요청 중 오류 발생:', error)
+    throw error
+  }
 }
 
 export const loginConfirm = async (
   loginConfirmProps: LoginConfirmProps,
 ): Promise<LoginConfirmResponseProps> => {
-  const response = await axios.post(
-    `${BASE_URL}/api/auth/verify/confirm`,
-    loginConfirmProps,
-  )
-  console.log('로그인 응답:', response.data)
-  return response.data.data
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/api/auth/verify/confirm`,
+      loginConfirmProps,
+    )
+    return response.data.data
+  } catch (error) {
+    console.error('로그인 중 오류 발생:', error)
+    throw error
+  }
 }
 
 export const refreshTokens = async (
   refreshToken: string,
 ): Promise<RefreshTokenResponseProps> => {
-  const response = await axios.post(`${BASE_URL}/api/auth/refresh`, {
-    refreshToken: refreshToken,
-  })
-  return response.data.data
+  try {
+    const response = await axios.post(`${BASE_URL}/api/auth/refresh`, {
+      refreshToken: refreshToken,
+    })
+    return response.data.data
+  } catch (error) {
+    console.error('토큰 리프레시 중 오류 발생:', error)
+    throw error
+  }
+}
+
+export const logoutRequest = async (refreshToken: string): Promise<any> => {
+  try {
+    const response = await apiRequester.post('/api/auth/logout', {
+      refreshToken: refreshToken,
+    })
+    return response.data
+  } catch (error) {
+    console.error('로그아웃 중 오류 발생:', error)
+    throw error
+  }
 }
