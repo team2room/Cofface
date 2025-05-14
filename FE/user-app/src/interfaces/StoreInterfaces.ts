@@ -27,7 +27,7 @@ export interface StampInfo {
   stampCount: number // 스탬프 수
   lastOrderId: number // 마지막 주문 아이디
   stampsRequired: number // 목표 스탬프 수
-  discountAmount: number // 스탬프 할인금액
+  discountAmount: number // 쿠폰 할인금액
   couponCount: number // 보유 쿠폰 수
   remainingStamps: number // 쿠폰까지 남은 스탬프 수
 }

@@ -1,5 +1,6 @@
 import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
+import { RecentOrderInfo } from '@/interfaces/StoreInterfaces'
 
 const Section = tw.div`
 `
@@ -10,11 +11,21 @@ const SectionHeader = tw.div`
 const OrderItem = tw.div`
   flex justify-between items-center px-2 py-1
 `
+interface OrderHistorySectionProps {
+  recentOrders: RecentOrderInfo[]
+}
 
-export default function OrderHistorySection() {
-  const orders = [
-    { date: '25.05.12', name: '아이스 아이스티 외 1종', price: 12800 },
-  ]
+export default function OrderHistorySection({
+  recentOrders,
+}: OrderHistorySectionProps) {
+  // 날짜 포맷 함수 (YY.MM.DD 형식으로 변환)
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const year = date.getFullYear().toString().substring(2) // YY
+    const month = String(date.getMonth() + 1).padStart(2, '0') // MM
+    const day = String(date.getDate()).padStart(2, '0') // DD
+    return `${year}.${month}.${day}`
+  }
 
   return (
     <Section>
@@ -24,21 +35,29 @@ export default function OrderHistorySection() {
         </Text>
       </SectionHeader>
 
-      {orders.map((order, index) => (
-        <OrderItem key={index}>
-          <div className="flex gap-4 items-center">
+      {recentOrders.length > 0 ? (
+        recentOrders.map((order, index) => (
+          <OrderItem key={index}>
+            <div className="flex gap-4 items-center">
+              <Text variant="caption1" weight="bold" color="lightBlack">
+                {formatDate(order.orderDate)}
+              </Text>
+              <Text variant="caption1" weight="medium" color="darkGray">
+                {order.orderSummary}
+              </Text>
+            </div>
             <Text variant="caption1" weight="bold" color="lightBlack">
-              {order.date}
+              {order.totalAmount.toLocaleString()} 원
             </Text>
-            <Text variant="caption1" weight="medium" color="darkGray">
-              {order.name}
-            </Text>
-          </div>
-          <Text variant="caption1" weight="bold" color="lightBlack">
-            {order.price.toLocaleString()} 원
+          </OrderItem>
+        ))
+      ) : (
+        <div className="py-4 flex justify-center">
+          <Text variant="caption1" color="darkGray">
+            최근 주문 내역이 없습니다.
           </Text>
-        </OrderItem>
-      ))}
+        </div>
+      )}
     </Section>
   )
 }

@@ -7,7 +7,7 @@ import apiRequester from '@/services/api'
 
 export const getRecentOrders = async (
   storeId: number,
-): Promise<RecentOrderInfo> => {
+): Promise<RecentOrderInfo[]> => {
   try {
     const response = await apiRequester.get(
       `/api/orders/recent?storeId=${storeId}`,
@@ -21,7 +21,7 @@ export const getRecentOrders = async (
 
 export const getTopOrders = async (
   storeId: number,
-): Promise<TopOrderMenuInfo> => {
+): Promise<TopOrderMenuInfo[]> => {
   try {
     const response = await apiRequester.get(
       `/api/user-orders/top-menus?storeId=${storeId}`,

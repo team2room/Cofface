@@ -2,6 +2,7 @@ import { Text } from '@/styles/typography'
 import tw from 'twin.macro'
 import styled from '@emotion/styled'
 import { colors } from '@/styles/colors'
+import { StampInfo } from '@/interfaces/StoreInterfaces'
 
 const Section = tw.div`
   mb-4
@@ -20,14 +21,18 @@ const ProgressBar = styled.div<{ width: number }>`
 const ProgressLabels = tw.div`
   flex justify-between items-center
 `
-const StampInfo = tw.div`
+const StampWrapper = tw.div`
   text-end my-1
 `
+interface StampSectionProps {
+  stampInfo: StampInfo
+}
 
-export default function StampSection() {
-  const currentStamps = 8
-  const maxStamps = 10
+export default function StampSection({ stampInfo }: StampSectionProps) {
+  const currentStamps = stampInfo.stampCount
+  const maxStamps = stampInfo.stampsRequired
   const progressPercentage = (currentStamps / maxStamps) * 100
+  const remainingStamps = stampInfo.remainingStamps
 
   return (
     <Section>
@@ -60,11 +65,13 @@ export default function StampSection() {
           </Text>
         </ProgressLabels>
       </div>
-      <StampInfo>
+      <StampWrapper>
         <Text variant="caption2" color="darkGray">
-          2잔 더 마시면 아메리카노 무료 쿠폰을 드려요
+          {remainingStamps > 0
+            ? `${remainingStamps}잔 더 마시면 아메리카노 무료 쿠폰을 드려요`
+            : '무료 쿠폰 사용 가능합니다!'}
         </Text>
-      </StampInfo>
+      </StampWrapper>
     </Section>
   )
 }

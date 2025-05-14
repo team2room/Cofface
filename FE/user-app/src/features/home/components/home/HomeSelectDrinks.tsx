@@ -119,11 +119,12 @@ interface IsLockedProps {
 export function HomeSelectDrinks({ locked = false }: IsLockedProps) {
   const navigate = useNavigate()
   const [selectedDrink, setSelectedDrink] = useState('strawberry')
-  const { visitedStores, selectedStore, fetchVisitedStores, selectStore } =
+  const { visitedStores, fetchVisitedStores, selectStore } =
     useVisitedStoreStore()
 
   // 방문 매장 정보 가져오기
   useEffect(() => {
+    console.log('[HomeSelectDrinks] 방문 매장 정보 가져오기 시작')
     fetchVisitedStores()
   }, [fetchVisitedStores])
 
@@ -247,18 +248,19 @@ export function HomeSelectDrinks({ locked = false }: IsLockedProps) {
 
   // 방문 매장 페이지로 이동
   const navigateToStore = (storeId: number) => {
-    if (locked) return // 잠금 상태에서는 이동 불가
-    navigate(`/store/${storeId}`)
-  }
+    console.log(`[HomeSelectDrinks] 매장 ${storeId}로 이동 시작`)
 
-  // 방문 횟수에 따라 표시할 얼음 결정
-  const getVisibleIceInfo = (visitCount: number) => {
-    if (visitCount <= 0) return null
-    const ice = iceInfo.find(
-      (ice) =>
-        visitCount >= ice.minVisitCount && visitCount <= ice.maxVisitCount,
-    )
-    return ice || null
+    if (locked) {
+      console.log('[HomeSelectDrinks] 잠금 상태: 이동 불가')
+      return // 잠금 상태에서는 이동 불가
+    }
+
+    // 선택한 매장 정보를 스토어에 저장
+    selectStore(storeId)
+
+    // 매장 상세 페이지로 이동
+    console.log(`[HomeSelectDrinks] 매장 ID: ${storeId}로 네비게이션 실행`)
+    navigate(`/store/${storeId}`)
   }
 
   // 각 얼음 단계에 해당하는 매장 찾기

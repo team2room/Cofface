@@ -1,6 +1,7 @@
 import tw from 'twin.macro'
 import styled from '@emotion/styled'
 import { Text } from '@/styles/typography'
+import { TopOrderMenuInfo } from '@/interfaces/StoreInterfaces'
 
 const Section = tw.div`
   mb-6
@@ -35,14 +36,20 @@ const TopItemWrapper = tw.div`
   border border-light border-4 rounded-lg px-4 py-2
 `
 
-export default function TopOrdersSection() {
-  const topOrders = [
-    { rank: 1, name: '아이스 아메리카노', count: 10, badge: 'gold' },
-    { rank: 2, name: '아이스 카페라떼', count: 5, badge: 'silver' },
-    { rank: 3, name: '아이스티 샷추가', count: 3, badge: 'bronze' },
-    { rank: 4, name: '페퍼민트티 샷추가', count: 1 },
-    { rank: 5, name: '버터크림라떼', count: 1 },
-  ]
+interface TopOrdersSectionProps {
+  topOrders: TopOrderMenuInfo[]
+}
+
+export default function TopOrdersSection({ topOrders }: TopOrdersSectionProps) {
+  // 배지 타입 결정 함수
+  const getBadgeType = (
+    index: number,
+  ): 'gold' | 'silver' | 'bronze' | undefined => {
+    if (index === 0) return 'gold'
+    if (index === 1) return 'silver'
+    if (index === 2) return 'bronze'
+    return undefined
+  }
 
   return (
     <Section>
@@ -53,13 +60,13 @@ export default function TopOrdersSection() {
       </SectionHeader>
 
       <TopItemWrapper>
-        {topOrders.map((order) => (
-          <TopItem key={order.rank}>
+        {topOrders.slice(0, 5).map((order, index) => (
+          <TopItem key={index}>
             <BadgeContainer>
-              {order.badge ? (
-                <Badge type={order.badge as 'gold' | 'silver' | 'bronze'}>
+              {getBadgeType(index) ? (
+                <Badge type={getBadgeType(index)!}>
                   <Text variant="caption2" weight="bold" color="white">
-                    {order.rank}
+                    {index + 1}
                   </Text>
                 </Badge>
               ) : (
@@ -69,15 +76,15 @@ export default function TopOrdersSection() {
                   color="darkGray"
                   className="ml-2 mr-6"
                 >
-                  {order.rank}
+                  {index + 1}
                 </Text>
               )}
               <Text variant="body1" weight="medium" color="darkGray">
-                {order.name}
+                {order.menuName}
               </Text>
             </BadgeContainer>
             <Text variant="body1" weight="bold" color="main">
-              {order.count}회
+              {order.totalCount}회
             </Text>
           </TopItem>
         ))}
