@@ -5,7 +5,7 @@ import { preparePayment, getClientKey } from '../api/paymentApi';
 import { isAuthenticated, getUser } from '../utils/authUtils';
 import '../styles/Payment.css';
 
-const TOSS_PAYMENTS_TEST_CLIENT_KEY = process.env.REACT_APP_TOSS_CLIENT_KEY || 'test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq';
+const TOSS_PAYMENTS_TEST_CLIENT_KEY = process.env.REACT_APP_TOSS_CLIENT_KEY || 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm';
 
 // 테스트용 상품 데이터
 const TEST_PRODUCTS = [
