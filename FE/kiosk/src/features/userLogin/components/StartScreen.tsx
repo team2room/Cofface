@@ -4,7 +4,13 @@ import CustomDialog from '@/components/CustomDialog'
 import { useState } from 'react'
 import { useLoginStore, useUserStore } from '@/stores/loginStore'
 import { useNavigate } from 'react-router-dom'
-import { usePhoneLogin } from '../hooks/usePhoneLogin'
+import { useLogin } from '../hooks/useLogin'
+import {
+  faceRecogRequest,
+  genderAgeRequest,
+} from '../services/faceRecogService'
+import { maskName } from '@/utils/maskUserName'
+import { useWeather } from '../hooks/useWearher'
 
 const TopLeftText = tw.div`
   absolute top-4 left-6 z-50
@@ -14,15 +20,9 @@ const ImageWrapper = tw.div`
   w-full my-8 flex justify-center items-center
 `
 
-// 풀 배경
 const FullImg = tw.img`
   absolute top-0 left-0 w-full h-full object-cover
 `
-
-// 중간 배경
-// const MiddleImg = tw.img`
-//   absolute top-40 w-[908px] h-[1224px] object-cover
-// `
 
 const ButtonGroup = tw.div`
   absolute bottom-40 w-full flex justify-center gap-20 z-10
@@ -35,7 +35,8 @@ const Button = tw.button`
 
 export default function StartScreen() {
   const navigate = useNavigate()
-  const { login } = usePhoneLogin()
+  useWeather()
+  const { phoneNumLogin, faceLogin } = useLogin()
 
   type ModalState = 'waiting' | 'success' | 'failure' | 'phone'
   const [modalState, setModalState] = useState<ModalState>('waiting')
@@ -43,6 +44,7 @@ export default function StartScreen() {
 
   const phoneNumber = useLoginStore((state) => state.phoneNumber)
   const resetPhoneNumber = useLoginStore((state) => state.resetPhoneNumber)
+  const user = useUserStore((state) => state.user)
 
   let modalContent
 
@@ -70,7 +72,7 @@ export default function StartScreen() {
       ),
       description: {
         waiting: '우측 단말기에\n얼굴을 인식해 주세요!',
-        success: '이*환님\n맞으신가요?',
+        success: `${maskName(user?.name || '')}님\n맞으신가요?`,
         failure: '인식을 실패했어요',
       }[modalState],
       icon: {
@@ -85,15 +87,34 @@ export default function StartScreen() {
 
   const handlePhoneLogin = async () => {
     try {
-      await login(phoneNumber)
+      await phoneNumLogin(phoneNumber)
       resetPhoneNumber()
       setShowModal(false)
-      setModalState('waiting')
-      alert('전화번호가 일치합니다')
-      navigate('/order')
+      setModalState('success')
     } catch (err) {
       resetPhoneNumber()
       alert('일치하는 전화번호가 없습니다')
+    }
+  }
+
+  const handleFaceLogin = async () => {
+    try {
+      const { phone_number } = await faceRecogRequest()
+      await faceLogin(phone_number)
+      setModalState('success')
+    } catch (err) {
+      console.error('얼굴 로그인 실패:', err)
+      setModalState('failure')
+    }
+  }
+
+  const handleGuestOrder = async () => {
+    try {
+      const { age, gender } = await genderAgeRequest()
+      useUserStore.getState().setGuestInfo({ age, gender })
+      navigate('/order')
+    } catch (err) {
+      alert('비회원 얼굴 분석에 실패했습니다.')
     }
   }
 
@@ -110,7 +131,12 @@ export default function StartScreen() {
       </TopLeftText>
 
       <ButtonGroup>
-        <Button onClick={() => setShowModal(true)}>
+        <Button
+          onClick={() => {
+            setShowModal(true)
+            handleFaceLogin()
+          }}
+        >
           <Text variant="title4" weight="extrabold" color="main">
             ORDER.ME
           </Text>
@@ -119,12 +145,7 @@ export default function StartScreen() {
             회원 주문
           </Text>
         </Button>
-        <Button
-          onClick={() => {
-            useUserStore.getState().setGuest()
-            navigate('/order')
-          }}
-        >
+        <Button onClick={handleGuestOrder}>
           <Text variant="title2" weight="bold">
             비회원 주문
           </Text>
