@@ -9,35 +9,56 @@ import java.util.List;
 @Mapper
 public interface RecommendationMapper {
 
-    List<Menu> findPopularMenusByGenderAndAge(@Param("storeId") Integer storeId,
-                                              @Param("gender") String gender,
-                                              @Param("ageGroup") Integer ageGroup,
-                                              @Param("limit") int limit);
+    // 성별과 나이대 기반 인기 메뉴 조회 (새로운 메소드)
+    List<Menu> findPopularMenusByGenderAndAgeRange(
+            @Param("storeId") Integer storeId,
+            @Param("gender") String gender,
+            @Param("minAge") Integer minAge,
+            @Param("maxAge") Integer maxAge,
+            @Param("limit") Integer limit);
 
-    /**
-     * 매장에서 가장 인기 있는 메뉴 목록 조회
-     */
-    List<Menu> findMostPopularMenus(@Param("storeId") Integer storeId,
-                                    @Param("limit") int limit);
+    // 기존 메소드들 유지
+    List<Menu> findPopularMenusByGenderAndAge(
+            @Param("storeId") Integer storeId,
+            @Param("gender") String gender,
+            @Param("ageGroup") Integer ageGroup,
+            @Param("limit") int limit);
 
-    /**
-     * 사용자 선호도 기반 메뉴 조회 (회원일 경우)
-     */
-    List<Menu> findUserPreferredMenus(@Param("storeId") Integer storeId,
-                                      @Param("userId") String userId,  // Long -> String
-                                      @Param("limit") int limit);
+    List<Menu> findMostPopularMenus(
+            @Param("storeId") Integer storeId,
+            @Param("limit") int limit);
 
-    void updateMenuPopularity(@Param("menuId") Integer menuId,
-                              @Param("storeId") Integer storeId);
+    List<Menu> findUserPreferredMenus(
+            @Param("storeId") Integer storeId,
+            @Param("userId") String userId,
+            @Param("limit") int limit);
 
-    void updateGenderAgePreference(@Param("menuId") Integer menuId,
-                                   @Param("storeId") Integer storeId,
-                                   @Param("gender") String gender,
-                                   @Param("ageGroup") String ageGroup);
+    void updateMenuPopularity(
+            @Param("menuId") Integer menuId,
+            @Param("storeId") Integer storeId);
 
-    /**
-     * 사용자 개인 선호도 업데이트
-     */
-    void updateUserPreference(@Param("menuId") Integer menuId,
-                              @Param("userId") String userId);  // Long -> String
+    void updateGenderAgePreference(
+            @Param("menuId") Integer menuId,
+            @Param("storeId") Integer storeId,
+            @Param("gender") String gender,
+            @Param("ageGroup") String ageGroup);
+
+    void updateUserPreference(
+            @Param("menuId") Integer menuId,
+            @Param("userId") String userId);
+
+    // 날씨, 성별, 나이대 기반 인기 메뉴 조회 (새로운 메소드)
+    List<Menu> findPopularMenusByWeatherGenderAndAgeRange(
+            @Param("storeId") Integer storeId,
+            @Param("weather") String weather,
+            @Param("gender") String gender,
+            @Param("minAge") Integer minAge,
+            @Param("maxAge") Integer maxAge,
+            @Param("limit") Integer limit);
+
+    // 날씨만 기준으로 인기 메뉴 조회 (새로 추가)
+    List<Menu> findPopularMenusByWeatherOnly(
+            @Param("storeId") Integer storeId,
+            @Param("weather") String weather,
+            @Param("limit") int limit);
 }

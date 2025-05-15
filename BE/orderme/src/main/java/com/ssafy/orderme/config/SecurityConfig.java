@@ -35,17 +35,17 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http, JwtTokenProvider jwtTokenProvider) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // 여기를 수정
+                .cors(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/verify/**").permitAll()
                         .requestMatchers("/api/auth/admin/**").permitAll()
+                        .requestMatchers("/api/kiosk/**").permitAll()
+                        .requestMatchers("/api/admin/**").permitAll()
                         .requestMatchers("/api/auth/kiosk/phone-login").permitAll()
                         .requestMatchers("/api/auth/kiosk/face-login").permitAll()
                         .requestMatchers("/api/auth/refresh").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/api/payments/**").permitAll()
-                        .requestMatchers("/api/kiosk/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 // 필터를 직접 생성하여 추가
@@ -73,8 +73,8 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "http://localhost:8080",
                 "http://localhost:5173", // 프론트엔드 개발 서버
-                "https://app.orderme.store",
-                "https://kiosk.orderme.store",
+                "https://orderme.poloceleste.site",
+                "https://orderadme.poloceleste.site",
                 "http://k12e202.p.ssafy.io"
         ));
 
@@ -98,3 +98,4 @@ public class SecurityConfig {
         return source;
     }
 }
+

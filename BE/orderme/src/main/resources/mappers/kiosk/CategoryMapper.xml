@@ -34,4 +34,39 @@
         WHERE category_id = #{categoryId}
           AND is_deleted = FALSE
     </select>
+
+    <select id="getCategoriesForPreferredMenus" resultType="java.util.Map">
+        SELECT
+            category_id as categoryId,
+            category_name as categoryName
+        FROM
+            categories
+        WHERE
+            category_id IN (
+                SELECT DISTINCT category_id
+                FROM Menus
+                WHERE menu_name IN (
+                                    '아메리카노',
+                                    '카페라떼',
+                                    '카라멜 마끼아또',
+                                    '자몽 에이드',
+                                    '레몬 에이드',
+                                    '레모네이드',
+                                    '딸기 주스',
+                                    '아이스 초코',
+                                    '딸기 라떼',
+                                    '녹차 라떼',
+                                    '블루베리 요거트 스무디',
+                                    '민트 프라페',
+                                    '딸기 쿠키 프라페',
+                                    '유자차',
+                                    '자몽차',
+                                    '녹차'
+                    )
+            )
+          AND
+            is_deleted = false
+        ORDER BY
+            category_id
+    </select>
 </mapper>
