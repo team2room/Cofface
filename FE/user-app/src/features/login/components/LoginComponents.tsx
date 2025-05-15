@@ -197,15 +197,40 @@ export function PhoneInputField({
     onChange(inputValue)
 
     if (inputValue.length >= 11) {
-      if (onComplete) {
-        onComplete()
+      // 입력 필드에서 포커스 해제하여 키보드 내리기
+      if (inputRef && inputRef.current) {
+        inputRef.current.blur()
       }
+
+      // 현재 활성화된 요소가 있다면 포커스 해제 (키보드 내림)
+      document.activeElement instanceof HTMLElement &&
+        document.activeElement.blur()
+
+      // 약간의 지연 후 모달 표시 (키보드가 내려가는 시간 고려)
+      setTimeout(() => {
+        if (onComplete) {
+          onComplete()
+        }
+      }, 100)
     }
   }
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && value.length >= 11 && onComplete) {
-      onComplete()
+    if (e.key === 'Enter' && value.length >= 11) {
+      // 엔터 키 누를 때도 포커스 해제
+      if (inputRef && inputRef.current) {
+        inputRef.current.blur()
+      }
+
+      // 현재 활성화된 요소가 있다면 포커스 해제 (키보드 내림)
+      document.activeElement instanceof HTMLElement &&
+        document.activeElement.blur()
+
+      // 약간의 지연 후 모달 표시 (키보드가 내려가는 시간 고려)
+      setTimeout(() => {
+        if (onComplete) {
+          onComplete()
+        }
+      }, 100)
     }
   }
 

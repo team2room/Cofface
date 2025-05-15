@@ -8,10 +8,10 @@ const InputWrapper = tw.div`
   w-full border border-gray rounded-md p-2 flex justify-between
 `
 const TimerContainer = tw.div`
-  flex items-center gap-3
+  flex items-center gap-2 shrink-0
 `
 const ResendButton = tw.button`
-  border border-gray rounded-md px-2 py-1 shrink-0 flex
+  border border-gray rounded-md px-1.5 py-1 shrink-0 text-center min-w-max flex
 `
 const StyledInput = styled.input`
   ${tw`border-none outline-none`}
