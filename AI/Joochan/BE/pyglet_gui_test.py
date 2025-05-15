@@ -1,8 +1,8 @@
-import time, os, argparse, pickle
+import time, os, argparse, pickle, pytz
 import threading, queue, traceback
 import requests, base64
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import cv2, pyglet
 import numpy as np
@@ -31,7 +31,7 @@ class FaceRecognitionResponse(BaseModel):
 
 def parse_args():
     parser = argparse.ArgumentParser(description='RealSense 얼굴 라이브니스 및 3D 임베딩')
-    parser.add_argument('--save_dir', type=str, default='embeddings', 
+    parser.add_argument('--save_dir', type=str, default='embeddings',
                         help='임베딩을 저장할 디렉토리')
     parser.add_argument('--width', type=int, default=640, help='카메라 너비')
     parser.add_argument('--height', type=int, default=480, help='카메라 높이')
@@ -951,7 +951,6 @@ class RealSenseFaceLiveness:
             "collection_time": collection_time,
             "live_ratio": live_ratio,  # 라이브니스 비율 추가
             "message": f"얼굴 인식 성공 (신뢰도: {live_ratio:.2f}, 프레임: {len(all_face_results)}개, 실제 여부: {'실제' if is_live_person else '가짜'})",
-            "weather": get_weather()
         }
         
         print(f"API 결과: {self.api_result}")
@@ -1458,6 +1457,11 @@ class FaceRecognitionServer:
         self.api = FastAPI(title="RealSense 얼굴 인식 API")
         self.setup_routes()
         self.server_thread = None
+        self.weather_cache = {
+            "data": None,
+            "last_update": None
+        }
+    
     
     def setup_routes(self):
         @self.api.get("/")
@@ -1641,7 +1645,6 @@ class FaceRecognitionServer:
                     # 결과 반환
                     result = {
                         **verification_result,  # 서버 응답 모든 필드 포함
-                        "weather": get_weather()
                     }
                 else:
                     print(f"서버 오류 응답: {response.status_code}, {response.text}")
@@ -1659,6 +1662,44 @@ class FaceRecognitionServer:
                 }
             
             background_tasks.add_task(self.delayed_camera_off, 0.1)
+            
+            return result
+        
+        @self.api.get("/weather")
+        async def weather_get():
+            korea_timezone = pytz.timezone('Asia/Seoul')
+            now = datetime.now(korea_timezone)
+            
+            # 앱 상태에서 캐시 접근
+            cache = self.weather_cache
+            
+            # 캐시된 데이터가 없거나 마지막 업데이트 후 1시간 이상 지났으면 새로 요청
+            if (cache["data"] is None or 
+                cache["last_update"] is None or 
+                now - cache["last_update"] > timedelta(hours=1)):
+                
+                try:
+                    # 새로운 날씨 데이터 가져오기
+                    weather_data = get_weather()
+                    
+                    # 캐시 업데이트
+                    cache["data"] = weather_data
+                    cache["last_update"] = now
+                    
+                    print(f"날씨 API 호출 - 새로운 데이터: {now}")
+                except Exception as e:
+                    print(f"날씨 API 호출 실패: {e}")
+                    # 캐시된 데이터가 있으면 기존 데이터 사용
+                    if cache["data"] is not None:
+                        print("오류 발생 - 캐시된 데이터 사용")
+            else:
+                print(f"캐시된 날씨 데이터 사용 (마지막 업데이트: {cache['last_update']})")
+            
+            result = {
+                "timestamp": now,
+                "weather": cache["data"],
+                "cached": cache["last_update"] != now
+            }
             
             return result
         
@@ -1791,7 +1832,25 @@ class FaceRecognitionServer:
         await asyncio.sleep(delay)
         self.app_instance.set_camera_mode(False)
     
+    def load_initial_weather(self):
+        """날씨 데이터 초기 로드"""
+        korea_timezone = pytz.timezone('Asia/Seoul')
+        now = datetime.now(korea_timezone)
+        
+        try:
+            # 초기 날씨 데이터 가져오기
+            weather_data = get_weather()
+            
+            # 캐시 업데이트
+            self.weather_cache["data"] = weather_data
+            self.weather_cache["last_update"] = now
+            
+            print(f"서버 시작 - 날씨 데이터 초기 로드 완료: {now}")
+        except Exception as e:
+            print(f"서버 시작 - 날씨 데이터 초기 로드 실패: {e}")
+    
     def start_server(self):
+        self.load_initial_weather()
         """별도 스레드에서 FastAPI 서버 시작"""
         def run_server():
             uvicorn.run(self.api, host="0.0.0.0", port=self.port)
