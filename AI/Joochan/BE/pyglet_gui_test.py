@@ -1545,7 +1545,7 @@ class FaceRecognitionServer:
             
             # 얼굴이 감지되지 않은 경우
             if not api_result.get('face_detected', False):
-                background_tasks.add_task(self.delayed_camera_off, 2.0)
+                background_tasks.add_task(self.delayed_camera_off, 0.2)
                 return api_result
             
             # 라이브니스 비율 확인
@@ -1557,7 +1557,7 @@ class FaceRecognitionServer:
             
             # 10개 이상의 라이브 프레임이 필요
             if live_frames < 10:
-                background_tasks.add_task(self.delayed_camera_off, 2.0)
+                background_tasks.add_task(self.delayed_camera_off, 0.2)
                 return {
                     "success": False,
                     "message": f"실제 얼굴 프레임이 부족합니다. 필요: 10개, 감지됨: {live_frames}개",
