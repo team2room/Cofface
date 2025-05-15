@@ -42,7 +42,6 @@ public class RecommendationController {
             @RequestParam(required = false) List<Integer> excludeMenuIds,
             @RequestParam String weather) {
 
-        List<MenuResponse> personalizedMenus;
         List<RecommendedMenuGroup> recommendedGroups = new ArrayList<>();
 
         // 사용자 ID, 나이, 성별 정보
@@ -89,26 +88,21 @@ public class RecommendationController {
             return ApiResponse.error(HttpStatus.BAD_REQUEST, "비회원의 경우 gender와 age 파라미터가 필요합니다.");
         }
 
-        // 1. 첫 번째 추천 메뉴 (개인화 또는 인기 메뉴)
+        // 1. 첫 번째 추천 메뉴 - 실제 주문 데이터 기반 (ordermenu, orderoption)
         String reason1;
+        List<MenuDetailResponse> personalizedMenuDetails;
+
         if (isGuest) {
-            // 비회원인 경우: 매장에서 가장 많이 팔린 메뉴
-            personalizedMenus = recommendationService.getMostPopularMenus(storeId, excludeMenuIds);
-            reason1 = "매장 인기 메뉴"; // 비회원은 인기 메뉴 기준
+            // 비회원: 전체 인기 주문 옵션 기반
+            personalizedMenuDetails = recommendationService.getMenusWithPopularOptions(
+                    storeId, null, null, null, null, excludeMenuIds);
+            reason1 = "매장 인기 메뉴 & 옵션";
         } else {
-            // 회원인 경우: 사용자 선호도 기반 메뉴 (현재는 인기 메뉴로 대체)
-            personalizedMenus = recommendationService.getUserPreferredMenus(storeId, userId, excludeMenuIds);
-            reason1 = "회원님의 선호 메뉴"; // 회원은 개인 선호도 기준
+            // 회원: 사용자의 주문 기록 기반
+            personalizedMenuDetails = recommendationService.getMenusWithPopularOptions(
+                    storeId, userId, null, null, null, excludeMenuIds);
+            reason1 = "회원님이 선호하는 메뉴 & 옵션";
         }
-
-        // MenuResponse에서 menuId 추출
-        List<Integer> personalizedMenuIds = personalizedMenus.stream()
-                .map(MenuResponse::getMenuId)
-                .collect(Collectors.toList());
-
-        // 상세 정보가 포함된 MenuDetailResponse 가져오기
-        List<MenuDetailResponse> personalizedMenuDetails =
-                recommendationService.getMenuDetailsByIds(personalizedMenuIds);
 
         // 첫 번째 추천 그룹 추가
         recommendedGroups.add(RecommendedMenuGroup.builder()
@@ -117,29 +111,20 @@ public class RecommendationController {
                 .menus(personalizedMenuDetails)
                 .build());
 
-        // 2. 두 번째 추천 메뉴 (성별/나이 기반)
-        // 이전에 추천된 메뉴를 제외하고 조회
+        // 이미 추천된 메뉴 ID 목록 업데이트
         List<Integer> updatedExcludeIds = new ArrayList<>();
         if (excludeMenuIds != null) {
             updatedExcludeIds.addAll(excludeMenuIds);
         }
-        updatedExcludeIds.addAll(personalizedMenuIds);
+        updatedExcludeIds.addAll(personalizedMenuDetails.stream()
+                .map(menu -> menu.getMenuId().intValue())
+                .collect(Collectors.toList()));
 
-        // 성별 및 나이대 기반 인기 메뉴 조회
-        List<MenuResponse> genderAgeMenus = recommendationService.getMenusByGenderAndAgeRange(
-                storeId, userGender, userAge, updatedExcludeIds);
+        // 2. 두 번째 추천 메뉴 (성별/나이 기반 + 주문 옵션)
+        List<MenuDetailResponse> genderAgeMenuDetails = recommendationService.getMenusWithPopularOptions(
+                storeId, null, userGender, userAge, null, updatedExcludeIds);
 
-        // MenuResponse에서 menuId 추출
-        List<Integer> genderAgeMenuIds = genderAgeMenus.stream()
-                .map(MenuResponse::getMenuId)
-                .collect(Collectors.toList());
-
-        // 상세 정보가 포함된 MenuDetailResponse 가져오기
-        List<MenuDetailResponse> genderAgeMenuDetails =
-                recommendationService.getMenuDetailsByIds(genderAgeMenuIds);
-
-        // 두 번째 추천 그룹 추가 (성별/나이 기반)
-        // 안전하게 처리 - userGender가 null이 아닐 때만 변환
+        // 두 번째 추천 그룹 추가
         String genderDisplay = userGender != null ?
                 (userGender.equalsIgnoreCase("male") || userGender.equalsIgnoreCase("남성") ? "남" : "여") : "미정";
         String reason2 = "[" + userAge + ", " + genderDisplay + "]";
@@ -150,48 +135,31 @@ public class RecommendationController {
                 .menus(genderAgeMenuDetails)
                 .build());
 
-        // 3. 세 번째 추천 메뉴 (날씨, 성별, 나이 기반)
-        // 이전에 추천된 메뉴 IDs를 excludeMenuIds에 추가
-        List<Integer> finalExcludeIds = new ArrayList<>();
-        if (excludeMenuIds != null) {
-            finalExcludeIds.addAll(excludeMenuIds);
-        }
-        finalExcludeIds.addAll(personalizedMenuIds);
-        finalExcludeIds.addAll(genderAgeMenuIds);
+        // 최종 제외 목록 업데이트
+        List<Integer> finalExcludeIds = new ArrayList<>(updatedExcludeIds);
+        finalExcludeIds.addAll(genderAgeMenuDetails.stream()
+                .map(menu -> menu.getMenuId().intValue())
+                .collect(Collectors.toList()));
 
-        // 로그를 추가하여 실제 값을 확인
+        // 3. 세 번째 추천 메뉴 (날씨, 성별, 나이 기반 + 주문 옵션)
+        List<MenuDetailResponse> weatherGenderAgeMenuDetails = recommendationService.getMenusWithPopularOptions(
+                storeId, null, userGender, userAge, weather, finalExcludeIds);
+
+        // 로그로 결과 확인
         System.out.println("날씨: " + weather);
         System.out.println("성별: " + userGender);
         System.out.println("나이: " + userAge);
-
-        // 날씨, 성별, 나이대 기반 인기 메뉴 조회
-        List<MenuResponse> weatherGenderAgeMenus = recommendationService.getMenusByWeatherGenderAndAgeRange(
-                storeId, weather, userGender, userAge, finalExcludeIds);
-
-        // 로그로 결과 확인
-        System.out.println("날씨/성별/나이 기반 추천 메뉴 수: " + weatherGenderAgeMenus.size());
+        System.out.println("날씨/성별/나이 기반 추천 메뉴 수: " + weatherGenderAgeMenuDetails.size());
 
         // 추천 메뉴가 없을 경우 날씨만 기반으로 한 대체 메뉴 제공
-        if (weatherGenderAgeMenus == null || weatherGenderAgeMenus.isEmpty()) {
+        if (weatherGenderAgeMenuDetails == null || weatherGenderAgeMenuDetails.isEmpty()) {
             System.out.println("날씨/성별/나이 기반 추천 메뉴가 없어 날씨만 기반으로 한 대체 메뉴를 제공합니다.");
-
-            // 날씨만 고려한 메뉴 추천
-            weatherGenderAgeMenus = recommendationService.getMenusByWeatherOnly(
-                    storeId, weather, finalExcludeIds);
+            weatherGenderAgeMenuDetails = recommendationService.getMenusWithPopularOptions(
+                    storeId, null, null, null, weather, finalExcludeIds);
         }
 
-        // MenuResponse에서 menuId 추출
-        List<Integer> weatherGenderAgeMenuIds = weatherGenderAgeMenus.stream()
-                .map(MenuResponse::getMenuId)
-                .collect(Collectors.toList());
-
-        // 상세 정보가 포함된 MenuDetailResponse 가져오기
-        List<MenuDetailResponse> weatherGenderAgeMenuDetails =
-                recommendationService.getMenuDetailsByIds(weatherGenderAgeMenuIds);
-
-        // 세 번째 추천 그룹 추가 (날씨, 성별, 나이 기반)
+        // 세 번째 추천 그룹 추가
         String reason3 = "[" + weather + "]";
-
         recommendedGroups.add(RecommendedMenuGroup.builder()
                 .recommendationType(3)
                 .recommendationReason(reason3)
@@ -222,6 +190,7 @@ public class RecommendationController {
         // 기존 추천에서 제외할 메뉴 ID 목록을 받아서 다시 추천
         return getAdvancedRecommendations(storeId, token, gender, age, excludeMenuIds, weather);
     }
+
     /**
      * 주문 완료 후 메뉴 선호도 업데이트 엔드포인트
      */
@@ -257,7 +226,7 @@ public class RecommendationController {
         return ApiResponse.success(null);
     }
 
-    // mapWeatherToKorean 메소드가 있다면 여기에 추가합니다.
+    // 날씨 코드를 한글로 변환하는 메소드
     private String mapWeatherToKorean(String weatherCode) {
         switch (weatherCode) {
             case "Sunny": return "맑음";

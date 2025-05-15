@@ -1,17 +1,17 @@
 package com.ssafy.orderme.recommendation.service;
 
 import com.ssafy.orderme.kiosk.dto.response.MenuDetailResponse;
+import com.ssafy.orderme.kiosk.dto.response.MenuOptionCategoryResponse;
 import com.ssafy.orderme.kiosk.dto.response.MenuResponse;
 import com.ssafy.orderme.kiosk.model.Menu;
 import com.ssafy.orderme.kiosk.service.MenuService;
+import com.ssafy.orderme.recommendation.dto.response.MenuWithOptionsDto;
 import com.ssafy.orderme.recommendation.mapper.RecommendationMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -380,6 +380,135 @@ public class RecommendationService {
                     .collect(Collectors.toList());
 
             return convertToMenuResponses(menus);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 실제 주문 데이터(ordermenu)와 선택 옵션(orderoption)을 기반으로 메뉴 추천
+     */
+    public List<MenuDetailResponse> getMenusWithPopularOptions(Integer storeId, String userId,
+                                                               String gender, String ageGroup,
+                                                               String weather, List<Integer> excludeMenuIds) {
+        try {
+            // 1. 데이터베이스에서 메뉴와 인기 옵션 조회
+            List<MenuWithOptionsDto> menuWithOptions = recommendationMapper.getMenusWithPopularOptions(
+                    storeId, userId, gender, ageGroup, weather, excludeMenuIds);
+
+            // 옵션이 없는 경우, 기본 메뉴만 조회하도록 변경
+            if (menuWithOptions == null || menuWithOptions.isEmpty()) {
+                System.out.println("날씨/성별/나이 기반 추천 메뉴가 없어 대체 메뉴를 제공합니다.");
+
+                // 인기 메뉴만 가져오기
+                List<MenuResponse> popularMenus = getMostPopularMenus(storeId, excludeMenuIds);
+                List<Integer> menuIds = popularMenus.stream()
+                        .map(MenuResponse::getMenuId)
+                        .collect(Collectors.toList());
+
+                // 옵션 정보 없이 메뉴 상세 정보만 반환
+                return getMenuDetailsByIds(menuIds);
+            }
+
+            // 2. 메뉴 ID별로 그룹화
+            Map<Integer, List<MenuWithOptionsDto>> menuGrouped = menuWithOptions.stream()
+                    .collect(Collectors.groupingBy(MenuWithOptionsDto::getMenuId));
+
+            // 3. 각 메뉴마다 인기 옵션을 포함한 DetailResponse 생성
+            List<MenuDetailResponse> result = new ArrayList<>();
+
+            menuGrouped.forEach((menuId, optionsList) -> {
+                if (optionsList.isEmpty()) return;
+
+                // 첫 번째 옵션 항목에서 메뉴 기본 정보 추출
+                MenuWithOptionsDto firstOption = optionsList.get(0);
+
+                // 옵션 카테고리별로 그룹화
+                Map<Integer, List<MenuWithOptionsDto>> optionsByCategory = optionsList.stream()
+                        .collect(Collectors.groupingBy(MenuWithOptionsDto::getOptionCategoryId));
+
+                // 각 카테고리별 옵션 생성
+                List<MenuOptionCategoryResponse> optionCategories = new ArrayList<>();
+
+                optionsByCategory.forEach((categoryId, options) -> {
+                    if (options.isEmpty()) return;
+
+                    MenuWithOptionsDto categoryInfo = options.get(0);
+
+                    // 옵션 항목 정보 추출
+                    List<String> optionNames = new ArrayList<>();
+                    List<Integer> additionalPrices = new ArrayList<>();
+                    List<Integer> optionIds = new ArrayList<>();
+                    List<Boolean> isDefault = new ArrayList<>();
+
+                    // 인기도 순으로 정렬 (내림차순)
+                    options.sort((o1, o2) -> o2.getOptionPopularity().compareTo(o1.getOptionPopularity()));
+
+                    for (MenuWithOptionsDto option : options) {
+                        optionNames.add(option.getOptionName());
+                        additionalPrices.add(option.getAdditionalPrice());
+                        optionIds.add(option.getOptionId());
+                        isDefault.add(false); // 기본값은 false로 설정, 가장 인기 있는 옵션을 나중에 true로 설정
+                    }
+
+                    // 가장 인기 있는 옵션을 기본값으로 설정 (목록의 첫 번째 항목)
+                    if (!isDefault.isEmpty()) {
+                        isDefault.set(0, true);
+                    }
+
+                    // 옵션 카테고리 응답 생성
+                    MenuOptionCategoryResponse categoryResponse = new MenuOptionCategoryResponse();
+                    categoryResponse.setOptionCategory(categoryInfo.getOptionCategoryName());
+                    categoryResponse.setIsRequired(categoryInfo.getIsRequired());
+                    categoryResponse.setOptionNames(optionNames);
+                    categoryResponse.setAdditionalPrices(additionalPrices);
+                    categoryResponse.setOptionIds(optionIds);
+                    categoryResponse.setIsDefault(isDefault);
+                    categoryResponse.setMaxSelections(1); // 기본값 1로 설정
+
+                    optionCategories.add(categoryResponse);
+                });
+
+                // 메뉴 상세 응답 생성
+                MenuDetailResponse menuDetail = new MenuDetailResponse();
+                menuDetail.setMenuId(Long.valueOf(menuId)); // Integer를 Long으로 변환
+                menuDetail.setMenuName(firstOption.getMenuName());
+                menuDetail.setPrice(firstOption.getPrice());
+                menuDetail.setCategoryId(Long.valueOf(firstOption.getCategoryId())); // Integer를 Long으로 변환
+                menuDetail.setCategoryName(firstOption.getCategoryName());
+                menuDetail.setIsSoldOut(firstOption.getIsSoldOut());
+                menuDetail.setImageUrl(firstOption.getImageUrl());
+                menuDetail.setDescription(firstOption.getDescription());
+                menuDetail.setOptions(optionCategories);
+
+                result.add(menuDetail);
+            });
+
+            // 결과가 없을 경우 기존 메서드로 대체
+            if (result.isEmpty()) {
+                if (userId != null) {
+                    List<MenuResponse> userPreferred = getUserPreferredMenus(storeId, userId, excludeMenuIds);
+                    List<Integer> menuIds = userPreferred.stream()
+                            .map(MenuResponse::getMenuId)
+                            .collect(Collectors.toList());
+                    return getMenuDetailsByIds(menuIds);
+                } else if (gender != null && ageGroup != null) {
+                    List<MenuResponse> genderAgeMenus = getMenusByGenderAndAgeRange(storeId, gender, ageGroup, excludeMenuIds);
+                    List<Integer> menuIds = genderAgeMenus.stream()
+                            .map(MenuResponse::getMenuId)
+                            .collect(Collectors.toList());
+                    return getMenuDetailsByIds(menuIds);
+                } else {
+                    List<MenuResponse> popularMenus = getMostPopularMenus(storeId, excludeMenuIds);
+                    List<Integer> menuIds = popularMenus.stream()
+                            .map(MenuResponse::getMenuId)
+                            .collect(Collectors.toList());
+                    return getMenuDetailsByIds(menuIds);
+                }
+            }
+
+            return result;
         } catch (Exception e) {
             e.printStackTrace();
             return Collections.emptyList();

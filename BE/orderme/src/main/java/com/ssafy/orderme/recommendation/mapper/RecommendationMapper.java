@@ -1,6 +1,7 @@
 package com.ssafy.orderme.recommendation.mapper;
 
 import com.ssafy.orderme.kiosk.model.Menu;
+import com.ssafy.orderme.recommendation.dto.response.MenuWithOptionsDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -61,4 +62,13 @@ public interface RecommendationMapper {
             @Param("storeId") Integer storeId,
             @Param("weather") String weather,
             @Param("limit") int limit);
+
+    // 메뉴와 인기 옵션을 함께 조회 (ordermenu, orderoption 기반)
+    List<MenuWithOptionsDto> getMenusWithPopularOptions(
+            @Param("storeId") Integer storeId,
+            @Param("userId") String userId,
+            @Param("gender") String gender,
+            @Param("ageGroup") String ageGroup,
+            @Param("weather") String weather,
+            @Param("excludeMenuIds") List<Integer> excludeMenuIds);
 }
