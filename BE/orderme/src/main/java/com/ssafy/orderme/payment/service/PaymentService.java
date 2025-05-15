@@ -94,7 +94,7 @@ public class PaymentService {
                 .isStampUsed(request.getIsStampUsed() != null ? request.getIsStampUsed() : false)
                 .orderStatus("PENDING")
                 .isTakeout(request.getIsTakeout() != null ? request.getIsTakeout() : false)
-                .weather(request.getWeather())
+                .age(request.getAge())
                 .gender(request.getGender())
                 .isGuest(userId == null) // 게스트 여부 설정
                 .isDelete(false)
