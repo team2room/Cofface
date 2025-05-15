@@ -20,7 +20,7 @@ export default function PayMethodButton({ onSelect }: Props) {
       <ImageButton onClick={() => onSelect('face')}>
         <TbFaceId size={213} />
         <Text variant="title4" weight="extrabold" color="lightBlack">
-          페이스 페이
+          자동 결제
         </Text>
       </ImageButton>
       <ImageButton onClick={() => onSelect('qr')}>

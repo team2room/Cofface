@@ -6,6 +6,9 @@ interface PayStoreState extends Partial<PayData> {
     menuOrders: PayMenuOrder[]
     totalAmount: number
     kioskId: number
+    age: number
+    gender: string
+    weather: string
   }) => void
   setTotalAmount: (amount: number) => void
   setIsTakeout: (isTakeout: boolean) => void
@@ -19,11 +22,20 @@ export const usePayStore = create<PayStoreState>((set) => ({
   totalAmount: 0,
   isStampUsed: false,
   isTakeout: false,
+  age: 20,
+  gender: '여성',
+  weather: 'SUNNY',
   paymentInfoId: null,
   menuOrders: [],
 
-  setInitialPayData: ({ menuOrders, totalAmount, kioskId }) =>
-    set({ menuOrders, totalAmount, kioskId }),
+  setInitialPayData: ({
+    menuOrders,
+    totalAmount,
+    kioskId,
+    age,
+    gender,
+    weather,
+  }) => set({ menuOrders, totalAmount, kioskId, age, gender, weather }),
   setTotalAmount: (amount) => set({ totalAmount: amount }),
   setIsTakeout: (isTakeout) => set({ isTakeout }),
   setIsStampUsed: (isStampUsed) => set({ isStampUsed }),
@@ -33,6 +45,9 @@ export const usePayStore = create<PayStoreState>((set) => ({
       totalAmount: 0,
       isStampUsed: false,
       isTakeout: false,
+      age: 20,
+      gender: '여성',
+      weather: 'SUNNY',
       paymentInfoId: null,
       menuOrders: [],
     }),
