@@ -6,17 +6,24 @@ import {
   CapturedImage,
   FaceDetectionState,
   RotationState,
-} from '@/interfaces/RegisterInterfaces'
+} from '@/interfaces/FaceRegisterInterfaces'
 import {
   calculateFaceRotation,
   checkFaceInCustomOval,
   getBorderStatusMessage,
   isCorrectOrientation,
 } from '@/utils/CaptureUtils'
+import { registerFace } from '@/features/register/services/captureService'
+import { useAuthStore } from '@/stores/authStore'
 
 // 얼굴 인식 로직
 export function useFaceDetection() {
   const navigate = useNavigate()
+
+  // 유저 아이디 - store에서 빼옴
+  const authStore = useAuthStore()
+  const name = authStore.user?.name
+  const phoneNumber = authStore.user?.phoneNumber
 
   // 상태 관리
   const currentStateRef = useRef<FaceDetectionState>(FaceDetectionState.INIT)
@@ -39,6 +46,11 @@ export function useFaceDetection() {
   })
   const [capturedImages, setCapturedImages] = useState<CapturedImage[]>([])
   const [_faceWithinBounds, setFaceWithinBounds] = useState<boolean>(false)
+
+  const [isRegistering, setIsRegistering] = useState<boolean>(false)
+  const [registrationError, setRegistrationError] = useState<string | null>(
+    null,
+  )
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -211,10 +223,6 @@ export function useFaceDetection() {
       const faceDetectedNow = true
       setFaceDetected(faceDetectedNow)
 
-      // 얼굴이 원 안에 있는지 확인
-      // const isFaceInCircle = checkFaceInCircle(landmarks)
-      // setFaceWithinBounds(isFaceInCircle)
-
       // 얼굴이 타원 안에 적절하게 위치하는지 확인 (새로운 함수 사용)
       const isFaceInOval = checkFaceInCustomOval(landmarks)
       setFaceWithinBounds(isFaceInOval)
@@ -310,8 +318,6 @@ export function useFaceDetection() {
         canvasElement.height / 2 + 7,
       )
     }
-
-    // 가이드라인 그리기 코드 제거 (별도 컴포넌트로 처리)
 
     canvasCtx.restore()
   }
@@ -620,12 +626,46 @@ export function useFaceDetection() {
   }
 
   // 진행 완료 처리
-  const handleComplete = (): void => {
-    navigate('/register/face/confirm', {
-      state: {
-        capturedImages: capturedImages.map((img) => img.imageData),
-      },
-    })
+  const handleComplete = async (): Promise<void> => {
+    if (capturedImages.length < 5) {
+      console.error('모든 방향의 얼굴을 캡처해야 합니다')
+      return
+    }
+
+    // userId가 없는 경우 처리
+    if (!name || !phoneNumber) {
+      console.error('사용자 정보를 찾을 수 없습니다')
+      return
+    }
+
+    setIsRegistering(true)
+    setRegistrationError(null)
+
+    try {
+      // 서버에 얼굴 등록 API 호출
+      const result = await registerFace(name, phoneNumber, capturedImages)
+
+      console.log('얼굴 등록 성공:', result)
+
+      // 등록 성공 시 다음 페이지로 이동
+      navigate('/register/face/confirm', {
+        state: { success: true },
+      })
+    } catch (error) {
+      console.error('얼굴 등록 실패:', error)
+      // 등록 실패 시에도 일단 완료 페이지로 이동 (프로덕션에서는 적절한 에러 처리 필요)
+      navigate('/register/face/confirm', {
+        state: {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : '알 수 없는 오류가 발생했습니다',
+        },
+      })
+    } finally {
+      setIsRegistering(false)
+    }
   }
 
   return {
@@ -638,6 +678,8 @@ export function useFaceDetection() {
     capturedImages,
     modelsLoaded,
     loadingError,
+    isRegistering,
+    registrationError,
 
     // refs
     videoRef,
@@ -649,3 +691,5 @@ export function useFaceDetection() {
     handleComplete,
   }
 }
+
+export default useFaceDetection

@@ -13,35 +13,33 @@ import {
 } from '@/features/register/components/intro/PayRegisterComponents'
 import { useNavigate } from 'react-router-dom'
 import RandomKeyPad from '@/features/register/components/intro/PayRandomKeyPad'
+import { CardCompanyProps } from '@/interfaces/PayRegisterInterfaces'
+import {
+  getCardCompany,
+  registerCard,
+} from '@/features/register/services/payService'
 
 const HeaderWrapper = tw.div`
   sticky top-0 z-10 bg-white w-full
 `
-
 const Container = tw.div`
   w-full max-w-screen-sm mx-auto flex flex-col min-h-screen
 `
-
 const ContentWrapper = tw.div`
   flex flex-col px-6 flex-1 pb-6
 `
-
 const FormSection = tw.div`
   flex-grow
 `
-
 const InputSection = tw.div`
   w-full mt-2 animate-slide-up
 `
-
 const StepContainer = tw.div`
   w-full flex flex-col gap-2
 `
-
 const RegisterWrapper = tw.div`
   w-full py-4 mt-auto
 `
-
 const RegisterButton = tw.button`
   bg-littleDark hover:bg-hover text-white w-full p-2 mt-4 rounded-md
 `
@@ -57,6 +55,12 @@ export function PayRegisterPage() {
   const [expiryDate, setExpiryDate] = useState('')
   const [securityCode, setSecurityCode] = useState('')
   const [password, setPassword] = useState('')
+  const [cardCompany, setCardCompany] = useState<CardCompanyProps | null>(null)
+  const [isLoadingCardCompany, setIsLoadingCardCompany] = useState(false)
+
+  // 카드 등록 처리
+  const [_isRegistering, setIsRegistering] = useState(false)
+  const [_registerError, setRegisterError] = useState<string | null>(null)
 
   const [currentStep, setCurrentStep] = useState(1) // 1: 카드번호, 2: 유효기간/보안코드, 3: 비밀번호
 
@@ -80,6 +84,32 @@ export function PayRegisterPage() {
       openKeypad('password')
     }
   }, [currentStep])
+
+  // 카드사 조회 API 호출
+  const fetchCardCompany = async (cardNum: string) => {
+    if (cardNum.length === 16) {
+      try {
+        setIsLoadingCardCompany(true)
+        const data = await getCardCompany(cardNum)
+        setCardCompany(data)
+        console.log('카드사 정보:', data)
+      } catch (error) {
+        console.error('카드사 조회 실패:', error)
+        setCardCompany(null)
+      } finally {
+        setIsLoadingCardCompany(false)
+      }
+    } else {
+      setCardCompany(null)
+    }
+  }
+
+  // 카드번호 변경 시 카드사 조회 호출
+  useEffect(() => {
+    if (cardNumber.length === 16) {
+      fetchCardCompany(cardNumber)
+    }
+  }, [cardNumber])
 
   // 키패드 열기 함수
   const openKeypad = (field: InputFieldType) => {
@@ -167,7 +197,18 @@ export function PayRegisterPage() {
 
   // 카드번호 완료 처리
   const handleCardNumberComplete = () => {
-    setCurrentStep(2)
+    // 카드사 정보가 로드되길 기다렸다가 다음 단계로 진행
+    if (isLoadingCardCompany) {
+      // 로딩 중이면 잠시 대기
+      const checkInterval = setInterval(() => {
+        if (!isLoadingCardCompany) {
+          clearInterval(checkInterval)
+          setCurrentStep(2)
+        }
+      }, 100)
+    } else {
+      setCurrentStep(2)
+    }
   }
 
   // 유효기간 및 보안코드 완료 처리
@@ -176,17 +217,37 @@ export function PayRegisterPage() {
   }
 
   // 카드 등록 처리
-  const handleRegister = () => {
-    console.log('카드 등록 요청:', {
-      cardNumber,
-      expiryDate,
-      securityCode,
-      password,
-    })
+  const handleRegister = async () => {
+    try {
+      setIsRegistering(true)
+      setRegisterError(null)
 
-    // 카드 등록 성공 후 이동할 페이지
-    navigate('/setting/pay')
-    // 실제 API 호출 코드가 여기에 들어갈 수 있음
+      // 카드 번호에 하이픈 추가 (4자리마다)
+      const formattedCardNumber = cardNumber.replace(/(\d{4})(?=\d)/g, '$1-')
+
+      // 카드 등록 요청 데이터 준비
+      const cardRegisterData = {
+        cardNumber: formattedCardNumber,
+        cardExpiry: `${expiryDate.substring(0, 2)}/${expiryDate.substring(2)}`, // MM/YY 형식으로 변환
+        cardCvc: securityCode,
+        isDefault: true, // 기본 결제 카드로 설정
+      }
+
+      console.log('카드 등록 요청:', cardRegisterData)
+
+      // API 호출
+      const response = await registerCard(cardRegisterData)
+
+      console.log('카드 등록 성공:', response)
+
+      // 카드 등록 성공 후 이동할 페이지
+      navigate('/setting/pay')
+    } catch (error) {
+      console.error('카드 등록 실패:', error)
+      setRegisterError('카드 등록에 실패했습니다. 다시 시도해주세요.')
+    } finally {
+      setIsRegistering(false)
+    }
   }
 
   // 모든 필드가 입력되었는지 확인
@@ -321,13 +382,14 @@ export function PayRegisterPage() {
                   value={cardNumber}
                   inputRef={cardNumberInputRef}
                   onFocus={() => openKeypad('cardNumber')}
+                  cardCompany={cardCompany}
                 />
               </InputSection>
             </StepContainer>
           </PaymentForm>
         </FormSection>
 
-        {/* 등록하기 버튼 - 페이지 하단에 위치 */}
+        {/* 등록하기 버튼 */}
         {isFormComplete && (
           <RegisterWrapper>
             <AgreementBox />

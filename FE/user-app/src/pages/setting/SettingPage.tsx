@@ -1,4 +1,5 @@
 import DetailHeader from '@/components/DetailHeader'
+import { useAuth } from '@/features/login/hooks/useAuth'
 import { Text } from '@/styles/typography'
 import { useNavigate } from 'react-router-dom'
 import tw from 'twin.macro'
@@ -24,6 +25,7 @@ const MenuItem = tw.div`
 
 export function SettingPage() {
   const navigate = useNavigate()
+  const { logout } = useAuth()
 
   return (
     <Container>
@@ -87,7 +89,7 @@ export function SettingPage() {
           </MenuItem>
         </SectionWrapper>
         <div className="border-t border-pay mt-4 py-4">
-          <MenuItem onClick={() => {}}>
+          <MenuItem onClick={() => logout()}>
             <Text variant="body1">로그아웃</Text>
           </MenuItem>
           <MenuItem onClick={() => {}}>

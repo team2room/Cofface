@@ -1,10 +1,9 @@
-//SECTION - 단계별 안내 문구 및 탭
 import { Text } from '@/styles/typography'
 import {
   FaceDetectionState,
   ProgressStepProps,
   StageIndicatorProps,
-} from '@/interfaces/RegisterInterfaces'
+} from '@/interfaces/FaceRegisterInterfaces'
 import { getStageText } from '@/utils/CaptureUtils'
 import tw from 'twin.macro'
 import styled from '@emotion/styled'

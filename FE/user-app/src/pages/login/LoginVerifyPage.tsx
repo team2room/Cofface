@@ -9,7 +9,7 @@ import {
 } from '@/features/login/components/LoginComponents'
 import LoginSelectModal from '@/features/login/components/LoginSelectModal'
 import { Text } from '@/styles/typography'
-import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/features/login/hooks/useAuth'
 
 const Container = tw.div`
   w-full
@@ -39,11 +39,16 @@ const Selectdiv = tw.div`
 `
 
 const VerifyButton = tw.button`
-  bg-main hover:bg-hover text-white w-full p-2 mt-10 rounded-md
+  bg-main hover:bg-hover text-white w-full p-2 mt-10 rounded-md disabled:bg-gray disabled:text-littleDarkGray
+`
+
+// 오류 메시지 스타일
+const ErrorMessage = tw.div`
+  text-destructive text-sm mt-2 animate-fade-in
 `
 
 export default function LoginVerifyPage() {
-  const navigate = useNavigate()
+  const { requestVerification, isLoading, error } = useAuth()
 
   // 상태 관리
   const [name, setName] = useState('')
@@ -64,18 +69,28 @@ export default function LoginVerifyPage() {
   const birthInputRef = useRef<HTMLInputElement>(null)
   const phoneInputRef = useRef<HTMLInputElement>(null)
 
+  // 유효성 검사 상태
+  const [formError, setFormError] = useState('')
+
   // 단계 전환 시 자동 포커스 처리를 위한 useEffect
   useEffect(() => {
     if (showBirthStep && !showPhoneStep && birthInputRef.current) {
       birthInputRef.current.focus()
     }
-  }, [showBirthStep])
+  }, [showBirthStep, showPhoneStep])
 
   useEffect(() => {
     if (showPhoneStep && !showTelecomStep && phoneInputRef.current) {
       phoneInputRef.current.focus()
     }
-  }, [showPhoneStep])
+  }, [showPhoneStep, showTelecomStep])
+
+  useEffect(() => {
+    if (showTelecomStep && !isModalOpen && !telecom) {
+      // 자동으로 통신사 선택 모달 열기
+      setIsModalOpen(true)
+    }
+  }, [showTelecomStep, isModalOpen, telecom])
 
   // 초기 렌더링 시 이름 입력 필드에 포커스
   useEffect(() => {
@@ -89,40 +104,33 @@ export default function LoginVerifyPage() {
     setIsModalOpen(true)
   }
 
-  // 이름 완료 처리
-  const handleNameComplete = () => {
-    if (name.trim()) {
-      setShowBirthStep(true)
-      // 직접 포커스 설정
-      setTimeout(() => {
-        if (birthInputRef.current) {
-          birthInputRef.current.focus()
-        }
-      }, 50)
+  // 이름 입력 처리
+  const handleNameChange = (value: string) => {
+    setName(value)
+
+    // 이름이 3글자 이상이면 다음 단계로 자동 진행
+    if (value.trim().length >= 3) {
+      setTimeout(() => setShowBirthStep(true), 500)
     }
   }
 
-  // 생년월일 완료 처리
-  const handleBirthComplete = () => {
-    if (birthdate.length >= 7) {
+  // 생년월일/성별 입력 처리
+  const handleBirthdateChange = (value: string) => {
+    setBirthdate(value)
+
+    // 주민번호 7자리(생년월일 6자리 + 성별 1자리) 입력 완료되면 다음 단계로 자동 진행
+    if (value.length >= 7) {
       setShowPhoneStep(true)
-      // 직접 포커스 설정
-      setTimeout(() => {
-        if (phoneInputRef.current) {
-          phoneInputRef.current.focus()
-        }
-      }, 50)
     }
   }
 
-  // 전화번호 완료 처리
-  const handlePhoneComplete = () => {
-    if (phone.length >= 11) {
+  // 전화번호 입력 처리
+  const handlePhoneChange = (value: string) => {
+    setPhone(value)
+
+    // 전화번호 11자리 입력 완료시 다음 단계로 자동 진행
+    if (value.length >= 11) {
       setShowTelecomStep(true)
-      // 통신사 선택으로 이동 (모달을 열도록 할 수도 있음)
-      setTimeout(() => {
-        // 모달을 바로 열거나 통신사 선택 영역으로 스크롤 등의 처리
-      }, 50)
     }
   }
 
@@ -132,12 +140,74 @@ export default function LoginVerifyPage() {
     setShowVerifyButton(true)
   }
 
-  // 본인인증 처리
-  const handleVerify = () => {
-    console.log('본인인증 요청:', { name, birthdate, phone, telecom })
+  // 인증 요청 전 검증
+  const validateForm = () => {
+    if (!name.trim()) {
+      setFormError('이름을 입력해주세요.')
+      return false
+    }
 
-    navigate('/login/confirm')
-    // 실제 API 호출 코드가 여기에 들어갈 수 있음
+    if (birthdate.length < 7) {
+      setFormError('생년월일과 성별 정보를 올바르게 입력해주세요.')
+      return false
+    }
+
+    // 성별 유효성 검사
+    const gender = birthdate.substring(6, 7)
+    if (!['1', '2', '3', '4'].includes(gender)) {
+      setFormError('성별 정보는 1, 2, 3, 4 중 하나여야 합니다.')
+      return false
+    }
+
+    if (phone.length < 10) {
+      setFormError('휴대폰 번호를 올바르게 입력해주세요.')
+      return false
+    }
+
+    if (!telecom) {
+      setFormError('통신사를 선택해주세요.')
+      return false
+    }
+
+    setFormError('')
+    return true
+  }
+
+  // 본인인증 처리
+  const handleVerify = async () => {
+    if (!validateForm()) {
+      return
+    }
+
+    try {
+      const idNumberFront = birthdate.substring(0, 6)
+      const idNumberGender = birthdate.substring(6, 7)
+
+      // 통신사 포맷 맞추기 (API 요구사항에 따라 수정 필요할 수 있음)
+      let formattedTelecom = telecom
+      if (telecom.includes('알뜰폰')) {
+        formattedTelecom = '알뜰폰'
+      } else if (telecom.includes('SKT')) {
+        formattedTelecom = 'SKT'
+      } else if (telecom.includes('KT')) {
+        formattedTelecom = 'KT'
+      } else if (telecom.includes('LG U+')) {
+        formattedTelecom = 'LG U+'
+      }
+
+      // API 호출 - 인증번호 요청
+      await requestVerification(
+        name,
+        idNumberFront,
+        idNumberGender,
+        phone,
+        formattedTelecom,
+      )
+
+      // 페이지 이동은 requestVerification 내부에서 처리됨
+    } catch (err) {
+      console.error('인증 요청 실패:', err)
+    }
   }
 
   // 상태별 타이틀 렌더링
@@ -176,6 +246,9 @@ export default function LoginVerifyPage() {
                 </div>
               ) : (
                 <div className="flex flex-col">
+                  <Text variant="caption2" color="darkGray" className="pl-0.5">
+                    통신사
+                  </Text>
                   <Selectdiv onClick={handleModalClick}>
                     <Text>통신사를 선택해주세요</Text>
                   </Selectdiv>
@@ -185,21 +258,19 @@ export default function LoginVerifyPage() {
           )}
 
           {/* 모달 */}
-          {isModalOpen && (
-            <LoginSelectModal
-              isOpen={isModalOpen}
-              onOpenChange={setIsModalOpen}
-              onSelect={handleTelecomSelect}
-            />
-          )}
+          <LoginSelectModal
+            isOpen={isModalOpen}
+            onOpenChange={setIsModalOpen}
+            onSelect={handleTelecomSelect}
+          />
 
           {/* 휴대폰 번호 입력 */}
           {showPhoneStep && (
             <InputSection>
               <PhoneInputField
                 value={phone}
-                onChange={setPhone}
-                onComplete={handlePhoneComplete}
+                onChange={handlePhoneChange}
+                onComplete={() => setShowTelecomStep(true)}
                 inputRef={phoneInputRef}
               />
             </InputSection>
@@ -210,8 +281,8 @@ export default function LoginVerifyPage() {
             <InputSection>
               <BirthInputField
                 value={birthdate}
-                onChange={setBirthdate}
-                onComplete={handleBirthComplete}
+                onChange={handleBirthdateChange}
+                onComplete={() => setShowPhoneStep(true)}
                 inputRef={birthInputRef}
               />
             </InputSection>
@@ -221,15 +292,22 @@ export default function LoginVerifyPage() {
           <InputSection>
             <NameInputField
               value={name}
-              onChange={setName}
-              onComplete={handleNameComplete}
+              onChange={handleNameChange}
+              onComplete={() => setShowBirthStep(true)}
               inputRef={nameInputRef}
             />
           </InputSection>
 
+          {/* 오류 메시지 표시 */}
+          {(formError || error) && (
+            <ErrorMessage>{formError || error}</ErrorMessage>
+          )}
+
           {/* 인증하기 버튼 */}
           {showVerifyButton && (
-            <VerifyButton onClick={handleVerify}>본인 인증하기</VerifyButton>
+            <VerifyButton onClick={handleVerify} disabled={isLoading}>
+              {isLoading ? '처리 중...' : '본인 인증하기'}
+            </VerifyButton>
           )}
         </StepContainer>
       </LoginForm>

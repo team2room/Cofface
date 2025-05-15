@@ -1,40 +1,39 @@
 import axios from 'axios'
-import {
-  CapturedImage,
-  FaceDetectionState,
-} from '@/interfaces/RegisterInterfaces'
+import { CapturedImage } from '@/interfaces/FaceRegisterInterfaces'
 
-//TODO - api 연결시 수정해야 함
+// API URL 설정
+const API_BASE_URL = 'https://face.orderme.store'
 
-// API 기본 설정
-const API_BASE_URL = 'http://localhost:8000' // 백엔드 서버 주소
+// API 인스턴스 생성
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    Accept: 'application/json',
   },
+  timeout: 10000,
 })
 
-// 얼굴 등록 함수
+/**
+ * 얼굴 등록 API 함수
+ * 캡처된 5방향 얼굴 이미지와 사용자 ID를 서버에 전송
+ */
 export const registerFace = async (
-  userId: string,
+  name: string,
+  phoneNumber: string,
   capturedImages: CapturedImage[],
 ): Promise<any> => {
-  console.log('등록 시작: 사용자 ID', userId)
+  console.log('등록 시작: 사용자이름', name, '전화번호', phoneNumber)
   console.log('캡처된 이미지 수:', capturedImages.length)
-  console.log(
-    '캡처된 이미지 상태:',
-    capturedImages.map((img) => FaceDetectionState[img.state]),
-  )
 
   try {
-    // 캡처된 이미지를 방향별로 매핑 (정수 키를 사용)
+    // 캡처된 이미지를 방향별로 매핑
     const directionMap: { [key: number]: string } = {
-      1: 'front', // FaceDetectionState.FRONT_FACE는 1
-      2: 'left', // FaceDetectionState.LEFT_FACE는 2
-      3: 'right', // FaceDetectionState.RIGHT_FACE는 3
-      4: 'up', // FaceDetectionState.UP_FACE는 4
-      5: 'down', // FaceDetectionState.DOWN_FACE는 5
+      1: 'front', // FaceDetectionState.FRONT_FACE
+      2: 'left', // FaceDetectionState.LEFT_FACE
+      3: 'right', // FaceDetectionState.RIGHT_FACE
+      4: 'up', // FaceDetectionState.UP_FACE
+      5: 'down', // FaceDetectionState.DOWN_FACE
     }
 
     // API 요청 형식에 맞게 데이터 변환
@@ -43,7 +42,7 @@ export const registerFace = async (
     capturedImages.forEach((img) => {
       const direction = directionMap[img.state]
       if (direction) {
-        // 이미지가 'data:image/jpeg;base64,' 형식인지 확인
+        // 이미지가 base64 형식인지 확인
         if (
           img.imageData.startsWith('data:image/') &&
           img.imageData.includes('base64,')
@@ -70,39 +69,31 @@ export const registerFace = async (
       )
     }
 
-    // API 요청 전송
+    // 서버에 요청 전송
     const response = await api.post('/register', {
-      user_id: userId,
+      name: name,
+      phone_number: phoneNumber,
       face_images: faceImages,
     })
 
+    console.log('서버 응답:', response.data)
     return response.data
   } catch (error) {
     console.error('얼굴 등록 API 호출 중 오류 발생:', error)
+
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        throw new Error(
+          `등록 실패: ${error.response.data.detail || '서버 오류'}`,
+        )
+      } else if (error.request) {
+        throw new Error('서버에 연결할 수 없습니다')
+      }
+    }
     throw error
   }
 }
 
-// 얼굴 인증 함수
-export const verifyFace = async (rgbImage: string): Promise<any> => {
-  try {
-    const response = await api.post('/verify', {
-      rgb_image: rgbImage,
-    })
-    return response.data
-  } catch (error) {
-    console.error('얼굴 인증 API 호출 중 오류 발생:', error)
-    throw error
-  }
-}
-
-// 서버 상태 확인 함수
-export const checkServerHealth = async (): Promise<any> => {
-  try {
-    const response = await api.get('/health')
-    return response.data
-  } catch (error) {
-    console.error('서버 상태 확인 중 오류 발생:', error)
-    throw error
-  }
+export default {
+  registerFace,
 }

@@ -39,13 +39,7 @@ export function CodeInputField({
 
     // 코드 6자리 입력 완료시 버튼 생성
     if (inputValue.length === 6 && onComplete) {
-      setTimeout(() => onComplete(), 300) // 약간의 딜레이 추가
-    }
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && value.length === 6 && onComplete) {
-      onComplete()
+      setTimeout(() => onComplete())
     }
   }
 
@@ -64,7 +58,6 @@ export function CodeInputField({
           placeholder="6자리 입력"
           value={value}
           onChange={handleCodeChange}
-          onKeyDown={handleKeyDown}
           inputMode="numeric" // 모바일에서 숫자 키패드 활성화
           pattern="[0-9]*" // iOS에서 숫자 키패드 활성화
           maxLength={6}

@@ -1,4 +1,4 @@
-import { StatusMessageProps } from '@/interfaces/RegisterInterfaces'
+import { StatusMessageProps } from '@/interfaces/FaceRegisterInterfaces'
 import { Text } from '@/styles/typography'
 import styled from '@emotion/styled'
 
