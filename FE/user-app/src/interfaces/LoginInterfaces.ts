@@ -29,6 +29,7 @@ export interface LoginConfirmResponseProps {
   expiresIn: number // 초 단위로 들어옴. 기본 값: 30일
   accessToken: string
   tokenType: string
+  isNewUser: boolean
   user: userInfoProps
   refreshToken: string
 }
