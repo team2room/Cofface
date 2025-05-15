@@ -1,27 +1,23 @@
+import time, os, argparse, pickle
+import threading, queue, traceback
+import requests, base64
 from pathlib import Path
-import pyglet
-import numpy as np
-import cv2
-import pyrealsense2 as rs
-import insightface
-from insightface.app import FaceAnalysis
-import time
-import os
-import argparse
-import pickle
 from datetime import datetime
-import threading
-import queue
-import traceback
-from typing import Optional, Dict, Any, List
+
+import cv2, pyglet
+import numpy as np
+import pyrealsense2 as rs
+from insightface.app import FaceAnalysis
+
+from typing import Optional
 from fastapi import FastAPI, BackgroundTasks
-import uvicorn
-import asyncio
-from pydantic import BaseModel
+import uvicorn, asyncio
 from PIL import Image
 from io import BytesIO
+from pydantic import BaseModel
 from urllib.request import urlopen
-import requests, json, base64
+
+from weather import get_weather
 
 # API 응답 모델
 class FaceRecognitionResponse(BaseModel):
@@ -43,7 +39,7 @@ def parse_args():
     parser.add_argument('--show_scores', action='store_true', help='라이브니스 점수 표시')
     parser.add_argument('--show_depth', action='store_true', help='깊이 맵 표시')
     parser.add_argument('--save_embeddings', action='store_true', help='3D 임베딩 저장')
-    parser.add_argument('--fullscreen', action='store_true', default=True, help='전체화면 모드')
+    parser.add_argument('--fullscreen', action='store_true', default=False, help='전체화면 모드')
     parser.add_argument('--gpu_id', type=int, default=0, help='사용할 GPU ID')
     parser.add_argument('--idle_image', type=str, default=None, 
                         help='대기 상태에서 표시할 이미지 파일 경로')
@@ -954,7 +950,8 @@ class RealSenseFaceLiveness:
             "gender": gender,
             "collection_time": collection_time,
             "live_ratio": live_ratio,  # 라이브니스 비율 추가
-            "message": f"얼굴 인식 성공 (신뢰도: {live_ratio:.2f}, 프레임: {len(all_face_results)}개, 실제 여부: {'실제' if is_live_person else '가짜'})"
+            "message": f"얼굴 인식 성공 (신뢰도: {live_ratio:.2f}, 프레임: {len(all_face_results)}개, 실제 여부: {'실제' if is_live_person else '가짜'})",
+            "weather": get_weather()
         }
         
         print(f"API 결과: {self.api_result}")
@@ -1644,6 +1641,7 @@ class FaceRecognitionServer:
                     # 결과 반환
                     result = {
                         **verification_result,  # 서버 응답 모든 필드 포함
+                        "weather": get_weather()
                     }
                 else:
                     print(f"서버 오류 응답: {response.status_code}, {response.text}")
