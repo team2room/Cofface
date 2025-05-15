@@ -50,7 +50,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
       initialized: false,
-      isNewUser: false,
+      isNewUser: true,
 
       initialize: async () => {
         const refreshTokenValue = getCookie('refreshToken')

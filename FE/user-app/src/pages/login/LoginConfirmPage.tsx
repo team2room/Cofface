@@ -28,7 +28,7 @@ const ErrorMessage = tw.div`
 export default function LoginConfirmPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { verifyLogin, login, isLoading, error } = useAuthStore()
+  const { verifyLogin, login, isLoading, error, isNewUser } = useAuthStore()
 
   const [code, setCode] = useState('')
   const [timeLeft, setTimeLeft] = useState(60 * 3) // 3분
@@ -157,8 +157,13 @@ export default function LoginConfirmPage() {
         password,
       )
 
-      // 로그인 성공 시 홈 페이지로 이동
-      navigate('/home', { replace: true, state: null })
+      // 처음 회원가입한 사람이면 /survey 으로 이동
+      if (isNewUser) {
+        navigate('/survey', { replace: true, state: null })
+      } else {
+        // 기존 회원이면 /home 으로 이동
+        navigate('/home', { replace: true, state: null })
+      }
     } catch (err) {
       console.error('로그인 확인 실패:', err)
       setShowConfirmButton(false) // 오류 시 버튼 숨김
