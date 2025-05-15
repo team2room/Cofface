@@ -4,7 +4,9 @@ import CustomDialog from '@/components/CustomDialog'
 import { useState } from 'react'
 import { useLoginStore, useUserStore } from '@/stores/loginStore'
 import { useNavigate } from 'react-router-dom'
-import { usePhoneLogin } from '../hooks/usePhoneLogin'
+import { useLogin } from '../hooks/useLogin'
+import { faceRecogRequest } from '../services/faceRecogService'
+import { maskName } from '@/utils/maskUserName'
 
 const TopLeftText = tw.div`
   absolute top-4 left-6 z-50
@@ -35,7 +37,7 @@ const Button = tw.button`
 
 export default function StartScreen() {
   const navigate = useNavigate()
-  const { login } = usePhoneLogin()
+  const { phoneNumLogin, faceLogin } = useLogin()
 
   type ModalState = 'waiting' | 'success' | 'failure' | 'phone'
   const [modalState, setModalState] = useState<ModalState>('waiting')
@@ -43,6 +45,7 @@ export default function StartScreen() {
 
   const phoneNumber = useLoginStore((state) => state.phoneNumber)
   const resetPhoneNumber = useLoginStore((state) => state.resetPhoneNumber)
+  const user = useUserStore((state) => state.user)
 
   let modalContent
 
@@ -70,7 +73,7 @@ export default function StartScreen() {
       ),
       description: {
         waiting: '우측 단말기에\n얼굴을 인식해 주세요!',
-        success: '이*환님\n맞으신가요?',
+        success: `${maskName(user?.name || '')}님\n맞으신가요?`,
         failure: '인식을 실패했어요',
       }[modalState],
       icon: {
@@ -85,15 +88,24 @@ export default function StartScreen() {
 
   const handlePhoneLogin = async () => {
     try {
-      await login(phoneNumber)
+      await phoneNumLogin(phoneNumber)
       resetPhoneNumber()
       setShowModal(false)
-      setModalState('waiting')
-      alert('전화번호가 일치합니다')
-      navigate('/order')
+      setModalState('success')
     } catch (err) {
       resetPhoneNumber()
       alert('일치하는 전화번호가 없습니다')
+    }
+  }
+
+  const handleFaceLogin = async () => {
+    try {
+      const { phone_number } = await faceRecogRequest()
+      await faceLogin(phone_number)
+      setModalState('success')
+    } catch (err) {
+      console.error('얼굴 로그인 실패:', err)
+      setModalState('failure')
     }
   }
 
@@ -110,7 +122,12 @@ export default function StartScreen() {
       </TopLeftText>
 
       <ButtonGroup>
-        <Button onClick={() => setShowModal(true)}>
+        <Button
+          onClick={() => {
+            setShowModal(true)
+            handleFaceLogin()
+          }}
+        >
           <Text variant="title4" weight="extrabold" color="main">
             ORDER.ME
           </Text>

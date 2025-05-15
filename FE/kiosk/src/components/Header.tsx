@@ -3,6 +3,7 @@ import { Text } from '@/styles/typography'
 import { useNavigate } from 'react-router-dom'
 import { useLogout } from '@/features/userLogin/hooks/useLogout'
 import { useUserStore } from '@/stores/loginStore'
+import { maskName } from '@/utils/maskUserName'
 
 const HeaderContainer = tw.div`w-full flex justify-between items-center mt-4 mb-8`
 const TimeBox = tw.div`flex w-[250px] justify-center border-b-2 border-gray`
@@ -29,7 +30,9 @@ export default function Header({ remainingSeconds }: HeaderProps) {
     <HeaderContainer>
       <div>
         <Text variant="body2" weight="bold" color="darkGray">
-          {token ? `${userName}님, 반갑습니다😊` : '처음 오셨나요?😊'}
+          {token
+            ? `${maskName(userName || '')}님, 반갑습니다😊`
+            : '처음 오셨나요?😊'}
         </Text>
       </div>
 
