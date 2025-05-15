@@ -15,8 +15,8 @@
     <select id="getPreferenceOptionCategories" resultMap="optionCategoryMap">
         SELECT oc.category_id, oc.category_name,
                oi.item_id, oi.option_name, oi.additional_price
-        FROM OptionCategories oc
-                 JOIN OptionItems oi ON oc.category_id = oi.category_id
+        FROM optioncategories oc
+                 JOIN optionitems oi ON oc.category_id = oi.category_id
         WHERE oc.category_id IN (1, 2, 3, 4)
           AND oc.is_deleted = false
           AND oi.is_deleted = false
@@ -31,7 +31,7 @@
             category_id as categoryId,
             image_url as imageUrl
         FROM
-            Menus
+            menus
         WHERE
             menu_name IN (
                           '아메리카노',
@@ -63,11 +63,11 @@
             category_id as categoryId,
             category_name as categoryName
         FROM
-            Categories
+            categories
         WHERE
             category_id IN (
                 SELECT DISTINCT category_id
-                FROM Menus
+                FROM menus
                 WHERE menu_name IN (
                                     '아메리카노',
                                     '카페라떼',

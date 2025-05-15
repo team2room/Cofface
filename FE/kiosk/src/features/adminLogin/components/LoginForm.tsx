@@ -38,7 +38,6 @@ export default function LoginForm() {
 
   const handleShift = () => {
     const newLayoutName = layout === 'default' ? 'shift' : 'default'
-    console.log('newLayoutName =>', newLayoutName)
     setLayout(newLayoutName)
   }
 

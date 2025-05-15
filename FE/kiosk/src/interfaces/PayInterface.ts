@@ -27,6 +27,9 @@ export interface PayData {
   totalAmount: number
   isStampUsed: boolean
   isTakeout: boolean
+  age: number
+  gender: string
+  weather: string
   paymentInfoId: number | null
   menuOrders: PayMenuOrder[]
 }

@@ -107,7 +107,7 @@
 
     <!-- 인기 메뉴 통계 저장 -->
     <insert id="insertPopularMenuStats">
-        INSERT INTO MenuPopularityStats (
+        INSERT INTO menupopularitystats (
             store_id, menu_id, stats_date, order_count, created_at, updated_at
         )
         SELECT
@@ -127,7 +127,7 @@
 
     <!-- 성별 선호도 통계 저장 -->
     <insert id="insertGenderPreferenceStats">
-        INSERT INTO MenuPreferenceStats (
+        INSERT INTO menupreferencestats (
             store_id, menu_id, gender, age_group, order_count, percentage, stats_date, created_at, updated_at
         )
         WITH gender_totals AS (
@@ -166,7 +166,7 @@
 
     <!-- 연령별 선호도 통계 저장 -->
     <insert id="insertAgePreferenceStats">
-        INSERT INTO MenuPreferenceStats (
+        INSERT INTO menupreferencestats (
             store_id, menu_id, gender, age_group, order_count, percentage, stats_date, created_at, updated_at
         )
         WITH age_totals AS (
@@ -193,9 +193,9 @@
             NOW() AS created_at,
             NOW() AS updated_at
         FROM ordermenu om
-                 JOIN Orders o ON om.order_id = o.order_id
-                 JOIN Users u ON o.user_id = u.internal_id
-                 JOIN Menus m ON om.menu_name = m.menu_name
+                 JOIN orders o ON om.order_id = o.order_id
+                 JOIN users u ON o.user_id = u.internal_id
+                 JOIN menus m ON om.menu_name = m.menu_name
                  JOIN age_totals at ON o.store_id = at.store_id
             AND FLOOR((YEAR(#{date}) - YEAR(u.birth_date)) / 10) * 10 = at.age_group
         WHERE DATE(o.order_date) = #{date}

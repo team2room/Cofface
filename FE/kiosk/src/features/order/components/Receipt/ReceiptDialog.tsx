@@ -131,6 +131,9 @@ export default function ReceiptModal({
                 kioskId: 1,
                 totalAmount: totalPrice,
                 menuOrders,
+                age: 20,
+                gender: '여성',
+                weather: 'SUNNY',
               })
               onOpenChange(false)
               onNext()

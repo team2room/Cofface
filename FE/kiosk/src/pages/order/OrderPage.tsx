@@ -4,7 +4,6 @@ import tw from 'twin.macro'
 import MenuContent from '../../features/order/components/MenuContent'
 import PlaceSelectContent from '../../features/order/components/PlaceSelectContent'
 import PayContent from '@/features/order/components/PayContent'
-import CompleteContent from '@/features/order/components/CompleteContent'
 import CustomDialog from '@/components/CustomDialog'
 import { Text } from '@/styles/typography'
 import { useNavigate } from 'react-router-dom'
@@ -14,7 +13,7 @@ import { useUserStore } from '@/stores/loginStore'
 
 const Container = tw.div`flex flex-col min-h-screen bg-white px-7 my-4`
 
-type Step = 'menu' | 'place' | 'pay' | 'complete'
+type Step = 'menu' | 'place' | 'pay'
 
 export default function OrderPage() {
   const navigate = useNavigate()
@@ -126,7 +125,7 @@ export default function OrderPage() {
           <PlaceSelectContent onNext={() => setStep('pay')} />
         )}
         {step === 'pay' && <PayContent />}
-        {step === 'complete' && <CompleteContent />}
+        {/* {step === 'complete' && <CompleteContent />} */}
       </Container>
 
       <CustomDialog

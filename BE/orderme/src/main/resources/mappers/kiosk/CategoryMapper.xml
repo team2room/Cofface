@@ -44,7 +44,7 @@
         WHERE
             category_id IN (
                 SELECT DISTINCT category_id
-                FROM Menus
+                FROM menus
                 WHERE menu_name IN (
                                     '아메리카노',
                                     '카페라떼',
