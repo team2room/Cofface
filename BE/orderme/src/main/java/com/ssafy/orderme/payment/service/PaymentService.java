@@ -259,8 +259,8 @@ public class PaymentService {
             }
 
             // 메뉴 가격 계산 (옵션 포함)
-            BigDecimal menuPrice = menu.getPrice();
-            BigDecimal totalPrice = menuPrice.multiply(BigDecimal.valueOf(menuOrder.getQuantity()));
+            Integer menuPrice = menu.getPrice();
+            int totalPrice = menuPrice * menuOrder.getQuantity();
 
             // 주문 메뉴 생성
             OrderMenu orderMenu = OrderMenu.builder()
@@ -269,7 +269,7 @@ public class PaymentService {
                     .menuName(menu.getMenuName())
                     .menuPrice(menuPrice.intValue())
                     .quantity(menuOrder.getQuantity())
-                    .totalPrice(totalPrice.intValue())
+                    .totalPrice(totalPrice)
                     .isDeleted(false)
                     .build();
 

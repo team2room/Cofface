@@ -1,17 +1,157 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
 <mapper namespace="com.ssafy.orderme.kiosk.mapper.MenuMapper">
-    <select id="findById" resultType="com.ssafy.orderme.kiosk.model.Menu">
+    <!-- 메뉴 조회 결과를 Menu 객체에 매핑 -->
+    <resultMap id="MenuResultMap" type="com.ssafy.orderme.kiosk.model.Menu">
+        <id property="menuId" column="menu_id" />
+        <result property="menuName" column="menu_name" />
+        <result property="price" column="price" />
+        <result property="categoryId" column="category_id" />
+        <result property="isSoldOut" column="is_sold_out" />
+        <result property="imageUrl" column="image_url" />
+        <result property="description" column="description" />
+        <result property="isDeleted" column="is_deleted" />
+        <result property="deletedAt" column="deleted_at" />
+        <association property="category" javaType="com.ssafy.orderme.kiosk.model.Category">
+            <result property="categoryName" column="category_name" />
+        </association>
+    </resultMap>
+
+    <!-- 옵션 카테고리 조회 결과를 OptionCategory 객체에 매핑 -->
+    <resultMap id="OptionCategoryResultMap" type="com.ssafy.orderme.kiosk.model.OptionCategory">
+        <id property="categoryId" column="category_id" />
+        <result property="categoryName" column="category_name" />
+        <result property="isRequired" column="is_required" />
+        <result property="displayOrder" column="display_order" />
+        <result property="isSoldOut" column="is_sold_out" />
+        <result property="isDeleted" column="is_deleted" />
+        <result property="deletedAt" column="deleted_at" />
+    </resultMap>
+
+    <!-- 옵션 아이템 조회 결과를 OptionItem 객체에 매핑 -->
+    <resultMap id="OptionItemResultMap" type="com.ssafy.orderme.kiosk.model.OptionItem">
+        <id property="itemId" column="item_id" />
+        <result property="categoryId" column="category_id" />
+        <result property="optionName" column="option_name" />
+        <result property="additionalPrice" column="additional_price" />
+        <result property="isDefault" column="is_default" />
+        <result property="displayOrder" column="display_order" />
+        <result property="isDeleted" column="is_deleted" />
+        <result property="deletedAt" column="deleted_at" />
+    </resultMap>
+
+    <!-- 메뉴-옵션 카테고리 연결 조회 결과를 MenuOptionCategory 객체에 매핑 -->
+    <resultMap id="MenuOptionCategoryResultMap" type="com.ssafy.orderme.kiosk.model.MenuOptionCategory">
+        <id property="id" column="id" />
+        <result property="menuId" column="menu_id" />
+        <result property="categoryId" column="category_id" />
+    </resultMap>
+
+    <!-- 매장의 모든 메뉴 조회 (FK 없이 JOIN) -->
+    <select id="findAllByStoreId" parameterType="Integer" resultMap="MenuResultMap">
         SELECT
-            menu_id as menuId,
-            category_id as categoryId,
-            menu_name as menuName,
-            price,
-            is_sold_out as isSoldOut,
-            image_url as imageUrl,
-            description,
-            is_deleted as isDeleted
-        FROM menus
-        WHERE menu_id = #{menuId}
+            m.menu_id,
+            m.menu_name,
+            m.price,
+            m.category_id,
+            c.category_name,
+            m.is_sold_out,
+            m.image_url,
+            m.description,
+            m.is_deleted,
+            m.deleted_at
+        FROM menus m
+                 JOIN categories c ON m.category_id = c.category_id
+        WHERE c.store_id = #{storeId}
+          AND m.is_deleted = 0
+        ORDER BY c.display_order, m.menu_name
+    </select>
+
+    <!-- 카테고리별 메뉴 조회 (FK 없이 JOIN) -->
+    <select id="findByCategoryId" resultMap="MenuResultMap">
+        SELECT
+            m.menu_id, m.menu_name, m.price, m.category_id,
+            c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
+        FROM menus m
+                 JOIN categories c ON m.category_id = c.category_id
+        WHERE c.store_id = #{storeId}
+          AND m.category_id = #{categoryId}
+          AND m.is_deleted = 0
+        ORDER BY m.menu_name
+    </select>
+
+    <!-- 메뉴 ID로 메뉴 상세 정보 조회 (FK 없이 JOIN) -->
+    <select id="findById" parameterType="Integer" resultMap="MenuResultMap">
+        SELECT
+            m.menu_id, m.menu_name, m.price, m.category_id,
+            c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
+        FROM menus m
+                 LEFT JOIN categories c ON m.category_id = c.category_id
+        WHERE m.menu_id = #{menuId}
+          AND m.is_deleted = 0
+    </select>
+
+    <!-- 메뉴 ID로 옵션 카테고리 목록 조회 (FK 없이 JOIN) -->
+    <select id="findOptionCategoriesByMenuId" parameterType="Integer" resultMap="OptionCategoryResultMap">
+        SELECT
+            oc.category_id, oc.category_name, oc.is_required, oc.display_order,
+            oc.is_sold_out, oc.is_deleted, oc.deleted_at
+        FROM optioncategories oc
+                 JOIN menuoptioncategories moc ON oc.category_id = moc.category_id
+        WHERE moc.menu_id = #{menuId}
+          AND oc.is_deleted = 0
+        ORDER BY oc.display_order, oc.category_name
+    </select>
+
+    <!-- 옵션 카테고리 ID로 옵션 아이템 목록 조회 -->
+    <select id="findOptionItemsByCategoryId" parameterType="Integer" resultMap="OptionItemResultMap">
+        SELECT
+            item_id, category_id, option_name, additional_price,
+            is_default, display_order, is_deleted, deleted_at
+        FROM optionitems
+        WHERE category_id = #{categoryId}
+          AND is_deleted = 0
+        ORDER BY display_order, option_name
+    </select>
+
+    <!-- 매장에서 가장 많이 팔린 메뉴 목록 조회 (kiosk_id 사용) -->
+    <select id="findPopularMenus" resultMap="MenuResultMap">
+        SELECT
+            m.menu_id, m.menu_name, m.price, m.category_id,
+            c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at,
+            COUNT(om.order_menu_id) AS order_count
+        FROM menus m
+                 JOIN ordermenu om ON m.menu_id = om.menu_id
+                 JOIN orders o ON om.order_id = o.order_id
+                 LEFT JOIN categories c ON m.category_id = c.category_id
+        WHERE o.kiosk_id = #{storeId}
+          AND m.is_deleted = 0
+          AND o.is_delete = 0
+        GROUP BY m.menu_id, m.menu_name, m.price, m.category_id,
+                 c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
+        ORDER BY order_count DESC
+            LIMIT #{limit}
+    </select>
+
+    <!-- 사용자가 가장 많이 주문한 메뉴 목록 조회 (kiosk_id 사용) -->
+    <select id="findFrequentOrderedMenus" resultMap="MenuResultMap">
+        SELECT
+            m.menu_id, m.menu_name, m.price, m.category_id,
+            c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at,
+            COUNT(DISTINCT om.order_id) AS order_count
+        FROM ordermenu om
+                 JOIN orders o ON om.order_id = o.order_id
+                 JOIN users u ON o.user_id = u.user_id
+                 JOIN menus m ON om.menu_id = m.menu_id
+                 LEFT JOIN categories c ON m.category_id = c.category_id
+        WHERE o.kiosk_id = #{storeId}
+          AND u.user_id = #{userId}
+          AND m.is_deleted = 0
+          AND o.is_delete = 0
+        GROUP BY m.menu_id, m.menu_name, m.price, m.category_id,
+                 c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
+        ORDER BY order_count DESC
+            LIMIT #{limit}
     </select>
 </mapper>

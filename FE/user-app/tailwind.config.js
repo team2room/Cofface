@@ -4,6 +4,37 @@ export default {
     content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
   	extend: {
+			keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { 
+            transform: 'translateY(10px)',
+            opacity: '0'
+          },
+          '100%': { 
+            transform: 'translateY(0)',
+            opacity: '1'
+          },
+        },
+        slideDown: {
+          '0%': { 
+            transform: 'translateY(-10px)',
+            opacity: '0'
+          },
+          '100%': { 
+            transform: 'translateY(0)',
+            opacity: '1'
+          },
+        }
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.3s ease-out',
+        'slide-up': 'slideUp 0.3s ease-out',
+        'slide-down': 'slideDown 0.3s ease-out'
+      },
   		fontFamily: {
   			suit: [
   				'Suit'
@@ -38,6 +69,7 @@ export default {
   			lightBlack: '#434343',
   			lightModal: 'rgba(0, 0, 0, 0.3)',
   			darkDark: '#772745',
+				hover: 'FF2175',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ssafy.orderme.manager.statistics.mapper.StatisticsMapper">
+
+    <!-- 일일 매출 정보 조회 - 수정된 SalesStats 테이블 활용 -->
+    <select id="getDailySales" resultType="java.util.Map">
+        SELECT
+            CAST(COALESCE(total_sales, 0) AS SIGNED) AS totalSales,
+            CAST(COALESCE(total_orders, 0) AS SIGNED) AS totalOrders,
+            CAST(COALESCE(takeout_sales, 0) AS SIGNED) AS takeoutSales,
+            CAST(COALESCE(eat_in_sales, 0) AS SIGNED) AS eatInSales,
+            CAST(COALESCE(takeout_orders, 0) AS SIGNED) AS takeoutOrders,
+            CAST(COALESCE(eat_in_orders, 0) AS SIGNED) AS eatInOrders
+        FROM salesstats
+        WHERE store_id = #{storeId}
+          AND stats_date = #{date}
+          AND stats_period_type = 'DAY'
+    </select>
+
+    <!-- 인기 메뉴 Top 3 조회 - MenuPopularityStats 테이블 활용 -->
+    <select id="getPopularMenus" resultType="java.util.Map">
+        SELECT
+            m.menu_name AS menuName,
+            m.image_url AS imageUrl,
+            CAST(SUM(mps.order_count) AS SIGNED) AS orderCount
+        FROM menupopularitystats mps
+                 JOIN menus m ON mps.menu_id = m.menu_id
+        WHERE mps.store_id = #{storeId}
+          AND mps.stats_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+        GROUP BY mps.menu_id
+        ORDER BY ordercount DESC
+            LIMIT 3
+    </select>
+
+    <!-- 성별별 선호 메뉴 조회 - MenuPreferenceStats 테이블 활용 -->
+    <select id="getGenderPreference" resultType="java.util.Map">
+        SELECT
+            mps.gender,
+            m.menu_name AS menuName,
+            m.image_url AS imageUrl,
+            mps.percentage
+        FROM menupreferencestats mps
+                 JOIN menus m ON mps.menu_id = m.menu_id
+        WHERE mps.store_id = #{storeId}
+          AND mps.gender IS NOT NULL
+          AND mps.age_group IS NULL
+          AND mps.stats_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+        ORDER BY mps.gender, mps.percentage DESC
+    </select>
+
+    <!-- 연령별 선호 메뉴 조회 - MenuPreferenceStats 테이블 활용 -->
+    <select id="getAgePreference" resultType="java.util.Map">
+        SELECT
+            mps.age_group AS ageGroup,
+            m.menu_name AS menuName,
+            m.image_url AS imageUrl,
+            mps.percentage
+        FROM menupreferencestats mps
+                 JOIN menus m ON mps.menu_id = m.menu_id
+        WHERE mps.store_id = #{storeId}
+          AND mps.gender IS NULL
+          AND mps.age_group IS NOT NULL
+          AND mps.stats_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+        ORDER BY mps.age_group, mps.percentage DESC
+    </select>
+
+    <!-- 주간 매출 정보 조회 - SalesStats 테이블 활용 -->
+    <select id="getWeeklySales" resultType="java.util.Map">
+        SELECT
+            stats_date AS date,
+            CAST(COALESCE(total_sales, 0) AS SIGNED) AS totalSales
+        FROM salesstats
+        WHERE store_id = #{storeId}
+          AND stats_date BETWEEN #{startDate} AND #{endDate}
+          AND stats_period_type = 'DAY'
+        ORDER BY stats_date
+    </select>
+
+    <!-- 일일 매출 통계 저장 -->
+    <insert id="insertDailySalesStats">
+        INSERT INTO salesstats (
+            store_id, stats_period_type, stats_date, year, month, week, day,
+            total_sales, takeout_sales, eat_in_sales, total_orders, takeout_orders, eat_in_orders,
+            created_at, updated_at
+        )
+        SELECT
+            store_id,
+            'DAY' AS stats_period_type,
+            #{date} AS stats_date,
+            YEAR(#{date}) AS year,
+            MONTH(#{date}) AS month,
+            WEEK(#{date}, 1) AS week,
+            DAY(#{date}) AS day,
+            SUM(total_amount) AS total_sales,
+            SUM(CASE WHEN is_takeout = TRUE THEN total_amount ELSE 0 END) AS takeout_sales,
+            SUM(CASE WHEN is_takeout = FALSE THEN total_amount ELSE 0 END) AS eat_in_sales,
+            COUNT(*) AS total_orders,
+            SUM(CASE WHEN is_takeout = TRUE THEN 1 ELSE 0 END) AS takeout_orders,
+            SUM(CASE WHEN is_takeout = FALSE THEN 1 ELSE 0 END) AS eat_in_orders,
+            NOW() AS created_at,
+            NOW() AS updated_at
+        FROM orders
+        WHERE DATE(order_date) = #{date}
+          AND is_deleted = FALSE
+        GROUP BY store_id
+    </insert>
+
+    <!-- 인기 메뉴 통계 저장 -->
+    <insert id="insertPopularMenuStats">
+        INSERT INTO MenuPopularityStats (
+            store_id, menu_id, stats_date, order_count, created_at, updated_at
+        )
+        SELECT
+            o.store_id,
+            m.menu_id,
+            #{date} AS stats_date,
+            COUNT(om.order_menu_id) AS order_count,
+            NOW() AS created_at,
+            NOW() AS updated_at
+        FROM ordermenu om
+                 JOIN orders o ON om.order_id = o.order_id
+                 JOIN menus m ON om.menu_name = m.menu_name
+        WHERE DATE(o.order_date) = #{date}
+          AND o.is_deleted = FALSE
+        GROUP BY o.store_id, m.menu_id
+    </insert>
+
+    <!-- 성별 선호도 통계 저장 -->
+    <insert id="insertGenderPreferenceStats">
+        INSERT INTO MenuPreferenceStats (
+            store_id, menu_id, gender, age_group, order_count, percentage, stats_date, created_at, updated_at
+        )
+        WITH gender_totals AS (
+            SELECT
+                o.store_id,
+                u.gender,
+                COUNT(om.order_menu_id) AS total_count
+            FROM ordermenu om
+                     JOIN orders o ON om.order_id = o.order_id
+                     JOIN users u ON o.user_id = u.internal_id
+            WHERE DATE(o.order_date) = #{date}
+            AND o.is_deleted = FALSE
+            AND u.gender IS NOT NULL
+        GROUP BY o.store_id, u.gender
+            )
+        SELECT
+            o.store_id,
+            m.menu_id,
+            u.gender,
+            NULL AS age_group,
+            COUNT(om.order_menu_id) AS order_count,
+            (COUNT(om.order_menu_id) / gt.total_count * 100) AS percentage,
+            #{date} AS stats_date,
+            NOW() AS created_at,
+            NOW() AS updated_at
+        FROM ordermenu om
+                 JOIN orders o ON om.order_id = o.order_id
+                 JOIN users u ON o.user_id = u.internal_id
+                 JOIN menus m ON om.menu_name = m.menu_name
+                 JOIN gender_totals gt ON o.store_id = gt.store_id AND u.gender = gt.gender
+        WHERE DATE(o.order_date) = #{date}
+          AND o.is_deleted = FALSE
+          AND u.gender IS NOT NULL
+        GROUP BY o.store_id, m.menu_id, u.gender
+    </insert>
+
+    <!-- 연령별 선호도 통계 저장 -->
+    <insert id="insertAgePreferenceStats">
+        INSERT INTO MenuPreferenceStats (
+            store_id, menu_id, gender, age_group, order_count, percentage, stats_date, created_at, updated_at
+        )
+        WITH age_totals AS (
+            SELECT
+                o.store_id,
+                FLOOR((YEAR(#{date}) - YEAR(u.birth_date)) / 10) * 10 AS age_group,
+                COUNT(om.order_menu_id) AS total_count
+            FROM ordermenu om
+                     JOIN orders o ON om.order_id = o.order_id
+                     JOIN users u ON o.user_id = u.internal_id
+            WHERE DATE(o.order_date) = #{date}
+            AND o.is_deleted = FALSE
+            AND u.birth_date IS NOT NULL
+        GROUP BY o.store_id, age_group
+            )
+        SELECT
+            o.store_id,
+            m.menu_id,
+            NULL AS gender,
+            FLOOR((YEAR(#{date}) - YEAR(u.birth_date)) / 10) * 10 AS age_group,
+            COUNT(om.order_menu_id) AS order_count,
+            (COUNT(om.order_menu_id) / at.total_count * 100) AS percentage,
+            #{date} AS stats_date,
+            NOW() AS created_at,
+            NOW() AS updated_at
+        FROM ordermenu om
+                 JOIN Orders o ON om.order_id = o.order_id
+                 JOIN Users u ON o.user_id = u.internal_id
+                 JOIN Menus m ON om.menu_name = m.menu_name
+                 JOIN age_totals at ON o.store_id = at.store_id
+            AND FLOOR((YEAR(#{date}) - YEAR(u.birth_date)) / 10) * 10 = at.age_group
+        WHERE DATE(o.order_date) = #{date}
+          AND o.is_deleted = FALSE
+          AND u.birth_date IS NOT NULL
+        GROUP BY o.store_id, m.menu_id, age_group
+    </insert>
+</mapper>
