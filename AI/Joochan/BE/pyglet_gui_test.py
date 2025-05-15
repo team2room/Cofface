@@ -1449,12 +1449,23 @@ class RealSenseFaceLiveness:
         except:
             pass
 
+from fastapi.middleware.cors import CORSMiddleware
+
 # FastAPI 서버 클래스
 class FaceRecognitionServer:
     def __init__(self, app_instance, port=8000):
         self.app_instance = app_instance
         self.port = port
         self.api = FastAPI(title="RealSense 얼굴 인식 API")
+        
+        self.api.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],  # Allows all origins
+            allow_credentials=True,
+            allow_methods=["*"],  # Allows all methods
+            allow_headers=["*"],  # Allows all headers
+        )
+        
         self.setup_routes()
         self.server_thread = None
         self.weather_cache = {
