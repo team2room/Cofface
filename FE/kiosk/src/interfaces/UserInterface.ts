@@ -5,3 +5,8 @@ export interface User {
   birthDate: string
   gender: string
 }
+
+export interface GuestInfo {
+  age: number
+  gender: string
+}

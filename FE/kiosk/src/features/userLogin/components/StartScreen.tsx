@@ -5,7 +5,10 @@ import { useState } from 'react'
 import { useLoginStore, useUserStore } from '@/stores/loginStore'
 import { useNavigate } from 'react-router-dom'
 import { useLogin } from '../hooks/useLogin'
-import { faceRecogRequest } from '../services/faceRecogService'
+import {
+  faceRecogRequest,
+  genderAgeRequest,
+} from '../services/faceRecogService'
 import { maskName } from '@/utils/maskUserName'
 
 const TopLeftText = tw.div`
@@ -109,6 +112,16 @@ export default function StartScreen() {
     }
   }
 
+  const handleGuestOrder = async () => {
+    try {
+      const { age, gender } = await genderAgeRequest()
+      useUserStore.getState().setGuestInfo({ age, gender })
+      navigate('/order')
+    } catch (err) {
+      alert('비회원 얼굴 분석에 실패했습니다.')
+    }
+  }
+
   return (
     <>
       <ImageWrapper>
@@ -136,12 +149,7 @@ export default function StartScreen() {
             회원 주문
           </Text>
         </Button>
-        <Button
-          onClick={() => {
-            useUserStore.getState().setGuest()
-            navigate('/order')
-          }}
-        >
+        <Button onClick={handleGuestOrder}>
           <Text variant="title2" weight="bold">
             비회원 주문
           </Text>
