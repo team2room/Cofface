@@ -5,11 +5,12 @@ import { useState } from 'react'
 import styled from '@emotion/styled'
 import CustomDialog from '@/components/CustomDialog'
 import PayMethodButton from './pay/PayMethodButton'
-import { usePayModal } from '../hooks/usePayModal'
+// import { usePayModal } from '../hooks/usePayModal'
 import { useCouponInfo } from '../hooks/useCoupon'
 import { useUserStore } from '@/stores/loginStore'
 import { usePayStore } from '@/stores/payStore'
 import { useNavigate } from 'react-router-dom'
+import Dialog from '../hooks/usePayModal'
 
 const Content = tw.div`w-full flex flex-col items-center justify-center flex-1 gap-12 mb-60`
 const Section = tw.div`w-[984px] bg-lightLight px-10 py-16 mb-12`
@@ -43,7 +44,7 @@ export default function PayContent() {
     menuOrders?.reduce((sum, item) => sum + item.quantity, 0) ?? 0
 
   const [modalState, setModalState] = useState<'face' | 'qr'>('face')
-  const modalContent = usePayModal(modalState)
+  // const modalContent = usePayModal(modalState)
   const [showModal, setShowModal] = useState(false)
 
   if (couponLoading) return <div>쿠폰 정보를 불러오는 중...</div>
@@ -155,14 +156,15 @@ export default function PayContent() {
             if (type === 'face') {
               navigate('/loading?type=progress')
             } else {
-              setModalState('qr')
-              setShowModal(true)
+              // setModalState('qr')
+              // setShowModal(true)
+              navigate('/pay')
             }
           }}
         />
       </Content>
 
-      <CustomDialog
+      {/* <CustomDialog
         open={showModal}
         onOpenChange={setShowModal}
         title={modalContent.title}
@@ -171,7 +173,9 @@ export default function PayContent() {
         cancelText={modalContent.cancelText}
         onCancel={() => setShowModal(false)}
         hideConfirm={true}
-      />
+      /> */}
+
+      {/* <Dialog open={showModal} onOpenChange={setShowModal} /> */}
     </>
   )
 }

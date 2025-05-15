@@ -115,6 +115,7 @@ export default function StartScreen() {
       navigate('/order')
     } catch (err) {
       alert('비회원 얼굴 분석에 실패했습니다.')
+      navigate('/order')
     }
   }
 

@@ -6,6 +6,9 @@ import UserLoginPage from './pages/userLogin/UserLoginPage'
 import GlobalRippleEffect from './styles/RippleEffect'
 import OrderPage from './pages/order/OrderPage'
 import LoadingPage from './pages/LoadingPage'
+import { SuccessPage } from './pages/pay/SuccessPage'
+import { FailPage } from './pages/pay/FailPage'
+import PayPage from './pages/pay/PayPage'
 
 function App() {
   return (
@@ -24,6 +27,15 @@ function App() {
 
         {/* 로딩 화면 */}
         <Route path="/loading" element={<LoadingPage />} />
+
+        {/* 결제 성공 페이지 */}
+        <Route path="/pay" element={<PayPage />} />
+
+        {/* 결제 성공 페이지 */}
+        <Route path="/pay/success" element={<SuccessPage />} />
+
+        {/* 결제 실패 페이지 */}
+        <Route path="/pay/fail" element={<FailPage />} />
       </Routes>
     </>
   )
