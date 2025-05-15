@@ -13,6 +13,7 @@ import com.ssafy.orderme.payment.mapper.PaymentMapper;
 import com.ssafy.orderme.payment.model.Order;
 import com.ssafy.orderme.payment.model.Payment;
 import com.ssafy.orderme.user.mapper.UserMapper;
+import com.ssafy.orderme.user.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -84,6 +85,11 @@ public class PaymentService {
 
         // 토스페이먼츠용 주문 ID 생성
         String tossOrderId = generateTossOrderId();
+        User user = null;
+
+        if( userId!=null ){
+            user = userMapper.selectById(userId);
+        }
 
         // 주문 정보 저장
         Order order = Order.builder()
@@ -94,8 +100,8 @@ public class PaymentService {
                 .isStampUsed(request.getIsStampUsed() != null ? request.getIsStampUsed() : false)
                 .orderStatus("PENDING")
                 .isTakeout(request.getIsTakeout() != null ? request.getIsTakeout() : false)
-                .age(request.getAge())
-                .gender(request.getGender())
+                .age(user!=null?user.getAge(): request.getAge())
+                .gender(user!=null?user.getGender().toString(): request.getGender())
                 .isGuest(userId == null) // 게스트 여부 설정
                 .isDelete(false)
                 .orderNumber(orderNumber)

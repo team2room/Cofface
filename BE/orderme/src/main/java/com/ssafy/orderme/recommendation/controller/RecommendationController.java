@@ -81,7 +81,7 @@ public class RecommendationController {
         } else {
             // 비회원인 경우 파라미터 값 사용
             userGender = gender;
-            userAge = age;
+            userAge = Integer.toString(( Integer.parseInt(age) / 10 ) * 10);
         }
 
         // 필수 정보 확인 - 비회원이고 성별/나이 정보가 없는 경우에만 에러
@@ -186,7 +186,7 @@ public class RecommendationController {
                 .collect(Collectors.toList());
 
         // 상세 정보가 포함된 MenuDetailResponse 가져오기
-        List<MenuDetailResponse> weatherGenderAgeMenuDetails =
+         List<MenuDetailResponse> weatherGenderAgeMenuDetails =
                 recommendationService.getMenuDetailsByIds(weatherGenderAgeMenuIds);
 
         // 세 번째 추천 그룹 추가 (날씨, 성별, 나이 기반)
@@ -209,6 +209,7 @@ public class RecommendationController {
 
     /**
      * 재추천 요청 처리 엔드포인트
+     * 25/05/15 : 필요 없어짐
      */
     @GetMapping("/refresh")
     public ApiResponse<RecommendationResponse> refreshRecommendations(

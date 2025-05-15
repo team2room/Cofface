@@ -21,6 +21,8 @@ import com.ssafy.orderme.payment.model.CardInfo;
 import com.ssafy.orderme.payment.model.Order;
 import com.ssafy.orderme.payment.model.Payment;
 import com.ssafy.orderme.payment.model.PaymentInfo;
+import com.ssafy.orderme.user.mapper.UserMapper;
+import com.ssafy.orderme.user.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,6 +50,7 @@ public class AutoPaymentService {
     public final StampHistoryMapper stampHistoryMapper;
     public final StampMapper stampMapper;
     public final StampPolicyMapper stampPolicyMapper;
+    public final UserMapper userMapper;
 
     /**
      * 자동 결제 처리
@@ -56,6 +59,8 @@ public class AutoPaymentService {
     public PaymentResponseDto processAutoPayment(AutoPaymentRequest request, String userId) {
         // 1. 사용자의 결제 정보 가져오기 (기존 코드 유지)
         PaymentInfo paymentInfo;
+        User user = userMapper.selectById(userId);
+
         if (request.getPaymentInfoId() != null) {
             // 지정된 결제 정보 가져오기
             paymentInfo = paymentInfoMapper.findById(request.getPaymentInfoId());
@@ -111,8 +116,8 @@ public class AutoPaymentService {
                 .isGuest(false) // 등록된 사용자이므로 게스트 아님
                 .isDelete(false)
                 .weather(request.getWeather())
-                .gender(request.getGender())
-                .age(request.getAge())
+                .gender(user.getGender().toString())
+                .age(user.getAge())
                 .orderNumber(orderNumber)
                 .build();
 
