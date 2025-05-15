@@ -1314,7 +1314,7 @@ class FaceRecognitionServer:
         def root():
             return {"message": "RealSense 얼굴 인식 API 서버"}
         
-        @self.api.post("/recognize")
+        @self.api.post("/genderage")
         async def recognize(background_tasks: BackgroundTasks):
             # 이미 처리 중인지 확인
             if self.app_instance.processing_api_request:
