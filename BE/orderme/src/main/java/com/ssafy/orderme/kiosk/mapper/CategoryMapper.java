@@ -4,6 +4,7 @@ import com.ssafy.orderme.kiosk.model.Category;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 카테고리 관련 DB 작업을 위한 Mapper 인터페이스
@@ -23,4 +24,6 @@ public interface CategoryMapper {
      * @return 카테고리 정보
      */
     Category findById(Long categoryId);
+
+    List<Map<String, Object>> getCategoriesForPreferredMenus();
 }

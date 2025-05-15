@@ -1,11 +1,7 @@
 package com.ssafy.orderme.kiosk.controller;
 
 import com.ssafy.orderme.common.ApiResponse;
-import com.ssafy.orderme.kiosk.dto.response.CategoryResponse;
-import com.ssafy.orderme.kiosk.dto.response.MenuDetailResponse;
-import com.ssafy.orderme.kiosk.dto.response.MenuResponse;
-import com.ssafy.orderme.kiosk.dto.response.PreferenceOptionCategoryResponse;
-import com.ssafy.orderme.kiosk.dto.response.RecommendedMenuResponse;
+import com.ssafy.orderme.kiosk.dto.response.*;
 import com.ssafy.orderme.kiosk.service.CategoryService;
 import com.ssafy.orderme.kiosk.service.MenuService;
 import com.ssafy.orderme.kiosk.service.PreferenceService;
@@ -16,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.ssafy.orderme.kiosk.dto.request.UserPreferenceRequest;
 
 import java.util.List;
 
@@ -155,5 +152,40 @@ public class KioskController {
     public ResponseEntity<ApiResponse<List<PreferenceOptionCategoryResponse>>> getPreferenceOptions() {
         List<PreferenceOptionCategoryResponse> options = preferenceService.getPreferenceOptions();
         return ResponseEntity.ok(ApiResponse.success("선호 옵션 목록 조회 성공", options));
+    }
+
+    /**
+     * 콜드 스타트 유저를 위한 선호 메뉴 목록 조회 (카테고리별로 그룹화)
+     */
+    @GetMapping("/preferences/menus")
+    public ResponseEntity<ApiResponse<List<PreferredMenuCategoryResponse>>> getPreferredMenusByCategory() {
+        List<PreferredMenuCategoryResponse> menuCategories = preferenceService.getPreferredMenusByCategory();
+        return ResponseEntity.ok(ApiResponse.success("선호 메뉴 목록 조회 성공", menuCategories));
+    }
+
+    /**
+     * 사용자의 선호 메뉴와 옵션을 저장하는 API
+     */
+    @PostMapping("/preferences/save")
+    public ResponseEntity<ApiResponse<Void>> saveUserPreferences(
+            @RequestHeader("Authorization") String token,
+            @RequestBody UserPreferenceRequest request) {
+
+        // 토큰 검증 및 사용자 ID 추출
+        if (!token.startsWith("Bearer ")) {
+            return ResponseEntity.ok(ApiResponse.error(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰 형식입니다."));
+        }
+
+        String jwtToken = token.substring(7);
+        if (!jwtTokenProvider.validateToken(jwtToken)) {
+            return ResponseEntity.ok(ApiResponse.error(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."));
+        }
+
+        String userId = jwtTokenProvider.getUserId(jwtToken);
+
+        // 선호도 저장
+        preferenceService.saveUserPreferences(userId, request);
+
+        return ResponseEntity.ok(ApiResponse.success("선호도 저장 성공"));
     }
 }

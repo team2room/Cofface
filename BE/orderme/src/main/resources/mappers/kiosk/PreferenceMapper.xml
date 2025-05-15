@@ -22,4 +22,96 @@
           AND oi.is_deleted = false
         ORDER BY oc.display_order, oi.display_order
     </select>
+
+    <!-- 선호 메뉴 조회 -->
+    <select id="getPreferredMenus" resultType="com.ssafy.orderme.kiosk.dto.response.PreferredMenuResponse">
+        SELECT
+            menu_id as menuId,
+            menu_name as menuName,
+            category_id as categoryId,
+            image_url as imageUrl
+        FROM
+            Menus
+        WHERE
+            menu_name IN (
+                          '아메리카노',
+                          '카페라떼',
+                          '카라멜 마끼아또',
+                          '자몽 에이드',
+                          '레몬 에이드',
+                          '레모네이드',
+                          '딸기 주스',
+                          '아이스 초코',
+                          '딸기 라떼',
+                          '녹차 라떼',
+                          '블루베리 요거트 스무디',
+                          '민트 프라페',
+                          '딸기 쿠키 프라페',
+                          '유자차',
+                          '자몽차',
+                          '녹차'
+                )
+          AND
+            is_deleted = false
+        ORDER BY
+            category_id, menu_name
+    </select>
+
+    <!-- 카테고리 이름 조회 -->
+    <select id="getCategoriesForPreferredMenus" resultType="java.util.Map">
+        SELECT
+            category_id as categoryId,
+            category_name as categoryName
+        FROM
+            Categories
+        WHERE
+            category_id IN (
+                SELECT DISTINCT category_id
+                FROM Menus
+                WHERE menu_name IN (
+                                    '아메리카노',
+                                    '카페라떼',
+                                    '카라멜 마끼아또',
+                                    '자몽 에이드',
+                                    '레몬 에이드',
+                                    '레모네이드',
+                                    '딸기 주스',
+                                    '아이스 초코',
+                                    '딸기 라떼',
+                                    '녹차 라떼',
+                                    '블루베리 요거트 스무디',
+                                    '민트 프라페',
+                                    '딸기 쿠키 프라페',
+                                    '유자차',
+                                    '자몽차',
+                                    '녹차'
+                    )
+            )
+          AND
+            is_deleted = false
+        ORDER BY
+            category_id
+    </select>
+
+    <!-- 선호 메뉴 저장 (ID 기반) - AUTO_INCREMENT 사용 -->
+    <insert id="savePreferredMenuById">
+        INSERT INTO preferredmenu (user_id, menu_id)
+        VALUES (#{userId}, #{menuId})
+    </insert>
+
+    <!-- 선호 옵션 저장 (ID 기반) - AUTO_INCREMENT 사용 -->
+    <insert id="savePreferredOptionById">
+        INSERT INTO preferredoption (user_id, category_id, item_id)
+        VALUES (#{userId}, #{categoryId}, #{itemId})
+    </insert>
+
+    <!-- 사용자의 기존 선호 메뉴 삭제 -->
+    <delete id="deletePreferredMenusByUserId">
+        DELETE FROM preferredmenu WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 사용자의 기존 선호 옵션 삭제 -->
+    <delete id="deletePreferredOptionsByUserId">
+        DELETE FROM preferredoption WHERE user_id = #{userId}
+    </delete>
 </mapper>
