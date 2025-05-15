@@ -15,6 +15,7 @@ interface AuthState {
   isLoading: boolean
   error: string | null
   initialized: boolean
+  isNewUser: boolean
 
   initialize: () => Promise<void>
 
@@ -49,6 +50,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
       initialized: false,
+      isNewUser: true,
 
       initialize: async () => {
         const refreshTokenValue = getCookie('refreshToken')
@@ -144,6 +146,7 @@ export const useAuthStore = create<AuthState>()(
           })
 
           set({
+            isNewUser: response.isNewUser,
             user: response.user,
             isAuthenticated: true,
             isLoading: false,
@@ -226,6 +229,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        isNewUser: state.isNewUser,
       }),
     },
   ),

@@ -9,6 +9,12 @@ export interface VisitedStoreInfo {
   lastVisitDate: string
 }
 
+// 얼굴 인증 등록여부 조회용
+export interface CheckingUserInfo {
+  phone_number: string
+  name: string
+}
+
 // 홈 메인버튼 인터페이스
 export interface HomeMainButtonProps {
   title: string

@@ -2,7 +2,10 @@ import { HomeMainButton } from '@/features/home/components/home/HomeMainButton'
 import { HomeSelectDrinks } from '@/features/home/components/home/HomeSelectDrinks'
 import { HomeTitleLock } from '@/features/home/components/home/HomeTitleLock'
 import { HomeTitleUnlock } from '@/features/home/components/home/HomeTitleUnlock'
-import { HomeMainButtonProps } from '@/interfaces/HomeInterfaces'
+import {
+  HomeMainButtonProps,
+  CheckingUserInfo,
+} from '@/interfaces/HomeInterfaces'
 import { Text } from '@/styles/typography'
 import { Settings } from 'iconoir-react'
 import tw from 'twin.macro'
@@ -13,6 +16,8 @@ import phone from '@/assets/phone.png'
 import wallet from '@/assets/wallet.png'
 import scrollDown from '@/assets/scroll-down.gif'
 import { useAuthStore } from '@/stores/authStore'
+import { checkRegistered } from '@/features/home/services/homeService'
+import LoadingMessage from '@/components/LoadingMessage'
 
 const Container = tw.div`
   w-full
@@ -56,13 +61,55 @@ const ButtonWrapper = tw.div`
 export default function HomePage() {
   const { user } = useAuthStore()
   const name = user?.name || '오늘도'
-  const locked = false
+  const [locked, setLocked] = useState<boolean>(true) // 기본값은 잠김 상태(true)로 설정
+  const [loading, setLoading] = useState<boolean>(true) // 로딩 상태 추가
 
   const [isScrolled, setIsScrolled] = useState(false)
   const isScrollingRef = useRef(false)
   const touchStartY = useRef(0)
 
   const navigate = useNavigate()
+
+  // 페이지 로드 시 얼굴 등록 여부 확인
+  useEffect(() => {
+    const checkFaceRegistration = async () => {
+      try {
+        setLoading(true)
+
+        // 사용자 정보가 없으면 로딩 중단
+        if (!user || !user.id) {
+          console.error('사용자 정보가 없습니다.')
+          setLocked(true) // 사용자 정보가 없으면 잠김 상태로 설정
+          setLoading(false)
+          return
+        }
+
+        // 사용자 정보로 얼굴 등록 여부 확인 요청
+        const checkingUserInfo: CheckingUserInfo = {
+          phone_number: user.phoneNumber,
+          name: user.name,
+        }
+
+        const isRegistered = await checkRegistered(checkingUserInfo)
+
+        // 등록 여부에 따라 잠김 상태 업데이트
+        setLocked(!isRegistered) // 등록되었으면 false(잠금 해제), 아니면 true(잠김)
+        console.log(
+          '얼굴 등록 여부:',
+          isRegistered,
+          '잠김 상태:',
+          !isRegistered,
+        )
+      } catch (error) {
+        console.error('얼굴 등록 여부 확인 중 오류:', error)
+        setLocked(true) // 오류 발생 시 기본적으로 잠김 상태로 설정
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkFaceRegistration()
+  }, [user])
 
   const mainButtonProps: HomeMainButtonProps[] = [
     {
@@ -173,6 +220,11 @@ export default function HomePage() {
     }, 800)
   }
 
+  // 로딩 중이면 로딩 화면 표시
+  if (loading) {
+    return <LoadingMessage />
+  }
+
   // 2가지 경우 고려, 얼굴&결제 미등록/등록
   return (
     <PageContainter>
@@ -188,7 +240,7 @@ export default function HomePage() {
               }}
             />
           </HomeNav>
-          {/* 등록 여부 */}
+          {/* 등록 여부에 따라 다른 컴포넌트 표시 */}
           {locked ? <HomeTitleLock /> : <HomeTitleUnlock />}
           <HomeSelectDrinks locked={locked} />
           <ScrollDown onClick={handleScrollDown}>

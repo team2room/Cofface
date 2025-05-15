@@ -11,6 +11,7 @@ import { FaceRegisterPage } from './pages/register/FaceRegisterPage'
 import { PayRegisterPage } from './pages/register/PayRegisterPage'
 import { SettingPage } from './pages/setting/SettingPage'
 import { SettingPayPage } from './pages/setting/SettingPayPage'
+import SurveyPage from './pages/survey/SurveyPage'
 import Fonts from './styles/fonts'
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 
@@ -35,6 +36,7 @@ function App() {
             </ProtectedRoute>
           }
         >
+          <Route path="/survey" element={<SurveyPage />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/store/:storeId" element={<StorePage />} />
 
