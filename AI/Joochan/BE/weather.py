@@ -179,14 +179,19 @@ def get_dominant_weather_feeling(weather_data):
     # 기본 쾌적한 느낌
     return "쾌적함"
 
-def get_weather(api_key, geo_api_key):
-    myip=showpublicIp()
-    geourl=f'https://geo.ipify.org/api/v2/country,city?apiKey={geo_api_key}&ipAddress={myip}'
+def get_weather(city=None):
+    api_key = os.getenv('OPEN_WEATHER_API_KEY')
+    geo_api_key = os.getenv('GEO_API_KEY')
     
-    response = requests.get(geourl)
-    parsed_data = response.json()
+    if city == None:
+        myip=showpublicIp()
+        geourl=f'https://geo.ipify.org/api/v2/country,city?apiKey={geo_api_key}&ipAddress={myip}'
     
-    city = parsed_data['location']['region']
+        response = requests.get(geourl)
+        parsed_data = response.json()
+    
+        city = parsed_data['location']['region']
+    
     url = f'http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric'
 
     response = requests.get(url)
@@ -206,8 +211,5 @@ def showpublicIp():
     return ip
 
 if __name__ == '__main__':
-    api_key = os.getenv('OPEN_WEATHER_API_KEY')
-    geo_api_key = os.getenv('GEO_API_KEY')
-
-    result = get_weather(api_key, geo_api_key)
+    result = get_weather()
     pprint(result)

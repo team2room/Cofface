@@ -1,243 +1,594 @@
-from fastapi import FastAPI, HTTPException
+# main.py
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 import numpy as np
 import base64
-import cv2, os, torch
+import cv2
 import logging
-from pathlib import Path
-import uuid
 from datetime import datetime
-
+import json
+import asyncio
+import os
+import uuid
+from contextlib import asynccontextmanager
+import torch
+import insightface
 from insightface.app import FaceAnalysis
-from insightface.model_zoo import get_model
+from insightface.data import get_image as ins_get_image
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
-from contextlib import asynccontextmanager
 
 # 로깅 설정
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("face_recognition_server.log"),
+        logging.FileHandler("face_verification_server.log"),
         logging.StreamHandler()
     ]
 )
-logger = logging.getLogger("face_recognition")
+logger = logging.getLogger("face_verification_server")
 
-# 설정
-VECTOR_DIMENSION = 512  # InsightFace 임베딩 차원
-COLLECTION_NAME = "face_vectors"
-REQUIRED_FACE_DIRECTIONS = ["front", "left", "right", "up", "down"]
+# Qdrant 설정
+QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
+QDRANT_PORT = int(os.getenv("QDRANT_PORT", 6333))
+COLLECTION_NAME = "face_embeddings"
+VECTOR_SIZE = 512  # InsightFace 임베딩 차원
 SIMILARITY_THRESHOLD = 0.7  # 유사도 임계값
 
 
 # 데이터 모델
-class FaceRegistrationRequest(BaseModel):
-    user_id: str
+class RegisterRequest(BaseModel):
+    phone_number: str
+    name: str
     face_images: Dict[str, str]  # 방향별 Base64 인코딩된 이미지
 
 
-class VerificationResponse(BaseModel):
-    user_id: Optional[str]
-    confidence: float
-    matched: bool
-    processing_time: float
+class VerifyRequest(BaseModel):
+    rgb_image: str  # Base64 인코딩된 RGB 이미지
+    rgb_images: Optional[List[str]] = None  # 여러 이미지를 리스트로 받음
+    liveness_result: Optional[Dict[str, Any]] = None  # 로컬에서 처리한 라이브니스 결과
 
-class VerificationRequest(BaseModel):
-    rgb_image: str
-    depth_image: Optional[str] = None
 
-class EmbeddingVerificationRequest(BaseModel):
-    embedding: List[float]
-    liveness: bool = True
-    distance: float = 0.0
+class CheckRegistrationRequest(BaseModel):
+    phone_number: str
+    name: str
 
-# InsightFace 모델을 관리하는 클래스
-class FaceRecognitionSystem:
+
+# 웹소켓 연결 관리
+class ConnectionManager:
     def __init__(self):
-        self.face_analyzer = None
-        self.face_recognizer = None
-        self.db_client = None
-        self.is_initialized = False
+        self.active_connections: List[WebSocket] = []
 
-        # 모델 디렉토리 설정
-        self.THIS_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
-        self.models_dir = self.THIS_DIR / "models" / "insightface"
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+        logger.info(f"WebSocket 연결 생성: {websocket.client}")
 
-        # 모델 디렉토리 생성
-        os.makedirs(self.models_dir, exist_ok=True)
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+        logger.info(f"WebSocket 연결 종료: {websocket.client}")
 
-    async def initialize(self):
-        if self.is_initialized:
-            return
+    async def send_personal_message(self, message: Dict[str, Any], websocket: WebSocket):
+        await websocket.send_json(message)
 
-        logger.info("안면인식 시스템 초기화 시작...")
 
+# 얼굴 처리 클래스
+class FaceProcessor:
+    def __init__(self):
+        self.face_app = None
+        self.face_model = None
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        logger.info(f"딥러닝 모델 실행 장치: {self.device}")
+        self.qdrant_client = None
+        self.init_qdrant()
+        self.init_models()
+
+    def init_qdrant(self):
+        """Qdrant 클라이언트 초기화 및 컬렉션 생성"""
         try:
-            # InsightFace 모델 초기화 (GPU 사용)
-            logger.info(f"모델 디렉토리: {self.models_dir}")
-            self.face_analyzer = FaceAnalysis(
-                name="buffalo_l",
-                root=str(self.models_dir),
-                providers=['CUDAExecutionProvider', 'CPUExecutionProvider'],
-                allowed_modules=['detection', 'recognition']
-            )
+            self.qdrant_client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
 
-            # face_analyzer 준비 (이 과정에서 모델을 자동으로 다운로드)
-            logger.info("FaceAnalysis 모델 준비 중...")
-            self.face_analyzer.prepare(ctx_id=0, det_size=(640, 640))
-            logger.info("FaceAnalysis 모델 준비 완료")
+            # 컬렉션이 이미 존재하는지 확인
+            collections = self.qdrant_client.get_collections().collections
+            collection_names = [collection.name for collection in collections]
 
-            # ArcFace 모델 (고정밀 임베딩 추출용)
-            logger.info("ArcFace 모델 로드 중...")
-            model_path = self.models_dir / "buffalo_l"
-
-            # 모델 디렉토리 확인
-            if not os.path.exists(model_path):
-                logger.info(f"모델 디렉토리가 존재하지 않습니다: {model_path}")
-                logger.info("FaceAnalysis 모델을 통해 모델 다운로드를 시도합니다.")
-
-            # ArcFace 모델 로드 시도
-            try:
-                self.face_recognizer = get_model("buffalo_l", root=str(self.models_dir))
-                self.face_recognizer.prepare(ctx_id=0)
-                logger.info("ArcFace 모델 로드 성공")
-            except Exception as e:
-                logger.error(f"ArcFace 모델 로드 실패: {e}")
-                logger.info("FaceAnalysis의 recognizer를 대체로 사용합니다.")
-                # face_analyzer에서 사용하는 recognition 모델을 대체로 사용
-                self.face_recognizer = self.face_analyzer
-
-            # Qdrant 벡터 DB 연결
-            logger.info("Qdrant 연결 중...")
-            self.db_client = QdrantClient(host="localhost", port=6333)
-
-            # 컬렉션 존재 확인 및 생성
-            try:
-                collections = self.db_client.get_collections().collections
-                collection_names = [collection.name for collection in collections]
-
-                if COLLECTION_NAME not in collection_names:
-                    self.db_client.create_collection(
-                        collection_name=COLLECTION_NAME,
-                        vectors_config=models.VectorParams(
-                            size=VECTOR_DIMENSION,
-                            distance=models.Distance.COSINE,
-                        ),
+            if COLLECTION_NAME not in collection_names:
+                # 컬렉션 생성
+                self.qdrant_client.create_collection(
+                    collection_name=COLLECTION_NAME,
+                    vectors_config=models.VectorParams(
+                        size=VECTOR_SIZE,
+                        distance=models.Distance.COSINE
                     )
-                    logger.info(f"컬렉션 '{COLLECTION_NAME}' 생성 완료")
-                else:
-                    logger.info(f"컬렉션 '{COLLECTION_NAME}' 이미 존재함")
-            except Exception as e:
-                logger.error(f"Qdrant 컬렉션 초기화 중 오류: {e}")
-                raise
-
-            self.is_initialized = True
-            logger.info("안면인식 시스템 초기화 완료")
+                )
+                logger.info(f"Qdrant 컬렉션 '{COLLECTION_NAME}' 생성 완료")
+            else:
+                logger.info(f"Qdrant 컬렉션 '{COLLECTION_NAME}' 이미 존재함")
 
         except Exception as e:
-            logger.error(f"안면인식 시스템 초기화 중 오류 발생: {e}")
+            logger.error(f"Qdrant 초기화 실패: {e}")
             raise
 
-
-# 얼굴 임베딩 추출 함수
-def extract_face_embedding(image, face_analyzer, face_recognizer):
-    """이미지에서 얼굴 임베딩 추출"""
-    faces = face_analyzer.get(image)
-    if not faces:
-        return None
-
-    # 가장 큰 얼굴 선택
-    largest_face = max(faces, key=lambda x: x.bbox[2] * x.bbox[3])
-
-    # face_recognizer가 face_analyzer와 동일한 경우 (대체 사용)
-    if face_recognizer is face_analyzer:
-        # 이미 추출된 얼굴의 임베딩 사용
-        embedding = largest_face.embedding
-    else:
-        # 별도의 face_recognizer 사용
+    def init_models(self):
         try:
-            embedding = face_recognizer.get(image, largest_face)
-        except:
-            # 실패 시 대체 임베딩 사용
-            embedding = largest_face.embedding
+            # InsightFace 얼굴 분석 모델 초기화
+            self.face_app = FaceAnalysis(providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
+            self.face_app.prepare(ctx_id=0, det_size=(640, 640))
+            logger.info("InsightFace 모델 초기화 완료")
+        except Exception as e:
+            logger.error(f"InsightFace 모델 초기화 실패: {e}")
+            raise
 
-    return embedding
+    def base64_to_image(self, base64_str):
+        """Base64 문자열을 OpenCV 이미지로 변환"""
+        try:
+            # "data:image/jpeg;base64," 프리픽스 제거
+            if ',' in base64_str:
+                base64_str = base64_str.split(',')[1]
 
+            img_bytes = base64.b64decode(base64_str)
+            nparr = np.frombuffer(img_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            return img
+        except Exception as e:
+            logger.error(f"Base64 디코딩 오류: {e}")
+            return None
 
-# 여러 각도의 얼굴 임베딩 통합
-def merge_embeddings(embeddings_dict):
-    """여러 각도의 얼굴 임베딩을 하나로 통합 - 정면 가중치 증가"""
-    if not all(angle in embeddings_dict for angle in REQUIRED_FACE_DIRECTIONS):
-        missing = [angle for angle in REQUIRED_FACE_DIRECTIONS if angle not in embeddings_dict]
-        raise ValueError(f"누락된 얼굴 각도가 있습니다: {missing}")
+    def extract_face_embedding(self, image):
+        """이미지에서 얼굴 임베딩 추출"""
+        try:
+            if image is None or image.size == 0:
+                return None
 
-    # 각 각도별 가중치 설정
-    weights = {
-        'front': 3.0,    # 정면에 3배 가중치
-        'left': 1.0,
-        'right': 1.0,
-        'up': 1.0,
-        'down': 1.0
-    }
+            # 얼굴 감지 및 특징 추출
+            faces = self.face_app.get(image)
+
+            if not faces:
+                logger.warning("이미지에서 얼굴을 찾을 수 없음")
+                return None
+
+            # 가장 큰 얼굴 선택 (여러 얼굴이 감지된 경우)
+            face = max(faces, key=lambda x: (x.bbox[2] - x.bbox[0]) * (x.bbox[3] - x.bbox[1]))
+            embedding = face.embedding
+
+            return embedding
+        except Exception as e:
+            logger.error(f"얼굴 임베딩 추출 오류: {e}")
+            return None
+
+    def register_face(self, phone_number, name, face_images):
+        """여러 방향의 얼굴 이미지를 등록"""
+        try:
+            # 필요한 방향 확인
+            required_directions = ['front', 'left', 'right', 'up', 'down']
+            for direction in required_directions:
+                if direction not in face_images:
+                    raise ValueError(f"{direction} 방향 이미지가 누락됨")
+
+            # 기존 사용자 데이터가 있으면 삭제
+            try:
+                # 전화번호와 이름으로 검색하여 삭제
+                self.qdrant_client.delete(
+                    collection_name=COLLECTION_NAME,
+                    points_selector=models.FilterSelector(
+                        filter=models.Filter(
+                            must=[
+                                models.FieldCondition(
+                                    key="phone_number",
+                                    match=models.MatchValue(value=phone_number)
+                                ),
+                                models.FieldCondition(
+                                    key="name",
+                                    match=models.MatchValue(value=name)
+                                )
+                            ]
+                        )
+                    )
+                )
+                logger.info(f"사용자 {name}({phone_number})의 기존 임베딩 삭제 완료")
+            except Exception as e:
+                logger.warning(f"사용자 {name}({phone_number})의 기존 데이터 삭제 중 오류 (무시됨): {e}")
+
+            # 각 방향별 이미지 처리
+            for direction, base64_img in face_images.items():
+                img = self.base64_to_image(base64_img)
+                if img is None:
+                    raise ValueError(f"{direction} 방향 이미지 디코딩 실패")
+
+                embedding = self.extract_face_embedding(img)
+                if embedding is None:
+                    raise ValueError(f"{direction} 방향 얼굴 감지 실패")
+
+                # Qdrant에 포인트 저장
+                self.qdrant_client.upsert(
+                    collection_name=COLLECTION_NAME,
+                    points=[
+                        models.PointStruct(
+                            id=str(uuid.uuid4()),  # UUID 형식으로 생성
+                            vector=embedding.tolist(),
+                            payload={
+                                "phone_number": phone_number,
+                                "name": name,
+                                "direction": direction,
+                                "timestamp": datetime.now().timestamp(),
+                                "register_time": datetime.now().isoformat()
+                            }
+                        )
+                    ]
+                )
+                logger.info(f"사용자 {name}({phone_number})의 {direction} 방향 임베딩 저장 완료")
+
+            return {
+                "status": "success",
+                "message": f"사용자 {name}({phone_number}) 등록 완료",
+                "direction_count": len(face_images)
+            }
+        except Exception as e:
+            logger.error(f"얼굴 등록 오류: {e}")
+            raise
+
+    def check_registration(self, phone_number, name):
+        """사용자 등록 여부 확인"""
+        try:
+            # 필터 조건 생성
+            filter_condition = models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="phone_number",
+                        match=models.MatchValue(value=phone_number)
+                    ),
+                    models.FieldCondition(
+                        key="name",
+                        match=models.MatchValue(value=name)
+                    )
+                ]
+            )
+
+            scroll_result = self.qdrant_client.scroll(
+                collection_name=COLLECTION_NAME,
+                scroll_filter=filter_condition,
+                limit=1,
+                with_payload=True,
+                with_vectors=False
+            )
+
+            points, _ = scroll_result
+            is_registered = len(points) > 0
+
+            if is_registered:
+                logger.info(f"사용자 {name}({phone_number}) 등록 확인: 등록된 사용자")
+                # 등록된 방향 확인
+                all_directions = set()
+                
+                # 추가 스크롤 검색으로 모든 방향 가져오기
+                scroll_result = self.qdrant_client.scroll(
+                    collection_name=COLLECTION_NAME,
+                    scroll_filter=filter_condition,
+                    limit=10,  # 최대 방향 수
+                    with_payload=True,
+                    with_vectors=False
+                )
+                
+                points, _ = scroll_result
+                for point in points:
+                    if "direction" in point.payload:
+                        all_directions.add(point.payload["direction"])
+                
+                return {
+                    "status": "success",
+                    "is_registered": True,
+                    "message": f"사용자 {name}({phone_number})는 등록된 사용자입니다.",
+                    "registered_directions": list(all_directions),
+                    "registration_time": points[0].payload.get("register_time") if points else None
+                }
+            else:
+                logger.info(f"사용자 {name}({phone_number}) 등록 확인: 미등록 사용자")
+                return {
+                    "status": "success",
+                    "is_registered": False,
+                    "message": f"사용자 {name}({phone_number})는 등록되지 않은 사용자입니다."
+                }
+        except Exception as e:
+            logger.error(f"사용자 등록 확인 오류: {e}")
+            return {
+                "status": "error",
+                "message": f"사용자 등록 확인 중 오류 발생: {str(e)}"
+            }
+
+    def verify_face(self, rgb_image, liveness_result=None):
+        """얼굴 인증 수행"""
+        start_time = datetime.now()
+        try:
+            # 이미지 디코딩
+            img = self.base64_to_image(rgb_image)
+            if img is None:
+                raise ValueError("이미지 디코딩 실패")
+
+            # 얼굴 임베딩 추출
+            query_embedding = self.extract_face_embedding(img)
+            if query_embedding is None:
+                raise ValueError("이미지에서 얼굴을 찾을 수 없음")
+
+            # 라이브니스 검사 확인 (로컬에서 처리된 결과)
+            if liveness_result and not liveness_result.get('is_live', False):
+                logger.warning(f"라이브니스 검사 실패: {liveness_result.get('reason')}")
+                processing_time = (datetime.now() - start_time).total_seconds()
+                return {
+                    "status": "failure",
+                    "message": f"라이브니스 검사 실패: {liveness_result.get('reason')}",
+                    "processing_time": processing_time,
+                    "liveness_result": liveness_result
+                }
+
+            # Qdrant를 사용하여 유사한 얼굴 검색
+            search_result = self.qdrant_client.search(
+                collection_name=COLLECTION_NAME,
+                query_vector=query_embedding.tolist(),
+                limit=5,  # 상위 5개 결과 조회
+                score_threshold=SIMILARITY_THRESHOLD  # 유사도 임계값 (Cosine 거리)
+            )
+
+            if not search_result:
+                logger.warning("일치하는 얼굴을 찾을 수 없음")
+                processing_time = (datetime.now() - start_time).total_seconds()
+                return {
+                    "status": "failure",
+                    "message": "일치하는 얼굴 없음",
+                    "confidence": 0.0,
+                    "processing_time": processing_time,
+                    "liveness_result": liveness_result
+                }
+
+            # 사용자별 평균 유사도 계산
+            user_scores = {}
+            for result in search_result:
+                phone_number = result.payload.get("phone_number")
+                name = result.payload.get("name")
+                user_key = f"{phone_number}_{name}"
+                score = result.score
+
+                if user_key not in user_scores:
+                    user_scores[user_key] = {
+                        "count": 0, 
+                        "total_score": 0.0, 
+                        "phone_number": phone_number, 
+                        "name": name
+                    }
+
+                user_scores[user_key]["count"] += 1
+                user_scores[user_key]["total_score"] += score
+
+            # 가장 높은 평균 유사도를 가진 사용자 선택
+            best_user_key = None
+            best_avg_score = 0.0
+
+            for user_key, data in user_scores.items():
+                avg_score = data["total_score"] / data["count"]
+                if avg_score > best_avg_score:
+                    best_avg_score = avg_score
+                    best_user_key = user_key
+
+            processing_time = (datetime.now() - start_time).total_seconds()
+
+            # 일치 결과 처리
+            if best_avg_score > SIMILARITY_THRESHOLD and best_user_key:
+                best_user_data = user_scores[best_user_key]
+                phone_number = best_user_data["phone_number"]
+                name = best_user_data["name"]
+                
+                logger.info(f"인증 성공: 사용자 {name}({phone_number}), 유사도 {best_avg_score:.4f}")
+
+                return {
+                    "status": "success",
+                    "phone_number": phone_number,
+                    "name": name,
+                    "confidence": float(best_avg_score),
+                    "processing_time": processing_time,
+                    "liveness_result": liveness_result
+                }
+            else:
+                logger.info(f"인증 실패: 최대 유사도 {best_avg_score:.4f} (임계값: {SIMILARITY_THRESHOLD})")
+                return {
+                    "status": "failure",
+                    "message": "일치하는 얼굴 없음",
+                    "confidence": float(best_avg_score) if best_avg_score > 0 else 0.0,
+                    "processing_time": processing_time,
+                    "liveness_result": liveness_result
+                }
+
+        except Exception as e:
+            logger.error(f"얼굴 인증 오류: {e}")
+            processing_time = (datetime.now() - start_time).total_seconds()
+            return {
+                "status": "error",
+                "message": f"인증 처리 중 오류 발생: {str(e)}",
+                "processing_time": processing_time
+            }
     
-    # 가중치가 적용된 임베딩 리스트 생성
-    weighted_embeddings = []
-    for angle, embedding in embeddings_dict.items():
-        # 가중치만큼 해당 임베딩 복제하여 추가
-        weight = weights.get(angle, 1.0)
-        repeats = int(weight)  # 정수 부분
-        weighted_embeddings.extend([embedding] * repeats)
-        
-        # 소수점 가중치 처리 (확률적으로 추가)
-        fraction = weight - repeats
-        if fraction > 0 and np.random.random() < fraction:
-            weighted_embeddings.append(embedding)
-    
-    # 가중치 적용된 임베딩 평균 계산
-    merged_embedding = np.mean(weighted_embeddings, axis=0)
-    
-    # 정규화
-    norm = np.linalg.norm(merged_embedding)
-    if norm > 0:
-        merged_embedding = merged_embedding / norm
-    
-    return merged_embedding
+    # 여러장 한번에 처리
+    def verify_multiple_faces(self, rgb_images, liveness_result=None):
+        """여러 얼굴 이미지를 인증하고 결과를 종합"""
+        if not rgb_images or len(rgb_images) == 0:
+            return {
+                "status": "error",
+                "message": "이미지가 제공되지 않았습니다."
+            }
 
+        # 이미지 개수 제한 (최대 10개)
+        max_images = 10
+        if len(rgb_images) > max_images:
+            logger.warning(f"요청된 이미지 수가 너무 많습니다. 처음 {max_images}개만 처리합니다.")
+            rgb_images = rgb_images[:max_images]
 
-# Base64 디코딩 함수
-def base64_to_image(base64_str):
-    """Base64 문자열을 OpenCV 이미지로 변환"""
-    try:
-        # 'data:image/jpeg;base64,' 부분 제거
-        if ',' in base64_str:
-            base64_str = base64_str.split(',')[1]
-        
-        img_bytes = base64.b64decode(base64_str)
-        nparr = np.frombuffer(img_bytes, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return img
-    except Exception as e:
-        logger.error(f"Base64 이미지 디코딩 실패: {e}")
-        return None
+        start_time = datetime.now()
+        all_results = []
+
+        # 각 이미지에 대해 개별 인증 수행
+        for i, rgb_image in enumerate(rgb_images):
+            try:
+                # 이미지 디코딩
+                img = self.base64_to_image(rgb_image)
+                if img is None:
+                    logger.warning(f"이미지 {i+1}: 디코딩 실패")
+                    continue
+
+                # 얼굴 임베딩 추출
+                query_embedding = self.extract_face_embedding(img)
+                if query_embedding is None:
+                    logger.warning(f"이미지 {i+1}: 얼굴을 찾을 수 없음")
+                    continue
+
+                # Qdrant 검색
+                search_result = self.qdrant_client.search(
+                    collection_name=COLLECTION_NAME,
+                    query_vector=query_embedding.tolist(),
+                    limit=5,
+                    score_threshold=SIMILARITY_THRESHOLD
+                )
+
+                if not search_result:
+                    logger.warning(f"이미지 {i+1}: 일치하는 얼굴이 없습니다.")
+                    continue
+
+                # 사용자별 평균 유사도 계산
+                user_scores = {}
+                for result in search_result:
+                    phone_number = result.payload.get("phone_number")
+                    name = result.payload.get("name")
+                    user_key = f"{phone_number}_{name}"
+                    score = result.score
+
+                    if user_key not in user_scores:
+                        user_scores[user_key] = {
+                            "count": 0, 
+                            "total_score": 0.0, 
+                            "phone_number": phone_number, 
+                            "name": name
+                        }
+
+                    user_scores[user_key]["count"] += 1
+                    user_scores[user_key]["total_score"] += score
+
+                # 가장 높은 평균 유사도를 가진 사용자 선택
+                best_user_key = None
+                best_avg_score = 0.0
+
+                for user_key, data in user_scores.items():
+                    avg_score = data["total_score"] / data["count"]
+                    if avg_score > best_avg_score:
+                        best_avg_score = avg_score
+                        best_user_key = user_key
+
+                # 일치 결과가 있다면 추가
+                if best_user_key and best_avg_score > SIMILARITY_THRESHOLD:
+                    best_user_data = user_scores[best_user_key]
+                    all_results.append({
+                        "phone_number": best_user_data["phone_number"],
+                        "name": best_user_data["name"],
+                        "confidence": float(best_avg_score),
+                        "image_index": i
+                    })
+
+            except Exception as e:
+                logger.error(f"이미지 {i+1} 처리 중 오류: {e}")
+                # 개별 이미지 오류는 건너뛰고 다음 이미지 처리
+
+        # 모든 이미지 처리 완료 후 결과 종합
+        processing_time = (datetime.now() - start_time).total_seconds()
+
+        if not all_results:
+            return {
+                "status": "failure",
+                "message": "모든 이미지에서 일치하는 얼굴을 찾을 수 없음",
+                "confidence": 0.0,
+                "processing_time": processing_time,
+                "liveness_result": liveness_result
+            }
+
+        # 결과를 사용자별로 그룹화
+        user_votes = {}
+        for result in all_results:
+            user_key = f"{result['phone_number']}_{result['name']}"
+            if user_key not in user_votes:
+                user_votes[user_key] = {
+                    "phone_number": result["phone_number"],
+                    "name": result["name"],
+                    "votes": 0,
+                    "confidences": [],
+                    "image_indices": []
+                }
+            
+            user_votes[user_key]["votes"] += 1
+            user_votes[user_key]["confidences"].append(result["confidence"])
+            user_votes[user_key]["image_indices"].append(result["image_index"])
+
+        # 가장 많은 표를 얻은 사용자 선택
+        best_user = None
+        max_votes = 0
+        for user_data in user_votes.values():
+            if user_data["votes"] > max_votes:
+                max_votes = user_data["votes"]
+                best_user = user_data
+            elif user_data["votes"] == max_votes:
+                # 표가 같다면 평균 신뢰도로 판단
+                current_avg_confidence = sum(best_user["confidences"]) / len(best_user["confidences"])
+                new_avg_confidence = sum(user_data["confidences"]) / len(user_data["confidences"])
+                if new_avg_confidence > current_avg_confidence:
+                    best_user = user_data
+
+        # 최종 결과 구성
+        if best_user:
+            avg_confidence = sum(best_user["confidences"]) / len(best_user["confidences"])
+            logger.info(f"다중 인증 성공: 사용자 {best_user['name']}({best_user['phone_number']}), "
+                    f"일치 이미지 수: {best_user['votes']}/{len(rgb_images)}, "
+                    f"평균 유사도: {avg_confidence:.4f}")
+            
+            return {
+                "status": "success",
+                "phone_number": best_user["phone_number"],
+                "name": best_user["name"],
+                "confidence": float(avg_confidence),
+                "matched_images_count": best_user["votes"],
+                "processing_time": processing_time,
+                "liveness_result": liveness_result
+            }
+        else:
+            return {
+                "type": "failure",
+                "status": "failure",
+                "message": "일치하는 얼굴을 찾을 수 없음",
+                "confidence": 0.0,
+                "processing_time": processing_time,
+                "liveness_result": liveness_result
+            }
 
 
 # 시스템 인스턴스 생성
-face_system = FaceRecognitionSystem()
+face_processor = None
+connection_manager = ConnectionManager()
 
 
 # 시스템 초기화 미들웨어
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await face_system.initialize()
+    # 모델 초기화
+    global face_processor
+    try:
+        face_processor = FaceProcessor()
+        logger.info("얼굴 인식 모델 및 Qdrant 초기화 완료")
+    except Exception as e:
+        logger.error(f"얼굴 인식 모델 또는 Qdrant 초기화 실패: {e}")
+
     yield
+
+    # 종료 시 처리할 내용이 있으면 여기에 작성
 
 
 # 앱 초기화
-app = FastAPI(title="안면인식 백엔드 API", lifespan=lifespan)
+app = FastAPI(title="얼굴 인증 GPU 서버", lifespan=lifespan)
 
 # CORS 설정
 app.add_middleware(
@@ -250,177 +601,184 @@ app.add_middleware(
 
 
 # API 엔드포인트: 얼굴 등록
-@app.post("/register", response_model=dict)
-async def register_face(registration: FaceRegistrationRequest):
-    """여러 각도의 얼굴 이미지를 등록하고 통합된 임베딩을 생성하여 저장"""
+@app.post("/register")
+async def register(request: RegisterRequest):
+    """여러 방향에서 촬영한 얼굴 이미지를 등록"""
     try:
-        logger.info(f"사용자 ID {registration.user_id}의 얼굴 등록 시작")
+        if face_processor is None:
+            raise HTTPException(status_code=500, detail="얼굴 인식 모델이 초기화되지 않았습니다")
 
-        # 각 각도별 이미지에서 얼굴 임베딩 추출
-        embeddings_dict = {}
-
-        for angle, base64_img in registration.face_images.items():
-            img = base64_to_image(base64_img)
-            if img is None:
-                raise HTTPException(status_code=400, detail=f"{angle} 각도의 이미지 디코딩 실패")
-
-            embedding = extract_face_embedding(img, face_system.face_analyzer, face_system.face_recognizer)
-            if embedding is None:
-                raise HTTPException(status_code=400, detail=f"{angle} 각도에서 얼굴을 찾을 수 없음")
-
-            embeddings_dict[angle] = embedding
-
-        # 임베딩 통합
-        try:
-            merged_embedding = merge_embeddings(embeddings_dict)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-
-        # Qdrant에 저장
-        face_system.db_client.upsert(
-            collection_name=COLLECTION_NAME,
-            points=[
-                models.PointStruct(
-                    id=str(uuid.uuid4()),
-                    vector=merged_embedding.tolist(),
-                    payload={
-                        "user_id": registration.user_id,
-                        "created_at": datetime.now().isoformat(),
-                        "face_angles": list(embeddings_dict.keys())
-                    }
-                )
-            ]
-        )
-
-        logger.info(f"사용자 ID {registration.user_id}의 얼굴 등록 완료")
-        return {
-            "success": True,
-            "message": "얼굴 등록 성공",
-            "user_id": registration.user_id
-        }
-
+        result = face_processor.register_face(request.phone_number, request.name, request.face_images)
+        return result
+    except ValueError as e:
+        logger.error(f"등록 값 오류: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"얼굴 등록 중 오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"얼굴 등록 실패: {str(e)}")
+        logger.error(f"등록 처리 오류: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# API 엔드포인트: 등록 여부 확인
+@app.post("/check-registration")
+async def check_registration(request: CheckRegistrationRequest):
+    """사용자의 얼굴 등록 여부 확인"""
+    try:
+        if face_processor is None:
+            raise HTTPException(status_code=500, detail="얼굴 인식 모델이 초기화되지 않았습니다")
+
+        result = face_processor.check_registration(request.phone_number, request.name)
+        return result
+    except Exception as e:
+        logger.error(f"등록 확인 오류: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # API 엔드포인트: 얼굴 인증
-@app.post("/verify", response_model=VerificationResponse)
-async def verify_face(request: VerificationRequest):
-    """RGB 이미지와 깊이 이미지를 사용하여 사용자 확인"""
-    start_time = datetime.now()
+@app.post("/verify")
+async def verify(request: VerifyRequest):
+    """단일 또는 다중 얼굴 이미지로 인증 수행"""
     try:
-        # RGB 이미지에서 얼굴 검출 및 임베딩 추출
-        rgb_img = base64_to_image(request.rgb_image)
-        if rgb_img is None:
-            raise HTTPException(status_code=400, detail="RGB 이미지 디코딩 실패")
+        if face_processor is None:
+            raise HTTPException(status_code=500, detail="얼굴 인식 모델이 초기화되지 않았습니다")
 
-        # 얼굴 임베딩 추출
-        embedding = extract_face_embedding(rgb_img, face_system.face_analyzer, face_system.face_recognizer)
-        if embedding is None:
-            raise HTTPException(status_code=400, detail="얼굴을 찾을 수 없음")
+        # 다중 이미지 확인
+        if request.rgb_images and len(request.rgb_images) > 0:
+            result = face_processor.verify_multiple_faces(request.rgb_images, request.liveness_result)
+            return result
+        # 단일 이미지 처리 (기존 호환성)
+        elif request.rgb_image:
+            result = face_processor.verify_face(request.rgb_image, request.liveness_result)
+            return result
+        else:
+            raise ValueError("이미지가 제공되지 않았습니다")
+    except ValueError as e:
+        logger.error(f"인증 값 오류: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"인증 처리 오류: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-        # 깊이 정보가 있으면 추가 분석 (선택사항)
-        if request.depth_image:
-            depth_img = base64_to_image(request.depth_image)
 
-        # 벡터 DB에서 검색
-        search_result = face_system.db_client.search(
+# 웹소켓 엔드포인트: 실시간 얼굴 인증
+@app.websocket("/ws/verify")
+async def websocket_verify(websocket: WebSocket):
+    """실시간 얼굴 인증을 위한 웹소켓"""
+    await connection_manager.connect(websocket)
+    logger.info("얼굴 인증 웹소켓 연결 시작")
+
+    try:
+        while True:
+            # 클라이언트로부터 메시지 수신
+            message_data = await websocket.receive_json()
+
+            if message_data.get('type') == 'verify':
+                # 인증 요청 처리
+                if face_processor is None:
+                    await connection_manager.send_personal_message({
+                        "type": "error",
+                        "message": "얼굴 인식 모델이 초기화되지 않았습니다"
+                    }, websocket)
+                    continue
+
+                rgb_image = message_data.get('rgb_image')
+                liveness_result = message_data.get('liveness_result')
+
+                if not rgb_image:
+                    await connection_manager.send_personal_message({
+                        "type": "error",
+                        "message": "이미지 데이터가 누락됨"
+                    }, websocket)
+                    continue
+
+                # 얼굴 인증 수행
+                result = face_processor.verify_face(rgb_image, liveness_result)
+                
+                # 결과 전송 (result에 이미 'type' 필드가 포함되어 있음)
+                await connection_manager.send_personal_message(result, websocket)
+
+            elif message_data.get('type') == 'ping':
+                # 연결 유지를 위한 ping-pong
+                await connection_manager.send_personal_message({
+                    "type": "pong",
+                    "timestamp": datetime.now().isoformat()
+                }, websocket)
+
+    except WebSocketDisconnect:
+        connection_manager.disconnect(websocket)
+        logger.info("얼굴 인증 웹소켓 연결 종료")
+    except Exception as e:
+        logger.error(f"웹소켓 처리 오류: {e}")
+        try:
+            await connection_manager.send_personal_message({
+                "type": "error",
+                "message": f"서버 오류: {str(e)}"
+            }, websocket)
+        except:
+            pass
+        connection_manager.disconnect(websocket)
+
+
+# 등록된 사용자 목록 조회 엔드포인트
+@app.get("/users")
+async def list_users():
+    """등록된 사용자 목록 조회"""
+    try:
+        if face_processor is None or face_processor.qdrant_client is None:
+            raise HTTPException(status_code=500, detail="시스템이 초기화되지 않았습니다")
+
+        # Qdrant에서 사용자 조회
+        # 중복 제거를 위해 집합 사용
+        users = set()
+
+        # 스크롤 API를 사용하여 모든 사용자 조회
+        scroll_result = face_processor.qdrant_client.scroll(
             collection_name=COLLECTION_NAME,
-            query_vector=embedding.tolist(),
-            limit=1,
-            score_threshold=SIMILARITY_THRESHOLD
+            limit=100,
+            with_payload=True,
+            with_vectors=False
         )
 
-        processing_time = (datetime.now() - start_time).total_seconds()
+        # 첫 페이지 처리
+        points, next_page_offset = scroll_result
 
-        if search_result and len(search_result) > 0:
-            # 매칭 성공
-            match = search_result[0]
-            user_id = match.payload.get("user_id")
-            
-            # 코사인 거리를 향상된 신뢰도로 변환
-            raw_confidence = 1.0 - match.score
-            # 0.6 거리가 0% 신뢰도, 0.0 거리가 100% 신뢰도가 되도록 조정
-            adjusted_confidence = (0.6 - match.score) / 0.6 * 100
-            adjusted_confidence = max(0, min(100, adjusted_confidence))
-            
-            logger.info(f"사용자 확인 성공: {user_id}, 신뢰도: {raw_confidence:.4f}, 코사인 거리: {match.score:.2f}") # {adjusted_confidence:.2f}%")
-            return VerificationResponse(
-                user_id=user_id,
-                confidence=adjusted_confidence / 100,  # 0~1 범위로 변환
-                matched=True,
-                processing_time=processing_time
-            )
-        else:
-            # 매칭 실패
-            logger.info("사용자 확인 실패: 매칭되는 얼굴 없음")
-            return VerificationResponse(
-                user_id=None,
-                confidence=0.0,
-                matched=False,
-                processing_time=processing_time
+        for point in points:
+            phone_number = point.payload.get("phone_number")
+            name = point.payload.get("name")
+            if phone_number and name:
+                users.add(f"{phone_number}_{name}")
+
+        # 다음 페이지가 있으면 스크롤 계속
+        while next_page_offset:
+            scroll_result = face_processor.qdrant_client.scroll(
+                collection_name=COLLECTION_NAME,
+                limit=100,
+                offset=next_page_offset,
+                with_payload=True,
+                with_vectors=False
             )
 
+            points, next_page_offset = scroll_result
+
+            for point in points:
+                phone_number = point.payload.get("phone_number")
+                name = point.payload.get("name")
+                if phone_number and name:
+                    users.add(f"{phone_number}_{name}")
+
+        # 사용자 정보 분리 및 응답 형식 작성
+        user_list = []
+        for user in users:
+            phone_number, name = user.split('_', 1)
+            user_list.append({
+                "phone_number": phone_number,
+                "name": name
+            })
+
+        return {"users": user_list}
     except Exception as e:
-        logger.error(f"얼굴 확인 중 오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"얼굴 확인 실패: {str(e)}")
+        logger.error(f"사용자 목록 조회 오류: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-
-@app.post("/verify_embedding", response_model=VerificationResponse)
-async def verify_embedding(request: EmbeddingVerificationRequest):
-    """임베딩을 직접 받아 사용자 확인"""
-    start_time = datetime.now()
-    try:
-        # 임베딩을 numpy 배열로 변환
-        embedding = np.array(request.embedding)
-        
-        # 임베딩 정규화
-        norm = np.linalg.norm(embedding)
-        if norm > 0:
-            embedding = embedding / norm
-        
-        # 벡터 DB에서 검색
-        search_result = face_system.db_client.search(
-            collection_name=COLLECTION_NAME,
-            query_vector=embedding.tolist(),
-            limit=1,
-            score_threshold=SIMILARITY_THRESHOLD
-        )
-
-        processing_time = (datetime.now() - start_time).total_seconds()
-
-        if search_result and len(search_result) > 0:
-            # 매칭 성공
-            match = search_result[0]
-            user_id = match.payload.get("user_id")
-            
-            # 코사인 거리를 향상된 신뢰도로 변환
-            raw_confidence = 1.0 - match.score
-            # 0.6 거리가 0% 신뢰도, 0.0 거리가 100% 신뢰도가 되도록 조정
-            adjusted_confidence = (0.6 - match.score) / 0.6 * 100
-            adjusted_confidence = max(0, min(100, adjusted_confidence))
-            
-            logger.info(f"사용자 확인 성공: {user_id}, 원본 신뢰도: {raw_confidence:.4f}, 코사인 거리: {match.score:.2f}, 라이브니스: {request.liveness}, 거리: {request.distance:.2f}m")
-            return VerificationResponse(
-                user_id=user_id,
-                confidence=adjusted_confidence / 100,  # 0~1 범위로 변환
-                matched=True,
-                processing_time=processing_time
-            )
-        else:
-            # 매칭 실패
-            logger.info(f"사용자 확인 실패: 매칭되는 얼굴 없음, 라이브니스: {request.liveness}, 거리: {request.distance:.2f}m")
-            return VerificationResponse(
-                user_id=None,
-                confidence=0.0,
-                matched=False,
-                processing_time=processing_time
-            )
-
-    except Exception as e:
-        logger.error(f"임베딩 확인 중 오류 발생: {e}")
-        raise HTTPException(status_code=500, detail=f"임베딩 확인 실패: {str(e)}")
 
 # 서버 상태 확인
 @app.get("/health")
@@ -428,7 +786,7 @@ async def health_check():
     """서버 상태 및 모델 상태 확인"""
     return {
         "status": "healthy",
-        "initialized": face_system.is_initialized,
+        "initialized": face_processor is not None,
         "gpu_available": torch.cuda.is_available(),
         "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None",
         "timestamp": datetime.now().isoformat()
@@ -439,4 +797,4 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)

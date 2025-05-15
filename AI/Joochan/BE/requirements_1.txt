@@ -12,3 +12,8 @@ uvicorn
 websockets
 opencv-python
 opencv-contrib-python
+python-dotenv
+pytz
+setuptools
+requests
+public-ip
