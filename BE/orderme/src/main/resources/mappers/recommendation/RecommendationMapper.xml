@@ -7,9 +7,9 @@
         SELECT
             m.menu_id, m.menu_name, m.price, m.category_id,
             c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
-        FROM Menus m
-                 JOIN GenderAgePreference gap ON m.menu_id = gap.menu_id
-                 LEFT JOIN Categories c ON m.category_id = c.category_id
+        FROM menus m
+                 JOIN genderagepreference gap ON m.menu_id = gap.menu_id
+                 LEFT JOIN categories c ON m.category_id = c.category_id
         WHERE gap.store_id = #{storeId}
           AND gap.gender = #{gender}
           AND gap.age_group = #{ageGroup}
@@ -24,10 +24,10 @@
             m.menu_id, m.menu_name, m.price, m.category_id,
             c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at,
             COUNT(om.order_menu_id) as order_count
-        FROM Menus m
-                 LEFT JOIN Categories c ON m.category_id = c.category_id
-                 LEFT JOIN OrderMenu om ON m.menu_id = om.menu_id
-                 LEFT JOIN Orders o ON om.order_id = o.order_id
+        FROM menus m
+                 LEFT JOIN categories c ON m.category_id = c.category_id
+                 LEFT JOIN ordermenu om ON m.menu_id = om.menu_id
+                 LEFT JOIN orders o ON om.order_id = o.order_id
         WHERE c.store_id = #{storeId}
           AND m.is_deleted = false
           AND m.is_sold_out = false
@@ -42,9 +42,9 @@
         SELECT
             m.menu_id, m.menu_name, m.price, m.category_id,
             c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at
-        FROM Menus m
-                 LEFT JOIN Categories c ON m.category_id = c.category_id
-                 JOIN orderMenu om ON m.menu_id = om.menu_id
+        FROM menus m
+                 LEFT JOIN categories c ON m.category_id = c.category_id
+                 JOIN ordermenu om ON m.menu_id = om.menu_id
                  JOIN orders o ON om.order_id = o.order_id
         WHERE c.store_id = #{storeId}
           AND o.user_id = #{userId}
@@ -61,10 +61,10 @@
             m.menu_id, m.menu_name, m.price, m.category_id,
             c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at,
             COUNT(om.menu_id) as order_count
-        FROM Menus m
-                 JOIN Categories c ON m.category_id = c.category_id
-                 JOIN OrderMenu om ON m.menu_id = om.menu_id
-                 JOIN Orders o ON om.order_id = o.order_id
+        FROM menus m
+                 JOIN categories c ON m.category_id = c.category_id
+                 JOIN ordermenu om ON m.menu_id = om.menu_id
+                 JOIN orders o ON om.order_id = o.order_id
         WHERE c.store_id = #{storeId}
           AND o.gender = #{gender}
           AND o.age BETWEEN #{minAge} AND #{maxAge}
@@ -81,10 +81,10 @@
             m.menu_id, m.menu_name, m.price, m.category_id,
             c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at,
             COUNT(om.menu_id) as order_count
-        FROM Menus m
-                 JOIN Categories c ON m.category_id = c.category_id
-                 JOIN OrderMenu om ON m.menu_id = om.menu_id
-                 JOIN Orders o ON om.order_id = o.order_id
+        FROM menus m
+                 JOIN categories c ON m.category_id = c.category_id
+                 JOIN ordermenu om ON m.menu_id = om.menu_id
+                 JOIN orders o ON om.order_id = o.order_id
         WHERE c.store_id = #{storeId}
           AND o.weather = #{weather}
           AND o.gender = #{gender}
@@ -103,10 +103,10 @@
             m.menu_id, m.menu_name, m.price, m.category_id,
             c.category_name, m.is_sold_out, m.image_url, m.description, m.is_deleted, m.deleted_at,
             COUNT(om.menu_id) as order_count
-        FROM Menus m
-                 JOIN Categories c ON m.category_id = c.category_id
-                 JOIN OrderMenu om ON m.menu_id = om.menu_id
-                 JOIN Orders o ON om.order_id = o.order_id
+        FROM menus m
+                 JOIN categories c ON m.category_id = c.category_id
+                 JOIN ordermenu om ON m.menu_id = om.menu_id
+                 JOIN orders o ON om.order_id = o.order_id
         WHERE c.store_id = #{storeId}
           AND o.weather = #{weather}
           AND m.is_deleted = false
@@ -118,13 +118,13 @@
     </select>
 
     <update id="updateMenuPopularity">
-        UPDATE Menus
+        UPDATE menus
         SET popularity = IFNULL(popularity, 0) + 1
         WHERE menu_id = #{menuId}
     </update>
 
     <insert id="updateGenderAgePreference">
-        INSERT INTO GenderAgePreference (store_id, gender, age_group, menu_id, order_count, last_updated)
+        INSERT INTO genderagepreference (store_id, gender, age_group, menu_id, order_count, last_updated)
         VALUES (#{storeId}, #{gender}, #{ageGroup}, #{menuId}, 1, NOW())
             ON DUPLICATE KEY UPDATE
                                  order_count = order_count + 1,
@@ -132,7 +132,7 @@
     </insert>
 
     <insert id="updateUserPreference">
-        INSERT INTO UserMenuPreference (user_id, menu_id, order_count, last_updated)
+        INSERT INTO usermenupreference (user_id, menu_id, order_count, last_updated)
         VALUES (#{userId}, #{menuId}, 1, NOW())
             ON DUPLICATE KEY UPDATE
                                  order_count = order_count + 1,
