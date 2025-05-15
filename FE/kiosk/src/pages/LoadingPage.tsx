@@ -31,10 +31,11 @@ export default function LoadingPage() {
   const [searchParams] = useSearchParams()
   const type = searchParams.get('type')
 
-  const { loading: result, error, startPayment } = useAutoPay()
+  const { result, error, startPayment } = useAutoPay()
 
   const calledRef = useRef(false)
 
+  // api 호출
   useEffect(() => {
     if (!calledRef.current) {
       calledRef.current = true
@@ -59,6 +60,16 @@ export default function LoadingPage() {
   }, [type, result])
 
   useEffect(() => {
+    if (type === 'progress' && error) {
+      const timer = setTimeout(() => {
+        handleHome()
+      }, 3000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [type, error])
+
+  useEffect(() => {
     if (type === 'complete') {
       const timer = setTimeout(() => {
         handleHome()
@@ -81,6 +92,9 @@ export default function LoadingPage() {
           {error && (
             <>
               <Text variant="title3">❌ 결제 실패</Text>
+              <Text variant="body2" color="darkGray">
+                3초 후 메인으로 이동합니다.
+              </Text>
             </>
           )}
         </>

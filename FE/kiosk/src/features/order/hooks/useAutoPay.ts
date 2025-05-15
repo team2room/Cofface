@@ -14,6 +14,9 @@ export const useAutoPay = () => {
     totalAmount: store.totalAmount!,
     isStampUsed: store.isStampUsed!,
     isTakeout: store.isTakeout!,
+    age: store.age!,
+    gender: store.gender!,
+    weather: store.weather!,
     paymentInfoId: store.paymentInfoId ?? null,
     menuOrders: store.menuOrders!,
   }
