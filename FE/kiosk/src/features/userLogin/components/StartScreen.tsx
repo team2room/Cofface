@@ -10,6 +10,7 @@ import {
   genderAgeRequest,
 } from '../services/faceRecogService'
 import { maskName } from '@/utils/maskUserName'
+import { useWeather } from '../hooks/useWearher'
 
 const TopLeftText = tw.div`
   absolute top-4 left-6 z-50
@@ -19,15 +20,9 @@ const ImageWrapper = tw.div`
   w-full my-8 flex justify-center items-center
 `
 
-// 풀 배경
 const FullImg = tw.img`
   absolute top-0 left-0 w-full h-full object-cover
 `
-
-// 중간 배경
-// const MiddleImg = tw.img`
-//   absolute top-40 w-[908px] h-[1224px] object-cover
-// `
 
 const ButtonGroup = tw.div`
   absolute bottom-40 w-full flex justify-center gap-20 z-10
@@ -40,6 +35,7 @@ const Button = tw.button`
 
 export default function StartScreen() {
   const navigate = useNavigate()
+  useWeather()
   const { phoneNumLogin, faceLogin } = useLogin()
 
   type ModalState = 'waiting' | 'success' | 'failure' | 'phone'

@@ -10,3 +10,8 @@ export interface GuestInfo {
   age: number
   gender: string
 }
+
+export interface WeatherInfo {
+  dominant: string
+  detail: string[]
+}
