@@ -111,7 +111,9 @@ public class AutoPaymentService {
                 .isGuest(false) // 등록된 사용자이므로 게스트 아님
                 .isDelete(false)
                 .weather(request.getWeather())
-                // orderNumber는 데이터베이스에 저장하지 않음
+                .gender(request.getGender())
+                .age(request.getAge())
+                .orderNumber(orderNumber)
                 .build();
 
         orderMapper.insertOrder(order);
