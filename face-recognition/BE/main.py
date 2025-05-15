@@ -1,5 +1,5 @@
 # main.py
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Optional, List, Any
@@ -496,6 +496,85 @@ async def websocket_realsense(websocket: WebSocket):
     except Exception as e:
         logger.error(f"RealSense 웹소켓 치명적 오류: {e}")
         manager.disconnect(websocket)
+
+
+@app.websocket("/ws/motion")
+async def websocket_motion(websocket: WebSocket):
+    """머리 움직임 모션 이벤트 처리를 위한 웹소켓"""
+    await manager.connect(websocket)
+    logger.info("모션 이벤트 웹소켓 연결 시작")
+
+    try:
+        while True:
+            # 클라이언트로부터 메시지 수신
+            message_data = await websocket.receive_json()
+
+            if message_data.get('type') == 'motion_event':
+                # 모션 이벤트 처리
+                motion_type = message_data.get('motion_type')
+                timestamp = message_data.get('timestamp')
+                rotation = message_data.get('rotation', {})
+                details = message_data.get('details', {})
+
+                logger.info(f"모션 이벤트 감지: {motion_type}, yaw: {rotation.get('yaw')}, timestamp: {timestamp}")
+
+                # 이벤트 처리 결과 응답
+                await manager.send_personal_message({
+                    "type": "motion_processed",
+                    "motion_type": motion_type,
+                    "processed_timestamp": datetime.now().isoformat(),
+                    "success": True,
+                    "message": f"모션 '{motion_type}' 처리 완료"
+                }, websocket)
+
+            elif message_data.get('type') == 'ping':
+                # 연결 유지를 위한 ping-pong
+                await manager.send_personal_message({
+                    "type": "pong",
+                    "timestamp": datetime.now().isoformat()
+                }, websocket)
+
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        logger.info("모션 이벤트 웹소켓 연결 종료")
+    except Exception as e:
+        logger.error(f"모션 웹소켓 처리 오류: {e}")
+        try:
+            await manager.send_personal_message({
+                "type": "error",
+                "message": f"서버 오류: {str(e)}"
+            }, websocket)
+        except:
+            pass
+        manager.disconnect(websocket)
+
+
+# REST API 엔드포인트 추가
+@app.post("/api/motion-event")
+async def handle_motion_event(request: Request):
+    """모션 이벤트 처리 REST API"""
+    try:
+        event_data = await request.json()
+        motion_type = event_data.get('type')
+        timestamp = event_data.get('timestamp', datetime.now().timestamp())
+
+        logger.info(f"REST API로 모션 이벤트 수신: {motion_type}, timestamp: {timestamp}")
+
+        # 간단한 로깅만 수행하거나 추가 처리 로직 구현
+        event_time = datetime.fromtimestamp(timestamp / 1000.0).isoformat() if timestamp else "알 수 없음"
+
+        return {
+            "success": True,
+            "message": f"모션 '{motion_type}' 이벤트가 {event_time}에 처리되었습니다",
+            "processed_timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"모션 이벤트 처리 오류: {e}")
+        return {
+            "success": False,
+            "message": f"처리 중 오류 발생: {str(e)}",
+            "processed_timestamp": datetime.now().isoformat()
+        }
 
 # 서버 상태 확인
 @app.get("/health")
