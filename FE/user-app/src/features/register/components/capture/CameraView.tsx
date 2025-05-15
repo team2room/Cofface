@@ -118,7 +118,9 @@ const DirectionGuidelineSVG = ({
         </svg>
       )
 
+    // 나머지 방향 케이스들도 동일한 방식으로 작성
     case FaceDetectionState.RIGHT_FACE:
+      // 원본 코드에서 RIGHT_FACE 케이스 유지
       return (
         <svg
           width="100%"
@@ -206,6 +208,7 @@ const DirectionGuidelineSVG = ({
       )
 
     case FaceDetectionState.UP_FACE:
+      // 원본 코드에서 UP_FACE 케이스 유지
       return (
         <svg
           width="100%"
@@ -260,6 +263,7 @@ const DirectionGuidelineSVG = ({
       )
 
     case FaceDetectionState.DOWN_FACE:
+      // 원본 코드에서 DOWN_FACE 케이스 유지
       return (
         <svg
           width="100%"
@@ -395,3 +399,5 @@ export function CameraView({
     </FaceCircle>
   )
 }
+
+export default CameraView

@@ -17,6 +17,7 @@ export const colors = {
   darkDark: '#772745',
   hover: 'FF2175',
   brightModal: 'rgba(255, 255, 255, 0.7)',
+  red: '#d70909',
 } as const
 
 export type ColorName = keyof typeof colors

@@ -23,7 +23,6 @@ const HeaderWrapper = tw.div`
 const ContentWrapper = tw.div`
   flex flex-col p-6 flex-1 relative
 `
-// 버튼을 담을 컨테이너 추가
 const ButtonsContainer = tw.div`
   w-full pb-6 mt-auto
 `

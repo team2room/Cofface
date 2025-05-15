@@ -1,4 +1,3 @@
-import React from 'react'
 import { CapturedImagesProps } from '@/interfaces/FaceRegisterInterfaces'
 import { getStateLabel } from '@/utils/CaptureUtils'
 import {
@@ -8,7 +7,9 @@ import {
   CapturedImg,
 } from '@/features/register/components/capture/styles'
 
-const CapturedImages: React.FC<CapturedImagesProps> = ({ capturedImages }) => {
+export default function CapturedImages({
+  capturedImages,
+}: CapturedImagesProps) {
   if (capturedImages.length === 0) return null
 
   return (
@@ -22,5 +23,3 @@ const CapturedImages: React.FC<CapturedImagesProps> = ({ capturedImages }) => {
     </CapturedImagesGrid>
   )
 }
-
-export default CapturedImages

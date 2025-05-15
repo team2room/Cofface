@@ -1,4 +1,3 @@
-//SECTION - 단계별 안내 문구 및 탭
 import { Text } from '@/styles/typography'
 import {
   FaceDetectionState,

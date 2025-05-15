@@ -4,40 +4,6 @@ import {
   RotationState,
 } from '@/interfaces/FaceRegisterInterfaces'
 
-// // 얼굴이 원 안에 있는지 확인
-// export const checkFaceInCircle = (
-//   landmarks: mp.NormalizedLandmarkList,
-// ): boolean => {
-//   // 얼굴 중심점 (코 끝 랜드마크 사용)
-//   const nose = landmarks[1]
-
-//   // 정규화된 중심점 (0~1 범위)
-//   const center = {
-//     x: 0.5, // 중앙
-//     y: 0.5, // 중앙
-//   }
-
-//   // 원의 반지름 (정규화된 값)
-//   const radius = 0.35
-
-//   // 코와 중심 사이의 거리 계산
-//   const distance = Math.sqrt(
-//     Math.pow(nose.x - center.x, 2) + Math.pow(nose.y - center.y, 2),
-//   )
-
-//   // 거리, 반지름, 결과 로깅
-//   const result = distance < radius
-//   console.log('원 위치 체크:', {
-//     distance: distance.toFixed(3),
-//     radius,
-//     result,
-//     noseX: nose.x.toFixed(3),
-//     noseY: nose.y.toFixed(3),
-//   })
-
-//   return result
-// }
-
 // 얼굴 회전 계산 함수 (정수값으로 반환)
 export const calculateFaceRotation = (
   landmarks: mp.NormalizedLandmarkList,
