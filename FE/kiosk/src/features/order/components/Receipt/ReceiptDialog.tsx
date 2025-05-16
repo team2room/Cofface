@@ -10,6 +10,7 @@ import CustomButton from '@/components/CustomButton'
 import ReceiptItemList from './ReceiptItemList'
 import { useOrderStore } from '@/stores/orderStore'
 import { usePayStore } from '@/stores/payStore'
+import { useUserStore } from '@/stores/loginStore'
 
 const Content = tw.div`h-[1150px] bg-lightLight p-4 mt-4 mb-12 flex flex-col justify-between`
 const HeaderRow = tw.div`flex justify-between p-2 border-y-2 border-dark`
@@ -30,6 +31,7 @@ export default function ReceiptModal({
   onOpenChange,
   onNext,
 }: ReceiptModalProps) {
+  const { guestInfo, weather } = useUserStore()
   const orders = useOrderStore((state) => state.orders)
   const payStore = usePayStore()
 
@@ -131,9 +133,9 @@ export default function ReceiptModal({
                 kioskId: 1,
                 totalAmount: totalPrice,
                 menuOrders,
-                age: 20,
-                gender: '여성',
-                weather: 'SUNNY',
+                age: guestInfo?.age ?? 0,
+                gender: guestInfo?.gender ?? '여성',
+                weather: weather?.dominant ?? '맑음',
               })
               onOpenChange(false)
               onNext()

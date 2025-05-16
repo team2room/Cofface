@@ -3,7 +3,7 @@ import api from '@/lib/axios'
 export const getRecommendMenus = async (
   storeId: number,
   age?: number,
-  gender?: 'MALE' | 'FEMALE',
+  gender?: string,
 ) => {
   const params: any = { storeId }
 
