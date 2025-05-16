@@ -31,7 +31,7 @@ const Container = tw.div`
 `
 
 const PageContainter = tw.div`
-  w-full h-screen overflow-hidden fixed top-0 left-0 overscroll-none
+  w-full h-screen overflow-hidden fixed top-0 left-0 overscroll-none touch-none
 `
 
 // 스크롤 시 자연스럽게 움직이는 애니메이션 컨테이너
@@ -41,6 +41,7 @@ const SmoothScrollContainer = styled.div<{ isScrolled: boolean }>`
   height: 100vh;
   will-change: transform;
   overscroll-behavior: none;
+  touch-action: pan-y;
 `
 
 const HomeNav = tw.div`
