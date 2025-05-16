@@ -7,47 +7,60 @@ import {
 import { useUserStore } from '@/stores/loginStore'
 import { usePayStore } from '@/stores/payStore'
 import { usePreparePay } from '@/features/order/hooks/pay/usePreparePay'
+import { useClientKey } from '@/features/order/hooks/pay/useClientKey'
+import tw from 'twin.macro'
+import { useLogout } from '@/features/userLogin/hooks/useLogout'
+import { useNavigate } from 'react-router-dom'
 
-const clientKey = 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm'
+const ImageWrapper = tw.div`w-full my-8 flex justify-center items-center`
+const FullImg = tw.img`absolute top-0 left-0 w-full h-full object-cover`
+const Content = tw.div`flex flex-col items-center justify-center flex-1 gap-8 z-10`
+
 const customerKey = 'YbX2HuSlsC9uVJW6NMRMj'
 
 export default function PayPage() {
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const { isMember } = useUserStore()
   const userName = useUserStore((state) => state.user?.name)
   const totalAmount = usePayStore((state) => state.totalAmount)
-
-  const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null)
-
-  const [error, setError] = useState<string | null>(null)
-  const [paymentWidgetLoaded, setPaymentWidgetLoaded] = useState(false)
-  const [paymentWidget, setPaymentWidget] =
-    useState<PaymentWidgetInstance | null>(null)
-  const [paymentMethodsWidget, setPaymentMethodsWidget] = useState<ReturnType<
-    PaymentWidgetInstance['renderPaymentMethods']
-  > | null>(null)
-
-  const { result, preparePay } = usePreparePay()
   const store = usePayStore.getState()
+  const { logout } = useLogout()
 
+  const { clientKey } = useClientKey()
+  const { preparePay } = usePreparePay()
+
+  // 결제 위젯 렌더링
+  const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null)
   useEffect(() => {
-    ;(async () => {
-      const paymentWidget = await loadPaymentWidget(clientKey, customerKey)
+    const loadWidget = async () => {
+      if (!clientKey) return
+      try {
+        const paymentWidget = await loadPaymentWidget(clientKey, customerKey)
+        paymentWidget.renderPaymentMethods('#payment-widget', totalAmount ?? 0)
+        paymentWidgetRef.current = paymentWidget
+      } catch (err) {
+        console.error('결제 위젯 로딩 실패:', err)
+      }
+    }
 
-      paymentWidget.renderPaymentMethods('#payment-widget', totalAmount ?? 0)
+    loadWidget()
+  }, [clientKey, customerKey, totalAmount])
 
-      paymentWidgetRef.current = paymentWidget
-    })()
-  }, [])
-
+  // 결제 요청
   const handlePayment = async () => {
     setLoading(true)
     const paymentWidget = paymentWidgetRef.current
 
     try {
-      await preparePay()
+      const prepareResult = await preparePay()
+
+      if (!prepareResult?.orderId) {
+        throw new Error('주문 번호가 없습니다.')
+      }
 
       await paymentWidget?.requestPayment({
-        orderId: result?.orderId?.toString() ?? '',
+        orderId: prepareResult.orderId.toString(),
         orderName: `커피 주문 (${store?.menuOrders?.reduce((acc, cur) => acc + cur.quantity, 0)}건)`,
         customerName: userName || '고객',
         customerEmail: 'customer123@gmail.com',
@@ -62,35 +75,62 @@ export default function PayPage() {
     setLoading(false)
   }
 
+  // 홈 화면으로 이동
+  const handleHomeClick = async () => {
+    if (isMember) {
+      await logout(1)
+    }
+    navigate('/user')
+  }
+
   return (
-    <>
-      <Text variant="title4" weight="extrabold">
-        휴대폰으로 QR을
-        <br />
-        인식해 주세요!
-      </Text>
+    <div className="w-full h-screen flex flex-col items-center justify-center">
+      <ImageWrapper>
+        <FullImg src="/로딩배경.png" alt="Spring Garden" draggable={false} />
+      </ImageWrapper>
 
-      {/* <h1>주문서</h1>
-              <div id="payment-widget" />
+      <Content>
+        <Text variant="title2" weight="extrabold" color="darkGray">
+          결제 수단을 선택해 주세요
+        </Text>
+        <Text variant="body1" weight="extrabold" color="darkGray">
+          (현재 토스/카카오/네이버만 가능)
+        </Text>
+        <div className="w-[800px] flex flex-col items-center">
+          <div
+            id="payment-widget"
+            className="w-[800px] h-[400px] bg-white mb-20 border border-2-black"
+          ></div>
 
-              <button onClick={handlePayment}>
+          <div className="flex w-full gap-4">
+            <div
+              className="w-1/3 flex items-center justify-center px-2 py-4 rounded-lg bg-white"
+              onClick={handleHomeClick}
+              style={{
+                boxShadow: `1.462px 1.462px 4px 2px #f774a275`,
+              }}
+            >
+              <Text variant="body2" weight="bold" color="main">
+                처음으로
+              </Text>
+            </div>
+
+            <div
+              className="w-2/3 flex items-center justify-center px-2 py-4 rounded-lg bg-main"
+              onClick={handlePayment}
+              style={{
+                boxShadow: `1.462px 1.462px 4px 2px #f774a275`,
+              }}
+            >
+              <Text variant="body2" weight="bold" color="white">
                 {loading
                   ? '처리 중...'
                   : `${totalAmount?.toLocaleString()}원 결제하기`}
-              </button> */}
-
-      <div className="payment-section">
-        <h2>결제 수단</h2>
-        <div id="payment-widget" className="payment-methods-widget"></div>
-
-        {error && <div className="payment-error">{error}</div>}
-
-        <button className="payment-button" onClick={handlePayment}>
-          {loading
-            ? '처리 중...'
-            : `${totalAmount?.toLocaleString()}원 결제하기`}
-        </button>
-      </div>
-    </>
+              </Text>
+            </div>
+          </div>
+        </div>
+      </Content>
+    </div>
   )
 }

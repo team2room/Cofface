@@ -25,8 +25,11 @@ export const usePreparePay = () => {
     setLoading(true)
     try {
       const res = await postPreparePay(payData)
+      console.log(res)
       setResult(res)
+      return res
     } catch (err: any) {
+      console.log(err)
       setError(err?.message ?? '결제 준비 실패')
     } finally {
       setLoading(false)

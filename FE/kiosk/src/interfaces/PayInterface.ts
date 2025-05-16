@@ -35,6 +35,13 @@ export interface PayData {
 }
 
 // 일반 결제
+export interface ClientKeyResponse {
+  data: {
+    clientKey: string
+  }
+  success: boolean
+}
+
 export interface PreparePayResponse {
   orderId: string
   orderNumber: string

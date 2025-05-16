@@ -14,8 +14,10 @@ export const useConfirmPay = () => {
     setLoading(true)
     try {
       const response = await postConfirmPay(payload)
+      console.log(response)
       setResult(response)
     } catch (err: any) {
+      console.log(err)
       setError(err?.message ?? '결제 승인 실패')
     } finally {
       setLoading(false)

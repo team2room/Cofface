@@ -1,17 +1,21 @@
+import { Text } from '@/styles/typography'
 import { ConfirmPayRequest } from '@/interfaces/PayInterface'
 import { useLocation, useNavigate } from 'react-router-dom'
 import tw from 'twin.macro'
 import { useConfirmPay } from '../../hooks/pay/useConfirmPay'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useUserStore } from '@/stores/loginStore'
+import { useLogout } from '@/features/userLogin/hooks/useLogout'
+import CustomButton from '@/components/CustomButton'
 
 const Content = tw.div`flex flex-col items-center justify-center flex-1 gap-8 z-10`
 
 export function SuccessContent() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { isMember } = useUserStore()
+  const { logout } = useLogout()
   const { loading, result, error, confirmPay } = useConfirmPay()
-
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   useEffect(() => {
     const processPayment = async () => {
@@ -21,8 +25,7 @@ export function SuccessContent() {
       const amount = query.get('amount')
 
       if (!paymentKey || !orderId || !amount) {
-        setErrorMsg('필수 결제 정보가 누락되었습니다.')
-        return
+        throw new Error('필수 결제 정보가 누락되었습니다.')
       }
 
       const payload: ConfirmPayRequest = {
@@ -42,48 +45,63 @@ export function SuccessContent() {
     processPayment()
   }, [location])
 
-  const handleGoBack = () => {
+  const handleGoBack = async () => {
+    if (isMember) {
+      await logout(1)
+    }
     navigate('/user')
   }
 
-  if (loading) {
-    return (
-      <div className="payment-container">
-        <div className="payment-loading">
-          <h2>결제 승인 중...</h2>
-          <p>잠시만 기다려주세요.</p>
-          <div className="loading-spinner"></div>
-        </div>
-      </div>
-    )
-  }
+  useEffect(() => {
+    if (error || result) {
+      const timeout = setTimeout(() => {
+        handleGoBack()
+      }, 3000)
 
-  if (errorMsg) {
-    return (
-      <div className="payment-container">
-        <div className="payment-error">
-          <h1>결제 오류</h1>
-          <p className="error-message">{error}</p>
-          <button onClick={handleGoBack} className="payment-button">
-            처음으로 돌아가기
-          </button>
-        </div>
-      </div>
-    )
-  }
+      return () => clearTimeout(timeout)
+    }
+  }, [error, result])
 
   return (
     <Content>
-      <h1>결제 성공</h1>
+      {loading && (
+        <>
+          <img src="/pay.gif" className="mb-6" />
+          <Text variant="title1" weight="bold" color="lightBlack">
+            결제가 진행되고 있습니다...
+          </Text>
+        </>
+      )}
+
+      {error && (
+        <>
+          <>
+            <Text variant="title3">❌ 결제 실패</Text>
+            <Text variant="body2" color="darkGray">
+              3초 후 첫 화면으로 이동합니다.
+            </Text>
+          </>
+        </>
+      )}
+
       {result && (
         <>
-          <div>{`주문 아이디: ${result.orderNumber}`}</div>
-          <div>{`결제 금액: ${result.amount.toLocaleString()}원`}</div>
-          <div className="info-row">
-            <span>결제 상태:</span>
-            <span>
-              {result.status === 'DONE' ? '결제 완료' : result.status}
-            </span>
+          <img src="/loading.gif" className="mb-6" />
+          <Text variant="title2" weight="bold" color="black">
+            {`주문 번호: ${result.orderNumber}`}
+          </Text>
+          <Text variant="title1" weight="bold" color="lightBlack">
+            주문이 완료되었습니다!
+          </Text>
+          <Text variant="title3" weight="bold" color="dark">
+            3초 뒤 첫 화면으로 이동합니다.
+          </Text>
+          <div className="w-60 mt-40">
+            <CustomButton
+              text={'닫기'}
+              variant={'main'}
+              onClick={handleGoBack}
+            />
           </div>
         </>
       )}
