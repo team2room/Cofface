@@ -10,7 +10,7 @@ import {
   genderAgeRequest,
 } from '../services/faceRecogService'
 import { maskName } from '@/utils/maskUserName'
-import { useWeather } from '../hooks/useWearher'
+import { useWeather } from '../hooks/useWeather'
 import { useLogout } from '../hooks/useLogout'
 
 const TopLeftText = tw.div`
@@ -75,7 +75,7 @@ export default function StartScreen() {
       description: {
         waiting: '우측 단말기에\n얼굴을 인식해 주세요!',
         success: `${maskName(user?.name || '')}님\n맞으신가요?`,
-        failure: '인식을 실패했어요',
+        failure: '등록된 얼굴 정보가 없어요',
       }[modalState],
       icon: {
         waiting: '/face.gif',
