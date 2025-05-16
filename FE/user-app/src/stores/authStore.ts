@@ -50,7 +50,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
       initialized: false,
-      isNewUser: true,
+      isNewUser: false,
 
       initialize: async () => {
         const refreshTokenValue = getCookie('refreshToken')
@@ -209,18 +209,36 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         try {
+          // 백엔드 로그아웃 API 호출
           await logoutRequest(getCookie('refreshToken'))
 
+          // 쿠키 제거
           removeCookie('accessToken')
           removeCookie('refreshToken')
 
+          // 스토어 상태 초기화
           set({
             user: null,
             isAuthenticated: false,
             error: null,
           })
+
+          return Promise.resolve()
         } catch (error) {
           console.log('로그아웃 중 에러', error)
+
+          // 오류가 발생해도 쿠키는 제거
+          removeCookie('accessToken')
+          removeCookie('refreshToken')
+
+          // 스토어 상태 초기화
+          set({
+            user: null,
+            isAuthenticated: false,
+            error: null,
+          })
+
+          return Promise.reject(error)
         }
       },
     }),

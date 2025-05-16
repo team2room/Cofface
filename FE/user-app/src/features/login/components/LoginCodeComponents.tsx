@@ -14,7 +14,7 @@ const ResendButton = tw.button`
   border border-gray rounded-md px-1.5 py-1 shrink-0 text-center min-w-max flex
 `
 const StyledInput = styled.input`
-  ${tw`border-none outline-none`}
+  ${tw`border-none outline-none w-36`}
   &:focus {
     outline: none;
   }
