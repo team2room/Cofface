@@ -39,7 +39,7 @@ def parse_args():
     parser.add_argument('--show_scores', action='store_true', help='라이브니스 점수 표시')
     parser.add_argument('--show_depth', action='store_true', help='깊이 맵 표시')
     parser.add_argument('--save_embeddings', action='store_true', help='3D 임베딩 저장')
-    parser.add_argument('--fullscreen', action='store_true', default=False, help='전체화면 모드')
+    parser.add_argument('--fullscreen', action='store_true', default=True, help='전체화면 모드')
     parser.add_argument('--gpu_id', type=int, default=0, help='사용할 GPU ID')
     parser.add_argument('--idle_image', type=str, default=None, 
                         help='대기 상태에서 표시할 이미지 파일 경로')
