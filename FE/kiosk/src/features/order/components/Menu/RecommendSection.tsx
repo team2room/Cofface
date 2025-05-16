@@ -2,6 +2,7 @@ import MenuCard from '@/features/order/components/Menu/MenuCard'
 import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
 import { RecommendSectionProps } from '@/interfaces/OrderInterface'
+import { useUserStore } from '@/stores/loginStore'
 
 const Container = tw.div`w-full`
 const UpSection = tw.section`min-h-[620px] bg-[#FFF1EF] px-16 py-5 rounded-xl flex`
@@ -15,6 +16,7 @@ export default function RecommendSection({
   recentMenus,
   customMenus,
 }: RecommendSectionProps) {
+  const { isMember } = useUserStore()
   return (
     <Container>
       <UpSection>
@@ -40,14 +42,26 @@ export default function RecommendSection({
 
         <UpRight>
           <Text variant="title4" weight="bold" className="mb-1">
-            최근 주문 메뉴
+            {isMember ? '최근 주문 메뉴' : '인기 메뉴'}
           </Text>
           <Text variant="body3" weight="bold" className="text-darkGray">
-            해당 매장에서
-            <br />
-            가장 최근에 주문한
-            <br />
-            메뉴 4개에요
+            {isMember ? (
+              <>
+                해당 매장에서
+                <br />
+                가장 최근에 주문한
+                <br />
+                메뉴 4개에요
+              </>
+            ) : (
+              <>
+                해당 매장에서
+                <br />
+                가장 많이 판매된
+                <br />
+                메뉴 4개에요
+              </>
+            )}
           </Text>
         </UpRight>
       </UpSection>
