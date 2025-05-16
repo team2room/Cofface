@@ -10,7 +10,6 @@ import {
   genderAgeRequest,
 } from '../services/faceRecogService'
 import { maskName } from '@/utils/maskUserName'
-import { useWeather } from '../hooks/useWeather'
 import { useLogout } from '../hooks/useLogout'
 
 const TopLeftText = tw.div`
@@ -36,7 +35,6 @@ const Button = tw.button`
 
 export default function StartScreen() {
   const navigate = useNavigate()
-  useWeather()
   const { phoneNumLogin, faceLogin } = useLogin()
   const { logout } = useLogout()
 
@@ -123,10 +121,10 @@ export default function StartScreen() {
     try {
       const { age, gender } = await genderAgeRequest()
       useUserStore.getState().setGuestInfo({ age, gender })
-      navigate('/order')
+      navigate('/loading?type=recommend')
     } catch (err) {
       alert('비회원 얼굴 분석에 실패했습니다.')
-      navigate('/order')
+      navigate('/loading?type=recommend')
     }
   }
 
@@ -188,7 +186,7 @@ export default function StartScreen() {
           } else if (modalState === 'success') {
             setShowModal(false)
             resetPhoneNumber()
-            navigate('/order')
+            navigate('/loading?type=recommend')
           } else {
             setModalState('phone')
           }
