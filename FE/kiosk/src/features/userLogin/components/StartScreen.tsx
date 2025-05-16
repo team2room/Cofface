@@ -12,22 +12,10 @@ import {
 import { maskName } from '@/utils/maskUserName'
 import { useLogout } from '../hooks/useLogout'
 
-const TopLeftText = tw.div`
-  absolute top-4 left-6 z-50
-`
-
-const ImageWrapper = tw.div`
-  w-full my-8 flex justify-center items-center
-`
-
-const FullImg = tw.img`
-  absolute top-0 left-0 w-full h-full object-cover
-`
-
-const ButtonGroup = tw.div`
-  absolute bottom-40 w-full flex justify-center gap-20 z-10
-`
-
+const TopLeftText = tw.div`absolute top-4 left-6 z-50`
+const ImageWrapper = tw.div`w-full my-8 flex justify-center items-center`
+const FullImg = tw.img`absolute top-0 left-0 w-full h-full object-cover`
+const ButtonGroup = tw.div`absolute bottom-40 w-full flex justify-center gap-20 z-10`
 const Button = tw.button`
   px-8 py-4 rounded-lg w-[397px] h-[234px] bg-[#FEFEFE] shadow-[1px_4px_10px_6px_rgba(0,0,0,0.10)] 
   hover:scale-105 transition-transform duration-200
@@ -121,6 +109,7 @@ export default function StartScreen() {
     try {
       const { age, gender } = await genderAgeRequest()
       useUserStore.getState().setGuestInfo({ age, gender })
+      // 얼굴 인식 중이라는 표현하기..
       navigate('/loading?type=recommend')
     } catch (err) {
       alert('비회원 얼굴 분석에 실패했습니다.')

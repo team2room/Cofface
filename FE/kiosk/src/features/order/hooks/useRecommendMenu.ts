@@ -3,7 +3,7 @@ import { getRecommendMenus } from '../services/recommendMenuService'
 import { useUserStore } from '@/stores/loginStore'
 
 export const useRecommendMenu = (storeId: number) => {
-  const { isMember, guestInfo, weather } = useUserStore()
+  const { isMember, guestInfo } = useUserStore()
 
   const [recentMenus, setRecentMenus] = useState([])
   const [customMenus, setCustomMenus] = useState([])
