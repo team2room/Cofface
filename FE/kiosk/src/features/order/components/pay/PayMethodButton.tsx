@@ -2,6 +2,7 @@ import { TbFaceId } from 'react-icons/tb'
 import { IoQrCodeOutline } from 'react-icons/io5'
 import { Text } from '@/styles/typography'
 import tw from 'twin.macro'
+import { useUserStore } from '@/stores/loginStore'
 
 const PaymentGrid = tw.div`flex gap-20`
 const ImageButton = tw.button`
@@ -15,14 +16,21 @@ interface Props {
 }
 
 export default function PayMethodButton({ onSelect }: Props) {
+  const { isMember, loginMethod } = useUserStore()
+
+  const isFaceLogin = isMember && loginMethod === 'face'
+
   return (
     <PaymentGrid>
-      <ImageButton onClick={() => onSelect('face')}>
-        <TbFaceId size={213} />
-        <Text variant="title4" weight="extrabold" color="lightBlack">
-          자동 결제
-        </Text>
-      </ImageButton>
+      {isFaceLogin && (
+        <ImageButton onClick={() => onSelect('face')}>
+          <TbFaceId size={213} />
+          <Text variant="title4" weight="extrabold" color="lightBlack">
+            자동 결제
+          </Text>
+        </ImageButton>
+      )}
+
       <ImageButton onClick={() => onSelect('qr')}>
         <IoQrCodeOutline size={185} className="mt-4" />
         <Text variant="title4" weight="extrabold" color="lightBlack">

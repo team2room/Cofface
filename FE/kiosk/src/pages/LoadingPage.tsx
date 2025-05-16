@@ -6,6 +6,7 @@ import tw from 'twin.macro'
 import CustomButton from '@/components/CustomButton'
 import { useLogout } from '@/features/userLogin/hooks/useLogout'
 import { useUserStore } from '@/stores/loginStore'
+import { useWeather } from '@/features/userLogin/hooks/useWeather'
 
 const ImageWrapper = tw.div`
   w-full my-8 flex justify-center items-center
@@ -43,7 +44,7 @@ export default function LoadingPage() {
       if (type === 'progress') {
         startPayment()
       } else if (type === 'recommend') {
-        // 추천 메뉴 API 호출
+        useWeather()
       }
     }
   }, [type])
@@ -73,6 +74,14 @@ export default function LoadingPage() {
     if (type === 'complete') {
       const timer = setTimeout(() => {
         handleHome()
+      }, 3000)
+
+      return () => clearTimeout(timer)
+    }
+
+    if (type === 'recommend') {
+      const timer = setTimeout(() => {
+        navigate('/order')
       }, 3000)
 
       return () => clearTimeout(timer)

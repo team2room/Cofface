@@ -1,7 +1,7 @@
 import { Text } from '@/styles/typography'
 import tw from 'twin.macro'
 import CustomDialog from '@/components/CustomDialog'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLoginStore, useUserStore } from '@/stores/loginStore'
 import { useNavigate } from 'react-router-dom'
 import { useLogin } from '../hooks/useLogin'
@@ -10,24 +10,12 @@ import {
   genderAgeRequest,
 } from '../services/faceRecogService'
 import { maskName } from '@/utils/maskUserName'
-import { useWeather } from '../hooks/useWearher'
+import { useLogout } from '../hooks/useLogout'
 
-const TopLeftText = tw.div`
-  absolute top-4 left-6 z-50
-`
-
-const ImageWrapper = tw.div`
-  w-full my-8 flex justify-center items-center
-`
-
-const FullImg = tw.img`
-  absolute top-0 left-0 w-full h-full object-cover
-`
-
-const ButtonGroup = tw.div`
-  absolute bottom-40 w-full flex justify-center gap-20 z-10
-`
-
+const TopLeftText = tw.div`absolute top-4 left-6 z-50`
+const ImageWrapper = tw.div`w-full my-8 flex justify-center items-center`
+const FullImg = tw.img`absolute top-0 left-0 w-full h-full object-cover`
+const ButtonGroup = tw.div`absolute bottom-40 w-full flex justify-center gap-20 z-10`
 const Button = tw.button`
   px-8 py-4 rounded-lg w-[397px] h-[234px] bg-[#FEFEFE] shadow-[1px_4px_10px_6px_rgba(0,0,0,0.10)] 
   hover:scale-105 transition-transform duration-200
@@ -35,8 +23,8 @@ const Button = tw.button`
 
 export default function StartScreen() {
   const navigate = useNavigate()
-  useWeather()
   const { phoneNumLogin, faceLogin } = useLogin()
+  const { logout } = useLogout()
 
   type ModalState = 'waiting' | 'success' | 'failure' | 'phone'
   const [modalState, setModalState] = useState<ModalState>('waiting')
@@ -73,7 +61,7 @@ export default function StartScreen() {
       description: {
         waiting: '우측 단말기에\n얼굴을 인식해 주세요!',
         success: `${maskName(user?.name || '')}님\n맞으신가요?`,
-        failure: '인식을 실패했어요',
+        failure: '등록된 얼굴 정보가 없어요',
       }[modalState],
       icon: {
         waiting: '/face.gif',
@@ -85,26 +73,35 @@ export default function StartScreen() {
     }
   }
 
+  const modalStateRef = useRef(modalState)
+  useEffect(() => {
+    modalStateRef.current = modalState
+  }, [modalState])
+
   const handlePhoneLogin = async () => {
     try {
       await phoneNumLogin(phoneNumber)
-      resetPhoneNumber()
-      setShowModal(false)
       setModalState('success')
     } catch (err) {
-      resetPhoneNumber()
       alert('일치하는 전화번호가 없습니다')
+    } finally {
+      resetPhoneNumber()
     }
   }
 
   const handleFaceLogin = async () => {
     try {
       const { phone_number } = await faceRecogRequest()
-      await faceLogin(phone_number)
-      setModalState('success')
+      if (modalStateRef.current !== 'phone') {
+        await faceLogin(phone_number)
+        setModalState('success')
+      }
     } catch (err) {
       console.error('얼굴 로그인 실패:', err)
-      setModalState('failure')
+
+      if (modalStateRef.current !== 'phone') {
+        setModalState('failure')
+      }
     }
   }
 
@@ -112,9 +109,11 @@ export default function StartScreen() {
     try {
       const { age, gender } = await genderAgeRequest()
       useUserStore.getState().setGuestInfo({ age, gender })
-      navigate('/order')
+      // 얼굴 인식 중이라는 표현하기..
+      navigate('/loading?type=recommend')
     } catch (err) {
       alert('비회원 얼굴 분석에 실패했습니다.')
+      navigate('/loading?type=recommend')
     }
   }
 
@@ -162,6 +161,7 @@ export default function StartScreen() {
         confirmText={modalContent.confirmText}
         onCancel={() => {
           if (modalState === 'success') {
+            logout(1)
             setModalState('phone')
           } else {
             setShowModal(false)
@@ -175,7 +175,7 @@ export default function StartScreen() {
           } else if (modalState === 'success') {
             setShowModal(false)
             resetPhoneNumber()
-            navigate('/order')
+            navigate('/loading?type=recommend')
           } else {
             setModalState('phone')
           }
