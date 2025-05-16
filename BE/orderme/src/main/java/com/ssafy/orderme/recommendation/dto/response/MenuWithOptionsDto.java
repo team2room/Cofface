@@ -1,14 +1,8 @@
 package com.ssafy.orderme.recommendation.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class MenuWithOptionsDto {
     private Integer menuId;
     private String menuName;
@@ -18,6 +12,12 @@ public class MenuWithOptionsDto {
     private Boolean isSoldOut;
     private String imageUrl;
     private String description;
+
+    // 메뉴 키워드
+    private String keyword1;
+    private String keyword2;
+
+    // 옵션 정보
     private Integer optionId;
     private String optionName;
     private Integer additionalPrice;
@@ -25,4 +25,8 @@ public class MenuWithOptionsDto {
     private String optionCategoryName;
     private Boolean isRequired;
     private Integer optionPopularity;
+
+    // 추가 통계 정보
+    private Integer orderCount;
+    private Double percentage;
 }

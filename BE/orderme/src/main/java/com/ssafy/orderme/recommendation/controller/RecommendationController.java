@@ -2,7 +2,6 @@ package com.ssafy.orderme.recommendation.controller;
 
 import com.ssafy.orderme.common.ApiResponse;
 import com.ssafy.orderme.kiosk.dto.response.MenuDetailResponse;
-import com.ssafy.orderme.kiosk.dto.response.MenuResponse;
 import com.ssafy.orderme.recommendation.dto.response.RecommendationResponse;
 import com.ssafy.orderme.recommendation.dto.response.RecommendedMenuGroup;
 import com.ssafy.orderme.recommendation.service.RecommendationService;
@@ -13,9 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/kiosk/recommendation")
@@ -31,7 +28,7 @@ public class RecommendationController {
     private JwtTokenProvider jwtTokenProvider;
 
     /**
-     * 회원/비회원 구분하여 메뉴 추천 (고급 추천 기능)
+     * 회원/비회원 구분하여 메뉴 추천 (개선된 추천 기능)
      */
     @GetMapping("/advanced")
     public ApiResponse<RecommendationResponse> getAdvancedRecommendations(
@@ -39,10 +36,27 @@ public class RecommendationController {
             @RequestHeader(value = "Authorization", required = false) String token,
             @RequestParam(required = false) String gender,
             @RequestParam(required = false) String age,
-            @RequestParam(required = false) List<Integer> excludeMenuIds,
-            @RequestParam String weather) {
+            @RequestParam(required = false) List<Integer> excludeMenuIds) {
 
         List<RecommendedMenuGroup> recommendedGroups = new ArrayList<>();
+
+        // 현재 시간 정보
+        Calendar calendar = Calendar.getInstance();
+        int hourOfDay = calendar.get(Calendar.HOUR_OF_DAY);
+        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+        int week = calendar.get(Calendar.WEEK_OF_YEAR);
+        int month = calendar.get(Calendar.MONTH) + 1; // Calendar.MONTH는 0부터 시작
+
+        // 현재 날씨 정보 - 주문 데이터에서 가장 최근 날씨 정보를 가져오거나, 기본값 사용
+        // 실제로는 DB에서 최근 날씨 정보를 가져오거나, 외부 API를 사용할 수 있음
+        String currentWeather = "맑음"; // 기본값 설정
+
+        try {
+            // 가장 최근 주문의 날씨 정보 가져오기 (실제 구현 필요)
+            currentWeather = recommendationService.getLatestWeather(storeId);
+        } catch (Exception e) {
+            System.out.println("날씨 정보 조회 오류: " + e.getMessage());
+        }
 
         // 사용자 ID, 나이, 성별 정보
         String userId = null;
@@ -62,13 +76,12 @@ public class RecommendationController {
                 // 사용자 정보 조회
                 User user = userService.findById(userId);
                 if (user != null) {
-                    // 성별 정보 가져오기 (Gender enum -> String으로 변환)
+                    // 성별 정보 가져오기
                     if (user.getGender() != null) {
-                        // 원래 형식 그대로 사용
-                        userGender = user.getGender().toString(); // 그대로 "MALE" 또는 "FEMALE" 사용
+                        userGender = user.getGender().toString();
                     }
 
-                    // 나이 계산 (User 클래스의 getAge() 메소드 활용)
+                    // 나이 계산
                     Integer calculatedAge = user.getAge();
                     if (calculatedAge != null) {
                         // 나이대만 추출 (예: 25살 -> 20)
@@ -88,88 +101,127 @@ public class RecommendationController {
             return ApiResponse.error(HttpStatus.BAD_REQUEST, "비회원의 경우 gender와 age 파라미터가 필요합니다.");
         }
 
-        // 1. 첫 번째 추천 메뉴 - 실제 주문 데이터 기반 (ordermenu, orderoption)
-        String reason1;
-        List<MenuDetailResponse> personalizedMenuDetails;
+        // 안전한 excludeMenuIds 생성
+        List<Integer> safeExcludeIds = excludeMenuIds != null ? excludeMenuIds : new ArrayList<>();
+        List<Integer> updatedExcludeIds = new ArrayList<>(safeExcludeIds);
 
-        if (isGuest) {
-            // 비회원: 전체 인기 주문 옵션 기반
-            personalizedMenuDetails = recommendationService.getMenusWithPopularOptions(
-                    storeId, null, null, null, null, excludeMenuIds);
-            reason1 = "매장 인기 메뉴 & 옵션";
-        } else {
-            // 회원: 사용자의 주문 기록 기반
-            personalizedMenuDetails = recommendationService.getMenusWithPopularOptions(
-                    storeId, userId, null, null, null, excludeMenuIds);
-            reason1 = "회원님이 선호하는 메뉴 & 옵션";
+        // 비회원 추천 (7가지)
+        // 1. 성별/나이 기반 추천
+        MenuDetailResponse genderAgeMenu = recommendationService.getMenuByGenderAndAge(
+                storeId, userGender, userAge, updatedExcludeIds);
+        if (genderAgeMenu != null) {
+            String genderText = userGender.equals("MALE") ? "남성" : "여성";
+            recommendedGroups.add(RecommendedMenuGroup.builder()
+                    .recommendationType(1)
+                    .recommendationReason(genderText + " " + userAge + "대에 인기 있는 메뉴")
+                    .menus(Collections.singletonList(genderAgeMenu))
+                    .build());
+            updatedExcludeIds.add(genderAgeMenu.getMenuId().intValue());
         }
 
-        // 첫 번째 추천 그룹 추가
-        recommendedGroups.add(RecommendedMenuGroup.builder()
-                .recommendationType(1)
-                .recommendationReason(reason1)
-                .menus(personalizedMenuDetails)
-                .build());
-
-        // 이미 추천된 메뉴 ID 목록 업데이트
-        List<Integer> updatedExcludeIds = new ArrayList<>();
-        if (excludeMenuIds != null) {
-            updatedExcludeIds.addAll(excludeMenuIds);
-        }
-        updatedExcludeIds.addAll(personalizedMenuDetails.stream()
-                .map(menu -> menu.getMenuId().intValue())
-                .collect(Collectors.toList()));
-
-        // 2. 두 번째 추천 메뉴 (성별/나이 기반 + 주문 옵션)
-        List<MenuDetailResponse> genderAgeMenuDetails = recommendationService.getMenusWithPopularOptions(
-                storeId, null, userGender, userAge, null, updatedExcludeIds);
-
-        // 두 번째 추천 그룹 추가
-        String genderDisplay = userGender != null ?
-                (userGender.equalsIgnoreCase("male") || userGender.equalsIgnoreCase("남성") ? "남" : "여") : "미정";
-        String reason2 = "[" + userAge + ", " + genderDisplay + "]";
-
-        recommendedGroups.add(RecommendedMenuGroup.builder()
-                .recommendationType(2)
-                .recommendationReason(reason2)
-                .menus(genderAgeMenuDetails)
-                .build());
-
-        // 최종 제외 목록 업데이트
-        List<Integer> finalExcludeIds = new ArrayList<>(updatedExcludeIds);
-        finalExcludeIds.addAll(genderAgeMenuDetails.stream()
-                .map(menu -> menu.getMenuId().intValue())
-                .collect(Collectors.toList()));
-
-        // 3. 세 번째 추천 메뉴 (날씨, 성별, 나이 기반 + 주문 옵션)
-        List<MenuDetailResponse> weatherGenderAgeMenuDetails = recommendationService.getMenusWithPopularOptions(
-                storeId, null, userGender, userAge, weather, finalExcludeIds);
-
-        // 로그로 결과 확인
-        System.out.println("날씨: " + weather);
-        System.out.println("성별: " + userGender);
-        System.out.println("나이: " + userAge);
-        System.out.println("날씨/성별/나이 기반 추천 메뉴 수: " + weatherGenderAgeMenuDetails.size());
-
-        // 추천 메뉴가 없을 경우 날씨만 기반으로 한 대체 메뉴 제공
-        if (weatherGenderAgeMenuDetails == null || weatherGenderAgeMenuDetails.isEmpty()) {
-            System.out.println("날씨/성별/나이 기반 추천 메뉴가 없어 날씨만 기반으로 한 대체 메뉴를 제공합니다.");
-            weatherGenderAgeMenuDetails = recommendationService.getMenusWithPopularOptions(
-                    storeId, null, null, null, weather, finalExcludeIds);
+        // 2. 시간대 기반 추천
+        MenuDetailResponse timeOfDayMenu = recommendationService.getMenuByTimeOfDay(
+                storeId, hourOfDay, updatedExcludeIds);
+        if (timeOfDayMenu != null) {
+            String timeDesc = getTimeOfDayDescription(hourOfDay);
+            recommendedGroups.add(RecommendedMenuGroup.builder()
+                    .recommendationType(2)
+                    .recommendationReason(timeDesc + " 시간대에 인기 있는 메뉴")
+                    .menus(Collections.singletonList(timeOfDayMenu))
+                    .build());
+            updatedExcludeIds.add(timeOfDayMenu.getMenuId().intValue());
         }
 
-        // 세 번째 추천 그룹 추가
-        String reason3 = "[" + weather + "]";
-        recommendedGroups.add(RecommendedMenuGroup.builder()
-                .recommendationType(3)
-                .recommendationReason(reason3)
-                .menus(weatherGenderAgeMenuDetails)
-                .build());
+        // 3. 날씨 기반 추천
+        MenuDetailResponse weatherMenu = recommendationService.getMenuByWeather(
+                storeId, currentWeather, updatedExcludeIds);
+        if (weatherMenu != null) {
+            recommendedGroups.add(RecommendedMenuGroup.builder()
+                    .recommendationType(3)
+                    .recommendationReason(currentWeather + " 날씨에 어울리는 메뉴")
+                    .menus(Collections.singletonList(weatherMenu))
+                    .build());
+            updatedExcludeIds.add(weatherMenu.getMenuId().intValue());
+        }
+
+        // 4. 일별 인기 메뉴 추천
+        MenuDetailResponse dayOfWeekMenu = recommendationService.getMenuByDayOfWeek(
+                storeId, dayOfWeek, updatedExcludeIds);
+        if (dayOfWeekMenu != null) {
+            recommendedGroups.add(RecommendedMenuGroup.builder()
+                    .recommendationType(4)
+                    .recommendationReason(getDayOfWeekName(dayOfWeek) + "에 인기 있는 메뉴")
+                    .menus(Collections.singletonList(dayOfWeekMenu))
+                    .build());
+            updatedExcludeIds.add(dayOfWeekMenu.getMenuId().intValue());
+        }
+
+        // 5. 주별 인기 메뉴 추천
+        MenuDetailResponse weekOfYearMenu = recommendationService.getMenuByWeekOfYear(
+                storeId, week, updatedExcludeIds);
+        if (weekOfYearMenu != null) {
+            recommendedGroups.add(RecommendedMenuGroup.builder()
+                    .recommendationType(5)
+                    .recommendationReason(week + "주차에 인기 있는 메뉴")
+                    .menus(Collections.singletonList(weekOfYearMenu))
+                    .build());
+            updatedExcludeIds.add(weekOfYearMenu.getMenuId().intValue());
+        }
+
+        // 6. 월별 인기 메뉴 추천
+        MenuDetailResponse monthMenu = recommendationService.getMenuByMonth(
+                storeId, month, updatedExcludeIds);
+        if (monthMenu != null) {
+            recommendedGroups.add(RecommendedMenuGroup.builder()
+                    .recommendationType(6)
+                    .recommendationReason(month + "월에 인기 있는 메뉴")
+                    .menus(Collections.singletonList(monthMenu))
+                    .build());
+            updatedExcludeIds.add(monthMenu.getMenuId().intValue());
+        }
+
+        // 7. 스테디셀러 메뉴 추천
+        MenuDetailResponse steadySellerMenu = recommendationService.getSteadySellerMenu(
+                storeId, updatedExcludeIds);
+        if (steadySellerMenu != null) {
+            recommendedGroups.add(RecommendedMenuGroup.builder()
+                    .recommendationType(7)
+                    .recommendationReason("매장의 스테디셀러 메뉴")
+                    .menus(Collections.singletonList(steadySellerMenu))
+                    .build());
+            updatedExcludeIds.add(steadySellerMenu.getMenuId().intValue());
+        }
+
+        // 회원 전용 추천 (2가지 추가)
+        if (!isGuest && userId != null) {
+            // 8. 회원 최다 주문 메뉴 추천
+            MenuDetailResponse mostOrderedMenu = recommendationService.getMostOrderedMenuByUser(
+                    storeId, userId, updatedExcludeIds);
+            if (mostOrderedMenu != null) {
+                recommendedGroups.add(RecommendedMenuGroup.builder()
+                        .recommendationType(8)
+                        .recommendationReason("회원님이 가장 많이 주문한 메뉴")
+                        .menus(Collections.singletonList(mostOrderedMenu))
+                        .build());
+                updatedExcludeIds.add(mostOrderedMenu.getMenuId().intValue());
+            }
+
+            // 9. 회원 최근 주문 메뉴 추천
+            MenuDetailResponse latestOrderedMenu = recommendationService.getLatestOrderedMenuByUser(
+                    storeId, userId, updatedExcludeIds);
+            if (latestOrderedMenu != null) {
+                recommendedGroups.add(RecommendedMenuGroup.builder()
+                        .recommendationType(9)
+                        .recommendationReason("회원님의 최근 주문 메뉴")
+                        .menus(Collections.singletonList(latestOrderedMenu))
+                        .build());
+            }
+        }
 
         // 응답 구성
         RecommendationResponse response = RecommendationResponse.builder()
                 .recommendedMenus(recommendedGroups)
-                .currentWeather(weather)
+                .currentWeather(currentWeather)
                 .build();
 
         return ApiResponse.success(response);
@@ -184,11 +236,10 @@ public class RecommendationController {
             @RequestHeader(value = "Authorization", required = false) String token,
             @RequestParam(required = false) String gender,
             @RequestParam(required = false) String age,
-            @RequestParam List<Integer> excludeMenuIds,
-            @RequestParam String weather) {
+            @RequestParam List<Integer> excludeMenuIds) {
 
         // 기존 추천에서 제외할 메뉴 ID 목록을 받아서 다시 추천
-        return getAdvancedRecommendations(storeId, token, gender, age, excludeMenuIds, weather);
+        return getAdvancedRecommendations(storeId, token, gender, age, excludeMenuIds);
     }
 
     /**
@@ -200,7 +251,8 @@ public class RecommendationController {
             @RequestParam Integer storeId,
             @RequestHeader(value = "Authorization", required = false) String token,
             @RequestParam String gender,
-            @RequestParam String age) {
+            @RequestParam String age,
+            @RequestParam(required = false) String weather) {
 
         String userId = null;
 
@@ -218,6 +270,11 @@ public class RecommendationController {
         // 성별/나이 기반 선호도 업데이트
         recommendationService.updateGenderAgePreference(menuId, storeId, gender, age);
 
+        // 날씨 기반 선호도 업데이트 (날씨 정보가 있는 경우)
+        if (weather != null && !weather.isEmpty()) {
+            recommendationService.updateWeatherPreference(menuId, storeId, weather);
+        }
+
         // 회원인 경우 개인 선호도 업데이트
         if (userId != null) {
             recommendationService.updateUserPreference(menuId, userId);
@@ -226,17 +283,32 @@ public class RecommendationController {
         return ApiResponse.success(null);
     }
 
-    // 날씨 코드를 한글로 변환하는 메소드
-    private String mapWeatherToKorean(String weatherCode) {
-        switch (weatherCode) {
-            case "Sunny": return "맑음";
-            case "Clear": return "맑음";
-            case "Cloudy": return "흐림";
-            case "Rainy": return "비";
-            case "Snowy": return "눈";
-            case "Stormy": return "폭풍";
-            case "Foggy": return "안개";
-            default: return weatherCode; // 기본값으로 원래 날씨 코드 반환
+    // 시간대 설명 반환 헬퍼 메소드
+    private String getTimeOfDayDescription(Integer hourOfDay) {
+        if (hourOfDay >= 6 && hourOfDay < 11) {
+            return "아침";
+        } else if (hourOfDay >= 11 && hourOfDay < 14) {
+            return "점심";
+        } else if (hourOfDay >= 14 && hourOfDay < 17) {
+            return "오후";
+        } else if (hourOfDay >= 17 && hourOfDay < 21) {
+            return "저녁";
+        } else {
+            return "밤";
+        }
+    }
+
+    // 요일 이름 반환 헬퍼 메소드
+    private String getDayOfWeekName(Integer dayOfWeek) {
+        switch (dayOfWeek) {
+            case Calendar.SUNDAY: return "일요일";
+            case Calendar.MONDAY: return "월요일";
+            case Calendar.TUESDAY: return "화요일";
+            case Calendar.WEDNESDAY: return "수요일";
+            case Calendar.THURSDAY: return "목요일";
+            case Calendar.FRIDAY: return "금요일";
+            case Calendar.SATURDAY: return "토요일";
+            default: return "";
         }
     }
 }

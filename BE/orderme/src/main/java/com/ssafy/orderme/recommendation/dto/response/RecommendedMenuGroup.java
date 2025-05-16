@@ -7,13 +7,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class RecommendedMenuGroup {
-    private Integer recommendationType;
-    private String recommendationReason;
-    private List<MenuDetailResponse> menus;
+    private int recommendationType;      // 추천 유형 (1: 성별/나이, 2: 시간대, 3: 날씨, ...)
+    private String recommendationReason; // 추천 이유
+    private List<MenuDetailResponse> menus; // 추천 메뉴 목록
 }

@@ -38,9 +38,7 @@
             LIMIT #{limit}
     </select>
 
-    <!-- 다른 select 문들... -->
-
-    <!-- 주문 옵션 기반 인기 메뉴와 옵션 조회 (추가) -->
+    <!-- 주문 옵션 기반 인기 메뉴와 옵션 조회 -->
     <select id="getMenusWithPopularOptions" resultType="com.ssafy.orderme.recommendation.dto.response.MenuWithOptionsDto">
         SELECT
         m.menu_id,
@@ -52,8 +50,8 @@
         m.image_url,
         m.description,
         oi.item_id as option_id,
-        oo.option_name,
-        oo.option_price as additional_price,
+        oi.option_name,
+        oi.additional_price,
         oc.category_id as option_category_id,
         oc.category_name as option_category_name,
         oc.is_required,
@@ -65,24 +63,23 @@
         JOIN
         ordermenu om ON m.menu_id = om.menu_id
         JOIN
+        orders o ON om.order_id = o.order_id
+        LEFT JOIN
         orderoption oo ON om.order_menu_id = oo.order_menu_id
-        JOIN
+        LEFT JOIN
         optionitems oi ON oo.option_item_id = oi.item_id
-        JOIN
+        LEFT JOIN
         optioncategories oc ON oi.category_id = oc.category_id
         WHERE
         c.store_id = #{storeId}
         <if test="userId != null">
-            AND om.order_id IN (SELECT order_id FROM orders WHERE user_id = #{userId})
+            AND o.user_id = #{userId}
         </if>
         <if test="gender != null">
-            AND om.order_id IN (SELECT order_id FROM orders WHERE gender = #{gender})
+            AND o.gender = #{gender}
         </if>
         <if test="ageGroup != null">
-            AND om.order_id IN (SELECT order_id FROM orders WHERE FLOOR(age/10)*10 = #{ageGroup})
-        </if>
-        <if test="weather != null">
-            AND om.order_id IN (SELECT order_id FROM orders WHERE weather = #{weather})
+            AND FLOOR(o.age/10)*10 = #{ageGroup}
         </if>
         <if test="excludeMenuIds != null and excludeMenuIds.size() > 0">
             AND m.menu_id NOT IN
@@ -91,11 +88,11 @@
             </foreach>
         </if>
         GROUP BY
-        m.menu_id, oi.item_id, m.menu_name, m.price, m.category_id, c.category_name, m.is_sold_out, m.image_url,
-        m.description, oo.option_name, oo.option_price, oc.category_id, oc.category_name, oc.is_required
+        m.menu_id, m.menu_name, m.price, m.category_id, c.category_name, m.is_sold_out, m.image_url,
+        m.description, oi.item_id, oi.option_name, oi.additional_price, oc.category_id, oc.category_name, oc.is_required
         ORDER BY
-        COUNT(om.order_menu_id) DESC, option_popularity DESC
-        LIMIT 50
+        COUNT(DISTINCT om.order_menu_id) DESC, m.menu_id, option_popularity DESC
+        LIMIT 10
     </select>
 
     <select id="findPopularMenusByGenderAndAgeRange" resultMap="com.ssafy.orderme.kiosk.mapper.MenuMapper.MenuResultMap">
@@ -115,6 +112,462 @@
         ORDER BY COUNT(om.order_menu_id) DESC
             LIMIT #{limit}
     </select>
+
+    <!-- 성별/나이 기반 메뉴 추천 쿼리 (개선된 버전) -->
+    <select id="findMenusByGenderAndAge" resultType="map">
+        SELECT
+        m.menu_id,
+        m.menu_name,
+        m.price,
+        m.category_id,
+        c.category_name,
+        m.is_sold_out,
+        m.image_url,
+        m.description,
+        m.keyword1,
+        m.keyword2,
+        COUNT(DISTINCT o.order_id) as order_count,
+        (COUNT(DISTINCT o.order_id) / (SELECT COUNT(DISTINCT o2.order_id)
+        FROM orders o2
+        WHERE o2.gender = #{gender}
+        AND FLOOR(o2.age/10)*10 = #{ageGroup})) * 100 as percentage
+        FROM
+        menus m
+        JOIN
+        categories c ON m.category_id = c.category_id
+        JOIN
+        ordermenu om ON m.menu_id = om.menu_id
+        JOIN
+        orders o ON om.order_id = o.order_id
+        WHERE
+        c.store_id = #{storeId}
+        AND o.gender = #{gender}
+        AND FLOOR(o.age/10)*10 = #{ageGroup}
+        <if test="excludeMenuIds != null and excludeMenuIds.size() > 0">
+            AND m.menu_id NOT IN
+            <foreach item="menuId" collection="excludeMenuIds" open="(" separator="," close=")">
+                #{menuId}
+            </foreach>
+        </if>
+        GROUP BY
+        m.menu_id, m.menu_name, m.price, m.category_id, c.category_name,
+        m.is_sold_out, m.image_url, m.description, m.keyword1, m.keyword2
+        ORDER BY
+        order_count DESC
+        LIMIT 1
+    </select>
+
+    <!-- 메뉴 ID에 대한 인기 옵션 조회 쿼리 -->
+    <select id="findPopularOptionsByMenuId" resultType="map">
+        SELECT
+            oc.category_id,
+            oc.category_name,
+            oc.is_required,
+            oi.item_id,
+            oi.option_name,
+            oi.additional_price,
+            COUNT(oo.order_option_id) as option_count
+        FROM
+            orderoption oo
+                JOIN
+            ordermenu om ON oo.order_menu_id = om.order_menu_id
+                JOIN
+            optionitems oi ON oo.option_item_id = oi.item_id
+                JOIN
+            optioncategories oc ON oi.category_id = oc.category_id
+        WHERE
+            om.menu_id = #{menuId}
+        GROUP BY
+            oc.category_id, oc.category_name, oc.is_required,
+            oi.item_id, oi.option_name, oi.additional_price
+        ORDER BY
+            oc.category_id, option_count DESC
+    </select>
+
+    <!-- 가장 최근 주문의 날씨 정보 조회 -->
+    <select id="findLatestWeather" resultType="string">
+        SELECT weather
+        FROM orders
+        WHERE kiosk_id = #{storeId}
+        ORDER BY order_date DESC
+            LIMIT 1
+    </select>
+
+    <!-- 시간대별 인기 메뉴 조회 -->
+    <select id="findMenusByTimeOfDay" resultType="map">
+        SELECT
+        m.menu_id,
+        m.menu_name,
+        m.price,
+        m.category_id,
+        c.category_name,
+        m.is_sold_out,
+        m.image_url,
+        m.description,
+        m.keyword1,
+        m.keyword2,
+        COUNT(DISTINCT o.order_id) as order_count,
+        (COUNT(DISTINCT o.order_id) * 100.0 /
+        (SELECT COUNT(DISTINCT o2.order_id)
+        FROM orders o2
+        WHERE o2.kiosk_id = #{storeId}
+        AND HOUR(o2.order_date) = #{hourOfDay})) as percentage
+        FROM
+        menus m
+        JOIN
+        categories c ON m.category_id = c.category_id
+        JOIN
+        ordermenu om ON m.menu_id = om.menu_id
+        JOIN
+        orders o ON om.order_id = o.order_id
+        WHERE
+        c.store_id = #{storeId}
+        AND o.kiosk_id = #{storeId}
+        AND HOUR(o.order_date) = #{hourOfDay}
+        <if test="excludeMenuIds != null and excludeMenuIds.size() > 0">
+            AND m.menu_id NOT IN
+            <foreach item="menuId" collection="excludeMenuIds" open="(" separator="," close=")">
+                #{menuId}
+            </foreach>
+        </if>
+        AND m.is_deleted = false
+        AND m.is_sold_out = false
+        GROUP BY
+        m.menu_id, m.menu_name, m.price, m.category_id, c.category_name,
+        m.is_sold_out, m.image_url, m.description, m.keyword1, m.keyword2
+        ORDER BY
+        order_count DESC
+        LIMIT 1
+    </select>
+
+    <!-- 날씨 기반 인기 메뉴 조회 -->
+    <select id="findMenusByWeather" resultType="map">
+        SELECT
+        m.menu_id,
+        m.menu_name,
+        m.price,
+        m.category_id,
+        c.category_name,
+        m.is_sold_out,
+        m.image_url,
+        m.description,
+        m.keyword1,
+        m.keyword2,
+        COUNT(DISTINCT o.order_id) as order_count,
+        (COUNT(DISTINCT o.order_id) * 100.0 /
+        (SELECT COUNT(DISTINCT o2.order_id)
+        FROM orders o2
+        WHERE o2.kiosk_id = #{storeId}
+        AND o2.weather = #{weather})) as percentage
+        FROM
+        menus m
+        JOIN
+        categories c ON m.category_id = c.category_id
+        JOIN
+        ordermenu om ON m.menu_id = om.menu_id
+        JOIN
+        orders o ON om.order_id = o.order_id
+        WHERE
+        c.store_id = #{storeId}
+        AND o.kiosk_id = #{storeId}
+        AND o.weather = #{weather}
+        <if test="excludeMenuIds != null and excludeMenuIds.size() > 0">
+            AND m.menu_id NOT IN
+            <foreach item="menuId" collection="excludeMenuIds" open="(" separator="," close=")">
+                #{menuId}
+            </foreach>
+        </if>
+        AND m.is_deleted = false
+        AND m.is_sold_out = false
+        GROUP BY
+        m.menu_id, m.menu_name, m.price, m.category_id, c.category_name,
+        m.is_sold_out, m.image_url, m.description, m.keyword1, m.keyword2
+        ORDER BY
+        order_count DESC
+        LIMIT 1
+    </select>
+
+    <!-- 요일별 인기 메뉴 조회 -->
+    <select id="findMenusByDayOfWeek" resultType="map">
+        SELECT
+        m.menu_id,
+        m.menu_name,
+        m.price,
+        m.category_id,
+        c.category_name,
+        m.is_sold_out,
+        m.image_url,
+        m.description,
+        m.keyword1,
+        m.keyword2,
+        COUNT(DISTINCT o.order_id) as order_count,
+        (COUNT(DISTINCT o.order_id) * 100.0 /
+        (SELECT COUNT(DISTINCT o2.order_id)
+        FROM orders o2
+        WHERE o2.kiosk_id = #{storeId}
+        AND DAYOFWEEK(o2.order_date) = #{dayOfWeek})) as percentage
+        FROM
+        menus m
+        JOIN
+        categories c ON m.category_id = c.category_id
+        JOIN
+        ordermenu om ON m.menu_id = om.menu_id
+        JOIN
+        orders o ON om.order_id = o.order_id
+        WHERE
+        c.store_id = #{storeId}
+        AND o.kiosk_id = #{storeId}
+        AND DAYOFWEEK(o.order_date) = #{dayOfWeek}
+        <if test="excludeMenuIds != null and excludeMenuIds.size() > 0">
+            AND m.menu_id NOT IN
+            <foreach item="menuId" collection="excludeMenuIds" open="(" separator="," close=")">
+                #{menuId}
+            </foreach>
+        </if>
+        AND m.is_deleted = false
+        AND m.is_sold_out = false
+        GROUP BY
+        m.menu_id, m.menu_name, m.price, m.category_id, c.category_name,
+        m.is_sold_out, m.image_url, m.description, m.keyword1, m.keyword2
+        ORDER BY
+        order_count DESC
+        LIMIT 1
+    </select>
+
+    <!-- 주별 인기 메뉴 조회 -->
+    <select id="findMenusByWeekOfYear" resultType="map">
+        SELECT
+        m.menu_id,
+        m.menu_name,
+        m.price,
+        m.category_id,
+        c.category_name,
+        m.is_sold_out,
+        m.image_url,
+        m.description,
+        m.keyword1,
+        m.keyword2,
+        COUNT(DISTINCT o.order_id) as order_count,
+        (COUNT(DISTINCT o.order_id) * 100.0 /
+        (SELECT COUNT(DISTINCT o2.order_id)
+        FROM orders o2
+        WHERE o2.kiosk_id = #{storeId}
+        AND WEEK(o2.order_date) = #{weekOfYear})) as percentage
+        FROM
+        menus m
+        JOIN
+        categories c ON m.category_id = c.category_id
+        JOIN
+        ordermenu om ON m.menu_id = om.menu_id
+        JOIN
+        orders o ON om.order_id = o.order_id
+        WHERE
+        c.store_id = #{storeId}
+        AND o.kiosk_id = #{storeId}
+        AND WEEK(o.order_date) = #{weekOfYear}
+        <if test="excludeMenuIds != null and excludeMenuIds.size() > 0">
+            AND m.menu_id NOT IN
+            <foreach item="menuId" collection="excludeMenuIds" open="(" separator="," close=")">
+                #{menuId}
+            </foreach>
+        </if>
+        AND m.is_deleted = false
+        AND m.is_sold_out = false
+        GROUP BY
+        m.menu_id, m.menu_name, m.price, m.category_id, c.category_name,
+        m.is_sold_out, m.image_url, m.description, m.keyword1, m.keyword2
+        ORDER BY
+        order_count DESC
+        LIMIT 1
+    </select>
+
+    <!-- 월별 인기 메뉴 조회 -->
+    <select id="findMenusByMonth" resultType="map">
+        SELECT
+        m.menu_id,
+        m.menu_name,
+        m.price,
+        m.category_id,
+        c.category_name,
+        m.is_sold_out,
+        m.image_url,
+        m.description,
+        m.keyword1,
+        m.keyword2,
+        COUNT(DISTINCT o.order_id) as order_count,
+        (COUNT(DISTINCT o.order_id) * 100.0 /
+        (SELECT COUNT(DISTINCT o2.order_id)
+        FROM orders o2
+        WHERE o2.kiosk_id = #{storeId}
+        AND MONTH(o2.order_date) = #{month})) as percentage
+        FROM
+        menus m
+        JOIN
+        categories c ON m.category_id = c.category_id
+        JOIN
+        ordermenu om ON m.menu_id = om.menu_id
+        JOIN
+        orders o ON om.order_id = o.order_id
+        WHERE
+        c.store_id = #{storeId}
+        AND o.kiosk_id = #{storeId}
+        AND MONTH(o.order_date) = #{month}
+        <if test="excludeMenuIds != null and excludeMenuIds.size() > 0">
+            AND m.menu_id NOT IN
+            <foreach item="menuId" collection="excludeMenuIds" open="(" separator="," close=")">
+                #{menuId}
+            </foreach>
+        </if>
+        AND m.is_deleted = false
+        AND m.is_sold_out = false
+        GROUP BY
+        m.menu_id, m.menu_name, m.price, m.category_id, c.category_name,
+        m.is_sold_out, m.image_url, m.description, m.keyword1, m.keyword2
+        ORDER BY
+        order_count DESC
+        LIMIT 1
+    </select>
+
+    <!-- 매장 스테디셀러 메뉴 조회 -->
+    <select id="findSteadySellerMenu" resultType="map">
+        SELECT
+        m.menu_id,
+        m.menu_name,
+        m.price,
+        m.category_id,
+        c.category_name,
+        m.is_sold_out,
+        m.image_url,
+        m.description,
+        m.keyword1,
+        m.keyword2,
+        COUNT(DISTINCT o.order_id) as order_count,
+        (COUNT(DISTINCT o.order_id) * 100.0 /
+        (SELECT COUNT(DISTINCT o2.order_id)
+        FROM orders o2
+        WHERE o2.kiosk_id = #{storeId})) as percentage
+        FROM
+        menus m
+        JOIN
+        categories c ON m.category_id = c.category_id
+        JOIN
+        ordermenu om ON m.menu_id = om.menu_id
+        JOIN
+        orders o ON om.order_id = o.order_id
+        WHERE
+        c.store_id = #{storeId}
+        AND o.kiosk_id = #{storeId}
+        <if test="excludeMenuIds != null and excludeMenuIds.size() > 0">
+            AND m.menu_id NOT IN
+            <foreach item="menuId" collection="excludeMenuIds" open="(" separator="," close=")">
+                #{menuId}
+            </foreach>
+        </if>
+        AND m.is_deleted = false
+        AND m.is_sold_out = false
+        GROUP BY
+        m.menu_id, m.menu_name, m.price, m.category_id, c.category_name,
+        m.is_sold_out, m.image_url, m.description, m.keyword1, m.keyword2
+        ORDER BY
+        order_count DESC
+        LIMIT 1
+    </select>
+
+    <!-- 회원이 가장 많이 주문한 메뉴 조회 -->
+    <select id="findMostOrderedMenuByUser" resultType="map">
+        SELECT
+        m.menu_id,
+        m.menu_name,
+        m.price,
+        m.category_id,
+        c.category_name,
+        m.is_sold_out,
+        m.image_url,
+        m.description,
+        m.keyword1,
+        m.keyword2,
+        COUNT(DISTINCT o.order_id) as order_count,
+        (COUNT(DISTINCT o.order_id) * 100.0 /
+        (SELECT COUNT(DISTINCT o2.order_id)
+        FROM orders o2
+        WHERE o2.user_id = #{userId})) as percentage
+        FROM
+        menus m
+        JOIN
+        categories c ON m.category_id = c.category_id
+        JOIN
+        ordermenu om ON m.menu_id = om.menu_id
+        JOIN
+        orders o ON om.order_id = o.order_id
+        WHERE
+        c.store_id = #{storeId}
+        AND o.user_id = #{userId}
+        <if test="excludeMenuIds != null and excludeMenuIds.size() > 0">
+            AND m.menu_id NOT IN
+            <foreach item="menuId" collection="excludeMenuIds" open="(" separator="," close=")">
+                #{menuId}
+            </foreach>
+        </if>
+        AND m.is_deleted = false
+        AND m.is_sold_out = false
+        GROUP BY
+        m.menu_id, m.menu_name, m.price, m.category_id, c.category_name,
+        m.is_sold_out, m.image_url, m.description, m.keyword1, m.keyword2
+        ORDER BY
+        order_count DESC
+        LIMIT 1
+    </select>
+
+    <!-- 회원의 최근 주문 메뉴 조회 -->
+    <select id="findLatestOrderedMenuByUser" resultType="map">
+        SELECT
+        m.menu_id,
+        m.menu_name,
+        m.price,
+        m.category_id,
+        c.category_name,
+        m.is_sold_out,
+        m.image_url,
+        m.description,
+        m.keyword1,
+        m.keyword2,
+        COUNT(DISTINCT o.order_id) as order_count,
+        o.order_date
+        FROM
+        menus m
+        JOIN
+        categories c ON m.category_id = c.category_id
+        JOIN
+        ordermenu om ON m.menu_id = om.menu_id
+        JOIN
+        orders o ON om.order_id = o.order_id
+        WHERE
+        c.store_id = #{storeId}
+        AND o.user_id = #{userId}
+        <if test="excludeMenuIds != null and excludeMenuIds.size() > 0">
+            AND m.menu_id NOT IN
+            <foreach item="menuId" collection="excludeMenuIds" open="(" separator="," close=")">
+                #{menuId}
+            </foreach>
+        </if>
+        AND m.is_deleted = false
+        AND m.is_sold_out = false
+        GROUP BY
+        m.menu_id, m.menu_name, m.price, m.category_id, c.category_name,
+        m.is_sold_out, m.image_url, m.description, m.keyword1, m.keyword2, o.order_date
+        ORDER BY
+        o.order_date DESC
+        LIMIT 1
+    </select>
+
+    <!-- 날씨 기반 메뉴 선호도 업데이트 -->
+    <insert id="updateWeatherPreference">
+        INSERT INTO weatherpreference (store_id, menu_id, weather_condition, order_count, updated_at)
+        VALUES (#{storeId}, #{menuId}, #{weather}, 1, NOW())
+            ON DUPLICATE KEY UPDATE
+                                 order_count = order_count + 1,
+                                 updated_at = NOW()
+    </insert>
 
     <!-- 기타 업데이트 쿼리 등... -->
     <update id="updateMenuPopularity">
