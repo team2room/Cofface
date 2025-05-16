@@ -1,7 +1,7 @@
 import { Text } from '@/styles/typography'
 import tw from 'twin.macro'
 import CustomDialog from '@/components/CustomDialog'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLoginStore, useUserStore } from '@/stores/loginStore'
 import { useNavigate } from 'react-router-dom'
 import { useLogin } from '../hooks/useLogin'
@@ -11,6 +11,7 @@ import {
 } from '../services/faceRecogService'
 import { maskName } from '@/utils/maskUserName'
 import { useWeather } from '../hooks/useWearher'
+import { useLogout } from '../hooks/useLogout'
 
 const TopLeftText = tw.div`
   absolute top-4 left-6 z-50
@@ -37,6 +38,7 @@ export default function StartScreen() {
   const navigate = useNavigate()
   useWeather()
   const { phoneNumLogin, faceLogin } = useLogin()
+  const { logout } = useLogout()
 
   type ModalState = 'waiting' | 'success' | 'failure' | 'phone'
   const [modalState, setModalState] = useState<ModalState>('waiting')
@@ -85,26 +87,35 @@ export default function StartScreen() {
     }
   }
 
+  const modalStateRef = useRef(modalState)
+  useEffect(() => {
+    modalStateRef.current = modalState
+  }, [modalState])
+
   const handlePhoneLogin = async () => {
     try {
       await phoneNumLogin(phoneNumber)
-      resetPhoneNumber()
-      setShowModal(false)
       setModalState('success')
     } catch (err) {
-      resetPhoneNumber()
       alert('일치하는 전화번호가 없습니다')
+    } finally {
+      resetPhoneNumber()
     }
   }
 
   const handleFaceLogin = async () => {
     try {
       const { phone_number } = await faceRecogRequest()
-      await faceLogin(phone_number)
-      setModalState('success')
+      if (modalStateRef.current !== 'phone') {
+        await faceLogin(phone_number)
+        setModalState('success')
+      }
     } catch (err) {
       console.error('얼굴 로그인 실패:', err)
-      setModalState('failure')
+
+      if (modalStateRef.current !== 'phone') {
+        setModalState('failure')
+      }
     }
   }
 
@@ -163,6 +174,7 @@ export default function StartScreen() {
         confirmText={modalContent.confirmText}
         onCancel={() => {
           if (modalState === 'success') {
+            logout(1)
             setModalState('phone')
           } else {
             setShowModal(false)
