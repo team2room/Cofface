@@ -3,6 +3,8 @@ import { LoginForm, Title } from '@/features/login/components/LoginComponents'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
+import { loginConfirm } from '@/features/login/services/authService'
+import { setCookie } from '@/utils/cookieAuth'
 import tw from 'twin.macro'
 
 const Container = tw.div`
@@ -28,12 +30,17 @@ const ErrorMessage = tw.div`
 export default function LoginConfirmPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { verifyLogin, login, isLoading, error, isNewUser } = useAuthStore()
+  const { login, isLoading, error } = useAuthStore()
+
+  // authStore에서 상태 업데이트 함수 가져오기
+  // (기존 verifyLogin 함수를 직접 호출하지 않고 내부 로직을 재구현)
+  const updateAuthState = useAuthStore((state) => state.setState)
 
   const [code, setCode] = useState('')
   const [timeLeft, setTimeLeft] = useState(60 * 3) // 3분
   const [showConfirmButton, setShowConfirmButton] = useState(false)
   const [formError, setFormError] = useState('')
+  const [isConfirming, setIsConfirming] = useState(false)
   const [_isResending, setIsResending] = useState(false)
 
   // 고정된 비밀번호 설정
@@ -134,7 +141,7 @@ export default function LoginConfirmPage() {
     return true
   }
 
-  // 확인 버튼 클릭 처리
+  // 확인 버튼 클릭 처리 - API 직접 호출하면서 authStore도 함께 업데이트
   const handleConfirm = async () => {
     if (!locationState) {
       console.error('locationState가 없습니다')
@@ -147,26 +154,69 @@ export default function LoginConfirmPage() {
     }
 
     try {
-      await verifyLogin(
-        locationState.verificationId,
-        locationState.phoneNumber,
-        code,
-        locationState.name,
-        locationState.idNumberFront,
-        locationState.idNumberGender,
-        password,
-      )
+      setIsConfirming(true)
+      updateAuthState({ isLoading: true, error: null }) // authStore 로딩 상태 업데이트
 
-      // 처음 회원가입한 사람이면 /survey 으로 이동
-      if (isNewUser) {
-        navigate('/survey', { replace: true, state: null })
+      // loginConfirm API 직접 호출
+      const response = await loginConfirm({
+        verificationId: locationState.verificationId,
+        phoneNumber: locationState.phoneNumber,
+        verificationCode: code,
+        name: locationState.name,
+        idNumberFront: locationState.idNumberFront,
+        idNumberGender: locationState.idNumberGender,
+        password: password,
+      })
+
+      console.log('API 응답:', response)
+      // 명시적으로 === true 비교를 통해 불리언 값으로 변환
+      const isUserNew = response.isNewUser === true
+      console.log('isNewUser 값 (확인):', isUserNew)
+
+      // 토큰 저장
+      const expiresDate = new Date()
+      expiresDate.setSeconds(expiresDate.getSeconds() + response.expiresIn)
+
+      setCookie('accessToken', response.accessToken, {
+        path: '/',
+        expires: expiresDate,
+        sameSite: 'strict',
+      })
+
+      setCookie('refreshToken', response.refreshToken, {
+        path: '/',
+        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30일
+        sameSite: 'strict',
+      })
+
+      // 중요: authStore 상태 업데이트
+      updateAuthState({
+        user: response.user,
+        isAuthenticated: true,
+        isLoading: false,
+        isNewUser: isUserNew, // 명시적으로 변환된 불리언 값 사용
+      })
+
+      // isNewUser 값에 따라 리다이렉트
+      if (isUserNew) {
+        console.log('신규 사용자입니다. /survey로 리다이렉트합니다.')
+        navigate('/survey', { replace: true })
       } else {
-        // 기존 회원이면 /home 으로 이동
-        navigate('/home', { replace: true, state: null })
+        console.log('기존 사용자입니다. /home으로 리다이렉트합니다.')
+        navigate('/home', { replace: true })
       }
     } catch (err) {
       console.error('로그인 확인 실패:', err)
-      setShowConfirmButton(false) // 오류 시 버튼 숨김
+      // 오류 발생 시 authStore 상태 업데이트
+      updateAuthState({
+        isLoading: false,
+        error:
+          err instanceof Error ? err.message : '로그인 중 오류가 발생했습니다.',
+      })
+      setFormError('인증번호가 올바르지 않습니다.')
+      setShowConfirmButton(false)
+    } finally {
+      setIsConfirming(false)
     }
   }
 
@@ -199,6 +249,7 @@ export default function LoginConfirmPage() {
       }
     } catch (err) {
       console.error('인증번호 재전송 실패:', err)
+      setFormError('인증번호 재전송에 실패했습니다. 다시 시도해 주세요.')
     } finally {
       setIsResending(false)
     }
@@ -232,9 +283,9 @@ export default function LoginConfirmPage() {
       {showConfirmButton && (
         <ConfirmButton
           onClick={handleConfirm}
-          disabled={isLoading || timeLeft <= 0}
+          disabled={isLoading || isConfirming || timeLeft <= 0}
         >
-          {isLoading ? '로그인 중...' : '확인'}
+          {isLoading || isConfirming ? '로그인 중...' : '확인'}
         </ConfirmButton>
       )}
     </Container>
