@@ -8,8 +8,8 @@ import { FaceRegisterPage } from './pages/register/FaceRegisterPage'
 import { PayRegisterPage } from './pages/register/PayRegisterPage'
 import { SettingPage } from './pages/setting/SettingPage'
 import { SettingPayPage } from './pages/setting/SettingPayPage'
-// import { HeadMotionPage } from './pages/motion/HeadMotionPage'
-import { HeadMotionTestPage } from './pages/motion/HeadMotionTestPage'
+import { HeadMotionPage } from './pages/motion/HeadMotionPage'
+// import { HeadMotionTestPage } from './pages/motion/HeadMotionTestPage'
 import KioskMotionWrapper from './features/motion/components/KioskMotionWrapper'
 import Fonts from './styles/fonts'
 import { Route, Routes } from 'react-router-dom'
@@ -109,7 +109,7 @@ function App() {
 
         {/* 헤드 모션 관련 경로 (개발용) */}
         {/* <Route path="/motion" element={<HeadMotionPage />} /> */}
-        <Route path="/motion/test" element={<HeadMotionTestPage />} />
+        <Route path="/motion" element={<HeadMotionPage />} />
       </Routes>
     </>
   )
