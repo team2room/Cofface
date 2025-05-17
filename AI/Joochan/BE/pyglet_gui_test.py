@@ -3,6 +3,7 @@ import threading, queue, traceback
 import requests, base64
 from pathlib import Path
 from datetime import datetime, timedelta
+# import eddmPrint
 
 import cv2, pyglet
 import numpy as np
@@ -49,7 +50,7 @@ def parse_args():
                         help='얼굴 인식 가이드 원 표시 (PNG 오버레이 대신)')
     parser.add_argument('--age_gender', action='store_true', default=True,
                         help='나이 및 성별 추정 사용')
-    parser.add_argument('--screen', type=int, default=2, 
+    parser.add_argument('--screen', type=int, default=0, 
                         help='표시할 화면 번호 (0부터 시작)')
     parser.add_argument('--target_width', type=int, default=600, 
                         help='대상 화면 너비')
@@ -57,7 +58,7 @@ def parse_args():
                         help='대상 화면 높이')
     parser.add_argument('--min_depth', type=float, default=0.36, 
                         help='감지할 최소 깊이 (미터)')
-    parser.add_argument('--max_depth', type=float, default=1.0, 
+    parser.add_argument('--max_depth', type=float, default=0.6, 
                         help='감지할 최대 깊이 (미터)')
     parser.add_argument('--api_port', type=int, default=8080, 
                         help='FastAPI 서버 포트')
@@ -314,16 +315,39 @@ class RealSenseFaceLiveness:
             for i, screen in enumerate(screens):
                 print(f"스크린 #{i}: {screen.width}x{screen.height} @ ({screen.x}, {screen.y})")
             
-            # 화면 인덱스 체크
-            if args.screen >= len(screens):
-                print(f"경고: 화면 인덱스 {args.screen}가 유효하지 않습니다. 기본 화면을 사용합니다.")
-                self.screen_index = 0
-            else:
-                self.screen_index = args.screen
+            # 600x1024 디스플레이 찾기
+            target_width = 600
+            target_height = 1024
+            best_screen_index = 0
+            best_score = float('inf')
+            
+            for i, screen in enumerate(screens):
+                # 너비와 높이 차이를 점수로 계산 (낮을수록 좋음)
+                width_diff = abs(screen.width - target_width)
+                height_diff = abs(screen.height - target_height)
                 
-            # 타겟 화면 선택
+                # 전체 크기 차이와 화면 비율 차이를 모두 고려
+                target_ratio = target_width / target_height
+                screen_ratio = screen.width / screen.height
+                ratio_diff = abs(screen_ratio - target_ratio)
+                
+                # 가중치를 사용한 점수 계산 (비율 차이와 크기 차이 모두 고려)
+                score = (width_diff + height_diff) * 0.7 + ratio_diff * 1000 * 0.3
+                
+                # 정확히 600x1024 디스플레이가 있으면 즉시 선택
+                if screen.width == target_width and screen.height == target_height:
+                    best_screen_index = i
+                    break
+                    
+                # 더 나은 점수라면 저장
+                if score < best_score:
+                    best_score = score
+                    best_screen_index = i
+            
+            self.screen_index = best_screen_index
             target_screen = screens[self.screen_index]
-            print(f"화면 #{self.screen_index}에 창을 표시합니다: {target_screen.width}x{target_screen.height}")
+            print(f"자동 선택된 화면 #{self.screen_index}: {target_screen.width}x{target_screen.height}")
+            print(f"목표 크기와의 차이: 너비 {abs(target_screen.width - target_width)}px, 높이 {abs(target_screen.height - target_height)}px")
             
             # 창 생성
             self.window = pyglet.window.Window(
@@ -337,7 +361,6 @@ class RealSenseFaceLiveness:
             window_x = target_screen.x + (target_screen.width - self.target_width) // 2
             window_y = target_screen.y + (target_screen.height - self.target_height) // 2
             self.window.set_location(window_x, window_y)
-            
             
             # 전체화면 설정 (요청 시)
             if args.fullscreen:
