@@ -1,4 +1,5 @@
-import StartScreen from '@/features/userLogin/components/StartScreen'
+import NewStartScreen from '@/features/userLogin/components/NewStartScreen'
+// import StartScreen from '@/features/userLogin/components/StartScreen'
 import { useOrderStore } from '@/stores/orderStore'
 import { useEffect } from 'react'
 import tw from 'twin.macro'
@@ -16,7 +17,8 @@ export default function UserLoginPage() {
 
   return (
     <Container>
-      <StartScreen />
+      {/* <StartScreen /> */}
+      <NewStartScreen />
     </Container>
   )
 }
