@@ -23,9 +23,10 @@ export default function NewStartScreen() {
   const handleStart = () => {
     // if (calledRef.current) return
     // calledRef.current = true
-
-    setShowModal(true)
-    handleFaceLogin()
+    if (modalStateRef.current !== 'phone') {
+      setShowModal(true)
+      handleFaceLogin()
+    }
   }
 
   type ModalState = 'waiting' | 'success' | 'failure' | 'phone' | 'error'
