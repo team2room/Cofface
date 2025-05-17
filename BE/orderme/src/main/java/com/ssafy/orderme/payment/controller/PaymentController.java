@@ -84,7 +84,9 @@ public class PaymentController {
 
     // 결제 승인
     @PostMapping("/confirm")
-    public ResponseEntity<ApiResponse<?>> confirmPayment(@RequestBody PaymentApprovalRequest request) {
+    public ResponseEntity<ApiResponse<?>> confirmPayment(
+            @RequestBody PaymentApprovalRequest request
+    ) {
         try {
             // 필수 정보 검증
             if (request.getPaymentKey() == null || request.getOrderId() == null || request.getAmount() == null) {
@@ -99,7 +101,7 @@ public class PaymentController {
 
             // 푸시 알림 전송 (비회원이 아닌 경우에만)
             if (order.getUserId() != null && !order.getIsGuest()) {
-                fcmService.sendOrderCompletionNotification(
+                notificationService.sendOrderCompletionNotification(
                         order.getUserId(),
                         response.getOrderNumber(),
                         response.getAmount()
