@@ -18,15 +18,15 @@ export default function NewStartScreen() {
   const { phoneNumLogin, faceLogin } = useLogin()
   const { logout } = useLogout()
 
+  // 시작 화면 터치 중복 방지
   // const calledRef = useRef(false)
-
   const handleStart = () => {
     // if (calledRef.current) return
     // calledRef.current = true
-    if (modalStateRef.current !== 'phone') {
-      setShowModal(true)
-      handleFaceLogin()
-    }
+    // if (modalStateRef.current !== 'phone') {
+    setShowModal(true)
+    handleFaceLogin()
+    // }
   }
 
   type ModalState = 'waiting' | 'success' | 'failure' | 'phone' | 'error'
@@ -68,7 +68,7 @@ export default function NewStartScreen() {
       ),
       icon: '/fail.gif',
       cancelText: '취소',
-      confirmText: '확인',
+      confirmText: '전화번호 로그인',
     }
   } else {
     modalContent = {
@@ -117,7 +117,6 @@ export default function NewStartScreen() {
           await faceLogin(phone_number)
           setModalState('success')
         } else {
-          // 비회원, 회원이지만 얼굴 등록 안한사람 (모달 띄우기)
           setModalState('failure')
           useUserStore
             .getState()
@@ -126,42 +125,32 @@ export default function NewStartScreen() {
       }
     } catch (err) {
       console.error('얼굴 로그인 실패:', err)
-
+      // console.log('결과', success)
       if (modalStateRef.current !== 'phone') {
         setModalState('error')
       }
     }
   }
 
-  // const handleGuestOrder = async () => {
-  //   try {
-  //     const { age, gender } = await genderAgeRequest()
-  //     useUserStore.getState().setGuestInfo({ age, gender })
-  //     // 얼굴 인식 중이라는 표현하기..
-  //     navigate('/loading?type=recommend')
-  //   } catch (err) {
-  //     alert('비회원 얼굴 분석에 실패했습니다.')
-  //     navigate('/loading?type=recommend')
-  //   }
-  // }
-
   return (
-    <div onClick={handleStart}>
-      <ImageWrapper>
-        <FullImg src="/포스터.png" alt="Spring Garden" draggable={false} />
+    <>
+      <div onClick={handleStart}>
+        <ImageWrapper>
+          <FullImg src="/포스터3.png" alt="Spring Garden" draggable={false} />
 
-        <div className="absolute bottom-60 left-1/2 transform -translate-x-1/2 rounded-lg animate-pulse">
-          <Text variant="body1" weight="bold" color="white">
-            화면을 터치해 주세요.
+          <div className="absolute bottom-60 left-1/2 transform -translate-x-1/2 rounded-lg animate-pulse">
+            <Text variant="body1" weight="bold" color="white">
+              화면을 터치해 주세요.
+            </Text>
+          </div>
+        </ImageWrapper>
+
+        <TopLeftText>
+          <Text variant="title4" weight="heavy" color="main">
+            COFFACE
           </Text>
-        </div>
-      </ImageWrapper>
-
-      <TopLeftText>
-        <Text variant="title4" weight="heavy" color="main">
-          COFFACE
-        </Text>
-      </TopLeftText>
+        </TopLeftText>
+      </div>
 
       <CustomDialog
         open={showModal}
@@ -196,6 +185,6 @@ export default function NewStartScreen() {
         }}
         showKeypad={modalState === 'phone'}
       />
-    </div>
+    </>
   )
 }
