@@ -34,10 +34,7 @@ public class FcmService {
 
         String message = makeMessage(fcmSendDto);
         RestTemplate restTemplate = new RestTemplate();
-        /**
-         * 추가된 사항 : RestTemplate 이용중 클라이언트의 한글 깨짐 증상에 대한 수정
-         * @refernece : https://stackoverflow.com/questions/29392422/how-can-i-tell-resttemplate-to-post-with-utf-8-encoding
-         */
+
         restTemplate.getMessageConverters()
                 .add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
 
@@ -47,7 +44,7 @@ public class FcmService {
 
         HttpEntity entity = new HttpEntity<>(message, headers);
 
-        String API_URL = "<https://fcm.googleapis.com/v1/projects/adjh54-a0189/messages:send>";
+        String API_URL = "https://fcm.googleapis.com/v1/projects/orderme-9ec2c/messages:send";
         ResponseEntity response = restTemplate.exchange(API_URL, HttpMethod.POST, entity, String.class);
 
         System.out.println(response.getStatusCode());
@@ -63,9 +60,10 @@ public class FcmService {
     private String getAccessToken() throws IOException {
         String firebaseConfigPath = "firebase/orderme-9ec2c-firebase-adminsdk-fbsvc-badfbf41fa.json";
 
+        // 수정된 스코프 URL - 각괄호 제거
         GoogleCredentials googleCredentials = GoogleCredentials
                 .fromStream(new ClassPathResource(firebaseConfigPath).getInputStream())
-                .createScoped(List.of("<https://www.googleapis.com/auth/cloud-platform>"));
+                .createScoped(List.of("https://www.googleapis.com/auth/cloud-platform"));
 
         googleCredentials.refreshIfExpired();
         return googleCredentials.getAccessToken().getTokenValue();
