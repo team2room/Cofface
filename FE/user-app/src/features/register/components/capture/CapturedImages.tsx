@@ -1,5 +1,5 @@
 import { CapturedImagesProps } from '@/interfaces/FaceRegisterInterfaces'
-import { getStateLabel } from '@/utils/CaptureUtils'
+import { getStateLabel } from '@/utils/captureUtils'
 import {
   CapturedImagesGrid,
   CapturedImageContainer,

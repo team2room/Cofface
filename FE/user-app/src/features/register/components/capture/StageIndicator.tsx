@@ -4,7 +4,7 @@ import {
   ProgressStepProps,
   StageIndicatorProps,
 } from '@/interfaces/FaceRegisterInterfaces'
-import { getStageText } from '@/utils/CaptureUtils'
+import { getStageText } from '@/utils/captureUtils'
 import tw from 'twin.macro'
 import styled from '@emotion/styled'
 import { colors } from '@/styles/colors'
