@@ -8,6 +8,7 @@ import com.ssafy.orderme.payment.dto.request.SetDefaultCardRequest;
 import com.ssafy.orderme.payment.dto.response.CardCompanyResponse;
 import com.ssafy.orderme.payment.dto.response.PaymentInfoResponse;
 import com.ssafy.orderme.payment.dto.response.PaymentResponseDto;
+import com.ssafy.orderme.payment.exception.CardNotFoundException;
 import com.ssafy.orderme.payment.model.CardRegistrationRequest;
 import com.ssafy.orderme.payment.model.Payment;
 import com.ssafy.orderme.payment.model.PaymentInfo;
@@ -85,21 +86,30 @@ public class AutoPaymentController {
             @RequestBody AutoPaymentRequest request,
             HttpServletRequest httpRequest
     ) {
-        // 토큰에서 사용자 ID 추출
-        String token = httpRequest.getHeader("Authorization").replace("Bearer ", "");
-        String userId = jwtTokenProvider.getUserId(token);
+        try {
+            // 토큰에서 사용자 ID 추출
+            String token = httpRequest.getHeader("Authorization").replace("Bearer ", "");
+            String userId = jwtTokenProvider.getUserId(token);
 
-        // 자동 결제 처리
-        PaymentResponseDto response = autoPaymentService.processAutoPayment(request, userId);
+            // 자동 결제 처리
+            PaymentResponseDto response = autoPaymentService.processAutoPayment(request, userId);
 
-        // 푸시 알림 전송 시도
-        fcmService.sendOrderCompletionNotification(
-                userId,
-                response.getOrderNumber(),
-                response.getAmount()
-        );
+            // 푸시 알림 전송 시도 (실패해도 결제 처리에는 영향 없음)
+            notificationService.sendOrderCompletionNotification(
+                    userId,
+                    response.getOrderNumber(),
+                    response.getAmount()
+            );
 
-        return ResponseEntity.ok(ApiResponse.success("결제가 성공적으로 승인되었습니다.", response));
+            return ResponseEntity.ok(ApiResponse.success("결제가 성공적으로 승인되었습니다.", response));
+        } catch (CardNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(404, e.getMessage(), "카드정보를 찾을 수 없습니다."));
+        } catch (Exception e) {
+            log.error("자동 결제 처리 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(500, e.getMessage(), "결제에 실패했습니다."));
+        }
     }
 
     // 유저의 카드 정보 조회 (카드사 정보 포함)
