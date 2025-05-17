@@ -1,6 +1,8 @@
 package com.ssafy.orderme.payment.controller;
 
 import com.ssafy.orderme.common.ApiResponse;
+import com.ssafy.orderme.notification.service.FcmService;
+import com.ssafy.orderme.notification.service.NotificationService;
 import com.ssafy.orderme.payment.dto.request.PaymentApprovalRequest;
 import com.ssafy.orderme.payment.dto.request.PaymentRequest;
 import com.ssafy.orderme.payment.dto.response.PaymentResponseDto;
@@ -31,6 +33,8 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final NotificationService notificationService;
+    private final FcmService fcmService;
 
     @Value("${toss.client-key}")
     private String tossPaymentsClientKey;
@@ -89,6 +93,19 @@ public class PaymentController {
 
             // 결제 승인 처리
             PaymentResponseDto response = paymentService.approvePayment(request);
+
+            // 주문 정보에서 userId 가져오기
+            Order order = paymentService.getOrderById(response.getOrderId());
+
+            // 푸시 알림 전송 (비회원이 아닌 경우에만)
+            if (order.getUserId() != null && !order.getIsGuest()) {
+                fcmService.sendOrderCompletionNotification(
+                        order.getUserId(),
+                        response.getOrderNumber(),
+                        response.getAmount()
+                );
+            }
+
             return ResponseEntity.ok(ApiResponse.success("결제가 성공적으로 승인되었습니다.", response));
         } catch (Exception e) {
             log.error("결제 승인 중 오류 발생", e);

@@ -1,6 +1,8 @@
 package com.ssafy.orderme.payment.controller;
 
 import com.ssafy.orderme.common.ApiResponse;
+import com.ssafy.orderme.notification.service.FcmService;
+import com.ssafy.orderme.notification.service.NotificationService;
 import com.ssafy.orderme.payment.dto.request.AutoPaymentRequest;
 import com.ssafy.orderme.payment.dto.request.SetDefaultCardRequest;
 import com.ssafy.orderme.payment.dto.response.CardCompanyResponse;
@@ -32,6 +34,8 @@ public class AutoPaymentController {
     private final UserService userService;
     private final AutoPaymentService autoPaymentService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final NotificationService notificationService;
+    private final FcmService fcmService;
 
     // 카드사 정보 조회
     @GetMapping("/card-company-info")
@@ -87,6 +91,13 @@ public class AutoPaymentController {
 
         // 자동 결제 처리
         PaymentResponseDto response = autoPaymentService.processAutoPayment(request, userId);
+
+        // 푸시 알림 전송 시도
+        fcmService.sendOrderCompletionNotification(
+                userId,
+                response.getOrderNumber(),
+                response.getAmount()
+        );
 
         return ResponseEntity.ok(ApiResponse.success("결제가 성공적으로 승인되었습니다.", response));
     }
