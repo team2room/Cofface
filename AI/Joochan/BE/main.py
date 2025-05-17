@@ -2,23 +2,25 @@
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Dict, Optional, List, Any
-import numpy as np
-import base64
-import cv2
-import logging
+
 from datetime import datetime
-import json
-import asyncio
-import os
-import uuid
+import logging, json, os, uuid
 from contextlib import asynccontextmanager
+from typing import Dict, Optional, List, Any
+
+import cv2
 import torch
-import insightface
+import base64
+import numpy as np
+
 from insightface.app import FaceAnalysis
 from insightface.data import get_image as ins_get_image
+
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # 로깅 설정
 logging.basicConfig(
@@ -34,6 +36,7 @@ logger = logging.getLogger("face_verification_server")
 # Qdrant 설정
 QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
 QDRANT_PORT = int(os.getenv("QDRANT_PORT", 6333))
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
 COLLECTION_NAME = "face_embeddings"
 VECTOR_SIZE = 512  # InsightFace 임베딩 차원
 SIMILARITY_THRESHOLD = 0.7  # 유사도 임계값
@@ -53,6 +56,10 @@ class VerifyRequest(BaseModel):
 
 
 class CheckRegistrationRequest(BaseModel):
+    phone_number: str
+    name: str
+
+class DeleteUserRequest(BaseModel):
     phone_number: str
     name: str
 
@@ -89,7 +96,7 @@ class FaceProcessor:
     def init_qdrant(self):
         """Qdrant 클라이언트 초기화 및 컬렉션 생성"""
         try:
-            self.qdrant_client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
+            self.qdrant_client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT, api_key=QDRANT_API_KEY)
 
             # 컬렉션이 이미 존재하는지 확인
             collections = self.qdrant_client.get_collections().collections
@@ -564,6 +571,50 @@ class FaceProcessor:
                 "processing_time": processing_time,
                 "liveness_result": liveness_result
             }
+    
+    def delete_user(self, phone_number, name):
+        """등록된 사용자 데이터 삭제"""
+        try:
+            # 사용자가 등록되어 있는지 먼저 확인
+            registration_check = self.check_registration(phone_number, name)
+            
+            if not registration_check.get("is_registered", False):
+                return {
+                    "status": "error",
+                    "message": f"사용자 {name}({phone_number})는 등록되어 있지 않습니다."
+                }
+            
+            # 전화번호와 이름으로 검색하여 삭제
+            delete_result = self.qdrant_client.delete(
+                collection_name=COLLECTION_NAME,
+                points_selector=models.FilterSelector(
+                    filter=models.Filter(
+                        must=[
+                            models.FieldCondition(
+                                key="phone_number",
+                                match=models.MatchValue(value=phone_number)
+                            ),
+                            models.FieldCondition(
+                                key="name",
+                                match=models.MatchValue(value=name)
+                            )
+                        ]
+                    )
+                )
+            )
+            
+            logger.info(f"사용자 {name}({phone_number})의 모든 얼굴 데이터 삭제 완료")
+            return {
+                "status": "success",
+                "message": f"사용자 {name}({phone_number})의 얼굴 데이터가 성공적으로 삭제되었습니다."
+            }
+        except Exception as e:
+            logger.error(f"사용자 삭제 오류: {e}")
+            return {
+                "status": "error",
+                "message": f"사용자 삭제 중 오류 발생: {str(e)}"
+            }
+
 
 
 # 시스템 인스턴스 생성
@@ -583,8 +634,6 @@ async def lifespan(app: FastAPI):
         logger.error(f"얼굴 인식 모델 또는 Qdrant 초기화 실패: {e}")
 
     yield
-
-    # 종료 시 처리할 내용이 있으면 여기에 작성
 
 
 # 앱 초기화
@@ -631,6 +680,35 @@ async def check_registration(request: CheckRegistrationRequest):
     except Exception as e:
         logger.error(f"등록 확인 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# API 엔드포인트: 등록된 얼굴 삭제
+@app.post("/delete-user", status_code=200)
+async def delete_user(request: DeleteUserRequest):
+    """등록된 사용자의 얼굴 데이터 삭제"""
+    try:
+        if face_processor is None:
+            return {
+                "status": "error",
+                "message": "얼굴 인식 모델이 초기화되지 않았습니다"
+            }
+
+        result = face_processor.delete_user(request.phone_number, request.name)
+        
+        from fastapi import Response
+        response_code = 200 if result.get("status") == "success" else 404
+        
+        return Response(
+            content=json.dumps(result),
+            media_type="application/json", 
+            status_code=response_code
+        )
+    except Exception as e:
+        logger.error(f"사용자 삭제 처리 오류: {e}")
+        return {
+            "status": "error",
+            "message": f"사용자 삭제 중 오류 발생: {str(e)}"
+        }
 
 
 # API 엔드포인트: 얼굴 인증
