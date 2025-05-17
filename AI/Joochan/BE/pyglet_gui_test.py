@@ -1555,6 +1555,15 @@ class FaceRecognitionServer:
                     "success": False,
                     "message": "이미 처리 중인 요청이 있습니다. 잠시 후 다시 시도하세요."
                 }
+                
+            # 기존 프레임 큐 비우기 (이전 데이터 정리)
+            try:
+                while not self.app_instance.frame_queue.empty():
+                    self.app_instance.frame_queue.get_nowait()
+                while not self.app_instance.result_queue.empty():
+                    self.app_instance.result_queue.get_nowait()
+            except queue.Empty:
+                pass
             
             # 카메라 모드 활성화
             self.app_instance.set_camera_mode(True)
@@ -1597,7 +1606,8 @@ class FaceRecognitionServer:
                     "message": f"실제 얼굴 프레임이 부족합니다. 필요: 10개, 감지됨: {live_frames}개",
                     "face_detected": True,
                     "is_live": False,
-                    "live_ratio": live_ratio
+                    "live_ratio": live_ratio,
+                    "genderage": api_result,
                 }
             
             # 현재 가장 최근의 프레임 캡처하여 사용 (이미 라이브니스 검증된 상태)
@@ -1679,6 +1689,7 @@ class FaceRecognitionServer:
                     # 결과 반환
                     result = {
                         **verification_result,  # 서버 응답 모든 필드 포함
+                        "genderage": api_result,
                     }
                 else:
                     print(f"서버 오류 응답: {response.status_code}, {response.text}")
