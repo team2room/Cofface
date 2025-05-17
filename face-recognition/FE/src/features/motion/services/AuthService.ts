@@ -1,5 +1,6 @@
 // services/AuthService.ts
 import MotionApiService from './MotionApiService'
+import BackgroundMotionService from './BackgroundMotionService'
 
 interface User {
   id: string
@@ -22,12 +23,26 @@ class AuthService {
   }
 
   // 로그인 처리
-  public static login(user: User): void {
+  public static async login(user: User): Promise<void> {
     this.isAuthenticated = true
     this.currentUser = user
     console.log(`[AuthService] 로그인 성공: ${user.name}`)
 
-    // 로그인 시 모션 감지 활성화
+    // 로그인 시 모션 감지 활성화 - 직접 BackgroundMotionService 호출
+    try {
+      console.log('[AuthService] 모션 감지 시작 중...')
+      // BackgroundMotionService가 초기화되지 않았다면 초기화
+      if (!BackgroundMotionService.isInitialized()) {
+        await BackgroundMotionService.initialize()
+      }
+      // 모션 감지 서비스 시작
+      await BackgroundMotionService.start()
+      console.log('[AuthService] 모션 감지 시작 성공')
+    } catch (error) {
+      console.error('[AuthService] 모션 감지 시작 실패:', error)
+    }
+
+    // 또한 MotionApiService도 활성화 (이전 구현과의 호환성)
     MotionApiService.setActive(true)
 
     // 로그인 이벤트 발생 (필요시 커스텀 이벤트 사용)
@@ -39,7 +54,16 @@ class AuthService {
     console.log('[AuthService] 로그아웃')
     this.isAuthenticated = false
 
-    // 로그아웃 시 모션 감지 비활성화
+    // 로그아웃 시 모션 감지 비활성화 - 직접 BackgroundMotionService 호출
+    try {
+      console.log('[AuthService] 모션 감지 중지 중...')
+      BackgroundMotionService.stop()
+      console.log('[AuthService] 모션 감지 중지 성공')
+    } catch (error) {
+      console.error('[AuthService] 모션 감지 중지 실패:', error)
+    }
+
+    // 또한 MotionApiService도 비활성화 (이전 구현과의 호환성)
     MotionApiService.setActive(false)
 
     // 로그아웃 이벤트 발생
@@ -52,6 +76,7 @@ class AuthService {
     type: 'login' | 'logout',
     user: User | null,
   ): void {
+    console.log(`[AuthService] ${type} 이벤트 발행`)
     const event = new CustomEvent('auth_state_change', {
       detail: { type, user },
     })
