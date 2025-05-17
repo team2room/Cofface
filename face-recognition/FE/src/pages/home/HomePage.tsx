@@ -189,20 +189,12 @@ export default function HomePage() {
           {locked ? <HomeTitleLock /> : <HomeTitleUnlock />}
           <HomeSelectDrinks locked={locked} />
           <ScrollDown onClick={handleScrollDown}>
-            <img
-              className="w-16"
-              src={scrollDown}
-              alt="스크롤 다운"
-            />
+            <img className="w-16" src={scrollDown} alt="스크롤 다운" />
           </ScrollDown>
         </Container>
         <Container>
           <ScrollUp onClick={handleScrollUp}>
-            <img
-              className="w-16"
-              src={scrollDown}
-              alt="스크롤 업"
-            />
+            <img className="w-16" src={scrollDown} alt="스크롤 업" />
           </ScrollUp>
           <ButtonWrapper>
             {mainButtonProps.map((buttonProps, index) => (

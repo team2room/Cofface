@@ -3,13 +3,12 @@ import React, { useState, useEffect, useRef } from 'react'
 import * as mp from '@mediapipe/face_mesh'
 import * as cam from '@mediapipe/camera_utils'
 import { MotionDetector } from './MotionDetector'
-import { calculateFaceRotation } from '../FaceRecognition/utils'
+import { calculateFaceRotation } from '../../../components/FaceRecognition/utils'
 import {
   Container,
   ContentWrapper,
   CameraColumn,
   InfoColumn,
-  BackButton,
   Message,
   SubMessage,
   Button,
@@ -22,7 +21,7 @@ import {
   DebugCanvasContainer,
   DebugCanvas,
   DebugValue,
-} from '../FaceRecognition/styles'
+} from '../../../components/FaceRecognition/styles'
 
 interface HeadMotionTrackerProps {
   onMotionDetected?: (motionType: string, data: any) => void
@@ -377,18 +376,37 @@ const HeadMotionTracker: React.FC<HeadMotionTrackerProps> = ({
     // Roll 회전 (z축 회전)
     ctx.rotate((rotationValues.roll * Math.PI) / 180)
 
-    // Yaw에 따른 타원 스케일링
-    const yawFactor = Math.cos((rotationValues.yaw * Math.PI) / 180)
-    // Pitch에 따른 타원 스케일링
-    const pitchFactor = Math.cos((rotationValues.pitch * Math.PI) / 180)
+    // Yaw에 따른 타원 스케일링 - 절대값으로 계산하여 음수 방지
+    // 수정: Math.abs 적용 및 값의 범위 제한
+    const yawFactor = Math.max(
+      0.1,
+      Math.cos(
+        Math.min(
+          Math.PI / 2 - 0.1,
+          Math.abs((rotationValues.yaw * Math.PI) / 180),
+        ),
+      ),
+    )
+
+    // Pitch에 따른 타원 스케일링 - 절대값으로 계산하여 음수 방지
+    // 수정: Math.abs 적용 및 값의 범위 제한
+    const pitchFactor = Math.max(
+      0.1,
+      Math.cos(
+        Math.min(
+          Math.PI / 2 - 0.1,
+          Math.abs((rotationValues.pitch * Math.PI) / 180),
+        ),
+      ),
+    )
 
     // 얼굴 윤곽 그리기
     ctx.beginPath()
     ctx.ellipse(
       0,
       0,
-      radius * yawFactor,
-      radius * pitchFactor,
+      radius * yawFactor, // 항상 양수 보장
+      radius * pitchFactor, // 항상 양수 보장
       0,
       0,
       2 * Math.PI,
@@ -397,23 +415,36 @@ const HeadMotionTracker: React.FC<HeadMotionTrackerProps> = ({
     ctx.lineWidth = 2
     ctx.stroke()
 
-    // 코 그리기 (방향 표시)
+    // 코 그리기 (방향 표시) - 각도 제한 추가
     const noseLength = 15
     ctx.beginPath()
     ctx.moveTo(0, -5)
-    const noseEndX = noseLength * Math.sin((rotationValues.yaw * Math.PI) / 180)
-    const noseEndY =
-      noseLength * Math.sin((rotationValues.pitch * Math.PI) / 180)
+
+    // yaw와 pitch 각도를 제한하여 안전한 값 사용
+    const limitedYaw =
+      Math.min(
+        Math.PI / 2 - 0.1,
+        Math.abs((rotationValues.yaw * Math.PI) / 180),
+      ) * Math.sign(rotationValues.yaw)
+    const limitedPitch =
+      Math.min(
+        Math.PI / 2 - 0.1,
+        Math.abs((rotationValues.pitch * Math.PI) / 180),
+      ) * Math.sign(rotationValues.pitch)
+
+    const noseEndX = noseLength * Math.sin(limitedYaw)
+    const noseEndY = noseLength * Math.sin(limitedPitch)
+
     ctx.lineTo(noseEndX, noseEndY)
     ctx.strokeStyle = '#FFFF00'
     ctx.lineWidth = 3
     ctx.stroke()
 
-    // 눈 그리기
+    // 눈 그리기 - 수정된 yawFactor와 pitchFactor 사용
     const eyeOffsetX = 15 * yawFactor
     const eyeOffsetY = -10 * pitchFactor
-    const eyeWidth = 8 * yawFactor
-    const eyeHeight = 5 * pitchFactor
+    const eyeWidth = Math.max(1, 8 * yawFactor) // 최소 1 픽셀 보장
+    const eyeHeight = Math.max(1, 5 * pitchFactor) // 최소 1 픽셀 보장
 
     // 왼쪽 눈
     ctx.beginPath()
@@ -428,8 +459,9 @@ const HeadMotionTracker: React.FC<HeadMotionTrackerProps> = ({
     ctx.fill()
 
     // 입 그리기
-    const mouthWidth = 20 * yawFactor
-    const mouthHeight = 5 * pitchFactor
+    const mouthWidth = Math.max(1, 20 * yawFactor) // 최소 1 픽셀 보장
+    const mouthHeight = Math.max(1, 5 * pitchFactor) // 최소 1 픽셀 보장
+
     ctx.beginPath()
     ctx.ellipse(0, 15 * pitchFactor, mouthWidth, mouthHeight, 0, 0, Math.PI)
     ctx.strokeStyle = '#FF8080'
