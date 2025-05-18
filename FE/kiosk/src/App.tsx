@@ -28,7 +28,7 @@ function App() {
         {/* 로딩 화면 */}
         <Route path="/loading" element={<LoadingPage />} />
 
-        {/* 결제 성공 페이지 */}
+        {/* 결제 페이지 */}
         <Route path="/pay" element={<PayPage />} />
 
         {/* 결제 성공 페이지 */}

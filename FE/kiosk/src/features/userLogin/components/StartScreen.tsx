@@ -40,7 +40,7 @@ export default function StartScreen() {
     modalContent = {
       title: (
         <Text variant="title4" weight="extrabold" color="gray">
-          PhoneSign --------------------- ORDER.ME
+          PhoneSign --------------------- COFFACE
         </Text>
       ),
       description: (
@@ -55,7 +55,7 @@ export default function StartScreen() {
     modalContent = {
       title: (
         <Text variant="title4" weight="extrabold" color="gray">
-          FaceSign ----------------------- ORDER.ME
+          FaceSign ----------------------- COFFACE
         </Text>
       ),
       description: {
@@ -125,7 +125,7 @@ export default function StartScreen() {
 
       <TopLeftText>
         <Text variant="title4" weight="heavy" color="main">
-          ORDER.ME
+          COFFACE
         </Text>
       </TopLeftText>
 
@@ -137,7 +137,7 @@ export default function StartScreen() {
           }}
         >
           <Text variant="title4" weight="extrabold" color="main">
-            ORDER.ME
+            COFFACE
           </Text>
           <br />
           <Text variant="title2" weight="bold">

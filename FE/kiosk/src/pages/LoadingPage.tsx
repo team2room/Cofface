@@ -63,7 +63,7 @@ export default function LoadingPage() {
   useEffect(() => {
     if (type === 'progress' && error) {
       const timer = setTimeout(() => {
-        handleHome()
+        navigate('/order')
       }, 3000)
 
       return () => clearTimeout(timer)
@@ -102,7 +102,7 @@ export default function LoadingPage() {
             <>
               <Text variant="title3">❌ 결제 실패</Text>
               <Text variant="body2" color="darkGray">
-                3초 후 메인으로 이동합니다.
+                3초 후 주문 화면으로 이동합니다.
               </Text>
             </>
           )}

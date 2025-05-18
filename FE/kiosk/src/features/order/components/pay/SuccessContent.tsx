@@ -53,9 +53,17 @@ export function SuccessContent() {
   }
 
   useEffect(() => {
-    if (error || result) {
+    if (result) {
       const timeout = setTimeout(() => {
         handleGoBack()
+      }, 3000)
+
+      return () => clearTimeout(timeout)
+    }
+
+    if (error) {
+      const timeout = setTimeout(() => {
+        navigate('/order')
       }, 3000)
 
       return () => clearTimeout(timeout)
@@ -78,7 +86,7 @@ export function SuccessContent() {
           <>
             <Text variant="title3">❌ 결제 실패</Text>
             <Text variant="body2" color="darkGray">
-              3초 후 첫 화면으로 이동합니다.
+              3초 후 주문 화면으로 이동합니다.
             </Text>
           </>
         </>

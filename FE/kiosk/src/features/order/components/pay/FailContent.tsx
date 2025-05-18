@@ -17,7 +17,7 @@ export function FailContent() {
     if (isMember) {
       await logout(1)
     }
-    navigate('/user')
+    navigate('/order')
   }
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export function FailContent() {
         결제 처리 중 오류가 발생했습니다.
       </Text>
       <Text variant="title3" weight="bold" color="dark">
-        3초 뒤 첫 화면으로 이동합니다.
+        3초 뒤 주문 화면으로 이동합니다.
       </Text>
       <div className="w-60 mt-40">
         <CustomButton text={'닫기'} variant={'main'} onClick={handleGoBack} />

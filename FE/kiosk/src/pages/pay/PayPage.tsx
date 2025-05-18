@@ -9,7 +9,7 @@ import { usePayStore } from '@/stores/payStore'
 import { usePreparePay } from '@/features/order/hooks/pay/usePreparePay'
 import { useClientKey } from '@/features/order/hooks/pay/useClientKey'
 import tw from 'twin.macro'
-import { useLogout } from '@/features/userLogin/hooks/useLogout'
+// import { useLogout } from '@/features/userLogin/hooks/useLogout'
 import { useNavigate } from 'react-router-dom'
 
 const ImageWrapper = tw.div`w-full my-8 flex justify-center items-center`
@@ -21,11 +21,11 @@ const customerKey = 'YbX2HuSlsC9uVJW6NMRMj'
 export default function PayPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
-  const { isMember } = useUserStore()
+  // const { isMember } = useUserStore()
   const userName = useUserStore((state) => state.user?.name)
   const totalAmount = usePayStore((state) => state.totalAmount)
   const store = usePayStore.getState()
-  const { logout } = useLogout()
+  // const { logout } = useLogout()
 
   const { clientKey } = useClientKey()
   const { preparePay } = usePreparePay()
@@ -76,11 +76,15 @@ export default function PayPage() {
   }
 
   // 홈 화면으로 이동
-  const handleHomeClick = async () => {
-    if (isMember) {
-      await logout(1)
-    }
-    navigate('/user')
+  // const handleHomeClick = async () => {
+  //   if (isMember) {
+  //     await logout(1)
+  //   }
+  //   navigate('/user')
+  // }
+
+  const handlePrevClick = () => {
+    navigate('/order')
   }
 
   return (
@@ -105,13 +109,13 @@ export default function PayPage() {
           <div className="flex w-full gap-4">
             <div
               className="w-1/3 flex items-center justify-center px-2 py-4 rounded-lg bg-white"
-              onClick={handleHomeClick}
+              onClick={handlePrevClick}
               style={{
                 boxShadow: `1.462px 1.462px 4px 2px #f774a275`,
               }}
             >
               <Text variant="body2" weight="bold" color="main">
-                처음으로
+                이전으로
               </Text>
             </div>
 
