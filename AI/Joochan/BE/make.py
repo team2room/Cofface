@@ -2,7 +2,7 @@ import qrcode
 from PIL import Image
 
 # 웹 링크 URL
-url = "https://app.orderme.store"
+url = "https://app.cofface.store"
 
 # QR 코드 생성 - 작은 크기로 생성
 qr = qrcode.QRCode(
