@@ -4,7 +4,7 @@ if [ -d "venv" ]; then
   if [ -n "$VIRTUAL_ENV" ]; then
     deactivate
   fi
-  start chrome kiosk.orderme.store --kiosk
+  start chrome https://kiosk.cofface.store --kiosk
   source venv/Scripts/activate
   python pyglet_gui_test.py
 else
