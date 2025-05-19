@@ -10,10 +10,12 @@ import { useAllMenu } from '../hooks/useAllMenu'
 import { useCategory } from '../hooks/useCategory'
 import { useOrderStore } from '@/stores/orderStore'
 import { useRecommendMenu } from '../hooks/useRecommendMenu'
+import { useStepStore } from '@/stores/stepStore'
 
 const MenuButton = tw.button`w-80 border border-main rounded-xl px-8 py-1 my-4 mx-auto shadow-md`
 
-export default function MenuContent({ onNext }: { onNext: () => void }) {
+export default function MenuContent() {
+  const { setStep } = useStepStore()
   const { menus, loading: menuLoading } = useAllMenu(1)
   const { category, loading: categoryLoading } = useCategory(1)
   const {
@@ -63,7 +65,7 @@ export default function MenuContent({ onNext }: { onNext: () => void }) {
       <ReceiptModal
         open={receiptOpen}
         onOpenChange={setReceiptOpen}
-        onNext={onNext}
+        onNext={() => setStep('place', 'menu')}
       />
     </div>
   )

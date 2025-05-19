@@ -1,8 +1,8 @@
 import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
 import CustomButton from '@/components/CustomButton'
-import { useState } from 'react'
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
+import { useStepStore } from '@/stores/stepStore'
 
 const OptionBtn = tw.div`bg-white rounded-full shadow-md w-[175px] h-[175px] flex flex-col items-center justify-center`
 
@@ -47,7 +47,9 @@ function OptionButton({
   )
 }
 
-export default function MainContent({ onNext }: { onNext: () => void }) {
+export default function MainContent() {
+  const { setStep } = useStepStore()
+
   return (
     <div>
       {/* 추천 메뉴 진행 바 */}
@@ -131,7 +133,9 @@ export default function MainContent({ onNext }: { onNext: () => void }) {
           <CustomButton
             text={'바로 주문하기'}
             variant={'main'}
-            onClick={() => {}}
+            onClick={() => {
+              setStep('place', 'main')
+            }}
           />
         </div>
       </div>
