@@ -95,7 +95,7 @@ export default function HomePage() {
 
   // 알림 관련 상태 추가
   const [showNotificationBanner, setShowNotificationBanner] = useState(false)
-  const [fcmTokenRegistered, setFcmTokenRegistered] = useState(false)
+  const [_fcmTokenRegistered, setFcmTokenRegistered] = useState(false)
 
   // 알림 배너 표시 여부 결정
   useEffect(() => {
