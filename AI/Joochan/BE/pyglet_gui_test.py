@@ -3,7 +3,7 @@ import threading, queue, traceback
 import requests, base64
 from pathlib import Path
 from datetime import datetime, timedelta
-# import eddmPrint
+import eddmPrint
 
 import cv2, pyglet
 import numpy as np
@@ -11,7 +11,7 @@ import pyrealsense2 as rs
 from insightface.app import FaceAnalysis
 
 from typing import Optional
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, WebSocket, WebSocketDisconnect
 import uvicorn, asyncio
 from PIL import Image
 from io import BytesIO
@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from urllib.request import urlopen
 
 from weather import get_weather
+import mediapipe as mp
 
 # API 응답 모델
 class FaceRecognitionResponse(BaseModel):
@@ -29,6 +30,60 @@ class FaceRecognitionResponse(BaseModel):
     gender: Optional[str] = None
     confidence: Optional[float] = None
     message: str
+
+
+class CameraControlRequest(BaseModel):
+    enable: bool = True
+    timeout: Optional[float] = None
+
+
+# 제스처 감지 결과 모델
+class GestureDetectionResult(BaseModel):
+    gesture_type: str
+    confidence: float
+    session_id: str
+    timestamp: datetime
+
+
+# 웹소켓 제스처 감지 관리자
+class GestureWebSocketManager:
+    def __init__(self):
+        self.active_connections = {}  # session_id를 키로 사용
+        self.sessions_data = {}  # 세션별 데이터 저장 (제스처 카운트 등)
+    
+    async def connect(self, websocket: WebSocket, session_id: str):
+        await websocket.accept()
+        self.active_connections[session_id] = websocket
+        self.sessions_data[session_id] = {
+            "nod_count": 0,
+            "shake_count": 0,
+            "last_landmarks": None,
+            "start_time": time.time(),
+            "gesture_detected": False
+        }
+        print(f"제스처 웹소켓 연결 시작: 세션 {session_id}")
+    
+    def disconnect(self, session_id: str):
+        if session_id in self.active_connections:
+            del self.active_connections[session_id]
+        if session_id in self.sessions_data:
+            del self.sessions_data[session_id]
+        print(f"제스처 웹소켓 연결 종료: 세션 {session_id}")
+    
+    def is_active(self, session_id: str):
+        return session_id in self.active_connections
+    
+    def get_session_data(self, session_id: str):
+        return self.sessions_data.get(session_id, {})
+    
+    def update_session_data(self, session_id: str, data):
+        if session_id in self.sessions_data:
+            self.sessions_data[session_id].update(data)
+    
+    async def send_message(self, session_id: str, message):
+        if session_id in self.active_connections:
+            await self.active_connections[session_id].send_json(message)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='RealSense 얼굴 라이브니스 및 3D 임베딩')
@@ -167,38 +222,6 @@ class TextureGenerator:
             return None
 
 
-def draw_guide_circle(image, center=None, radius=None, bg_color=(18, 18, 18)):
-    """얼굴 인식을 위한 가이드 원을 그립니다"""
-    h, w = image.shape[:2]
-    
-    # 기본값: 이미지 중앙에 반지름은 너비의 1/4
-    if center is None:
-        center = (w // 2, h // 2)
-    if radius is None:
-        radius = min(w, h) // 4
-    
-    # 원본 이미지 복사
-    result = image.copy()
-    
-    # 마스크 생성 (전체 검정)
-    mask = np.zeros((h, w), dtype=np.uint8)
-    
-    # 가이드 원 그리기
-    cv2.circle(mask, center, radius, 255, -1)
-    
-    # 원 바깥 영역을 완전히 어둡게 만들기 (투명도 0)
-    alpha = 0.0  # 투명도 (0: 완전 불투명, 1: 원본 유지)
-    
-    # 마스크를 사용하여 원 바깥 영역을 어둡게 처리
-    result_with_mask = result.copy()
-    # 원 바깥 영역을 배경색으로 설정 (완전 불투명)
-    result_with_mask[mask == 0] = bg_color
-    
-    # 가이드 원 테두리 그리기
-    cv2.circle(result_with_mask, center, radius, (0, 255, 0), 2)
-    
-    return result_with_mask
-
 def crop_to_target_ratio(image, target_ratio):
     """이미지를 대상 종횡비에 맞게 자르기"""
     h, w = image.shape[:2]
@@ -270,6 +293,18 @@ class RealSenseFaceLiveness:
         
         # 라이브니스 상태 추적 변수 추가
         self.person_detected = False  # 실제 사람 감지 여부
+
+        # MediaPipe Face Mesh 초기화
+        self.mp_face_mesh = mp.solutions.face_mesh
+        self.face_mesh = self.mp_face_mesh.FaceMesh(
+            max_num_faces=1,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5
+        )
+        
+        # 제스처 감지 플래그
+        self.detecting_gesture = False
+        self.current_gesture_session = None
         
         if self.idle_gif_path:
             try:
@@ -423,6 +458,15 @@ class RealSenseFaceLiveness:
             x=20, y=20,
             color=(255, 255, 255, 255),
         )
+        self.gesture_label = pyglet.text.Label(
+            '끄덕이거나 절레절레 해주세요.',
+            font_name='Arial',
+            font_size=20,
+            x=self.window.width // 2,
+            y=self.window.height - 50,
+            anchor_x='center',
+            color=(255, 255, 255, 255),
+        )
         
         # Sprite 생성
         self.color_sprite = None
@@ -521,6 +565,26 @@ class RealSenseFaceLiveness:
         except Exception as e:
             print(f"[Overlay] PNG 로드 실패: {e}")
         
+        
+        # 카운트다운 레이블 추가
+        self.countdown_label = pyglet.text.Label(
+            '',
+            font_name='Arial',
+            font_size=120,  # 큰 글씨
+            x=self.window.width // 2,
+            y=self.window.height // 2,
+            anchor_x='center',
+            anchor_y='center',
+            color=(255, 255, 255, 255),
+        )
+        
+        # 카운트다운 상태 변수
+        self.countdown_active = False
+        self.countdown_value = 0
+        self.countdown_event = None
+        
+        
+        
         # 윈도우 이벤트 핸들러 설정
         @self.window.event
         def on_draw():
@@ -537,30 +601,37 @@ class RealSenseFaceLiveness:
                     if self.color_sprite:
                         self.color_sprite.draw()
                         
-                        # PNG 오버레이 그리기 (상태에 따라 다른 오버레이 사용)
-                        if self.face_detected:
-                            if self.person_detected:
-                                # 진짜 사람이 감지됨 - 기본 오버레이
-                                current_overlay = self.overlay_sprite
-                            else:
-                                # 얼굴은 감지됐지만 진짜 사람이 아님 - 라이브니스 오버레이
-                                current_overlay = self.overlay_liveness_sprite
-                                self.guide_label.draw()  # "실제 얼굴을 보여주세요" 메시지
-                        else: # 얼굴 감지 안됨
-                            current_overlay = self.overlay_no_face_sprite
-                        
-                        if current_overlay:
-                            scale_x = self.window.width / current_overlay.image.width
-                            scale_y = self.window.height / current_overlay.image.height
-                            scale = min(scale_x, scale_y)
+                        if self.detecting_gesture:
+                            self.gesture_label.draw()
+                        else:
+                            # PNG 오버레이 그리기 (상태에 따라 다른 오버레이 사용)
+                            if self.face_detected:
+                                if self.person_detected:
+                                    # 진짜 사람이 감지됨 - 기본 오버레이
+                                    current_overlay = self.overlay_sprite
+                                else:
+                                    # 얼굴은 감지됐지만 진짜 사람이 아님 - 라이브니스 오버레이
+                                    current_overlay = self.overlay_liveness_sprite
+                                    self.guide_label.draw()  # "실제 얼굴을 보여주세요" 메시지
+                            else: # 얼굴 감지 안됨
+                                current_overlay = self.overlay_no_face_sprite
+                            
+                            if current_overlay:
+                                scale_x = self.window.width / current_overlay.image.width
+                                scale_y = self.window.height / current_overlay.image.height
+                                scale = min(scale_x, scale_y)
 
-                            current_overlay.scale = scale
+                                current_overlay.scale = scale
 
-                            # 중앙 정렬
-                            current_overlay.x = (self.window.width - current_overlay.width) / 2
-                            current_overlay.y = (self.window.height - current_overlay.height) / 2
+                                # 중앙 정렬
+                                current_overlay.x = (self.window.width - current_overlay.width) / 2
+                                current_overlay.y = (self.window.height - current_overlay.height) / 2
 
-                            current_overlay.draw()
+                                current_overlay.draw()
+                    
+                    if self.countdown_active and self.countdown_value > 0:
+                        self.countdown_label.text = str(self.countdown_value)
+                        self.countdown_label.draw()
                     
                     # 깊이 이미지 스프라이트 그리기
                     if self.show_depth and self.depth_sprite:
@@ -647,6 +718,27 @@ class RealSenseFaceLiveness:
         except Exception as e:
             print(f"마스크 생성 오류 (무시됨): {e}")
             self.mask_sprite = None
+    
+    def start_countdown(self, total_seconds=3):
+        """카운트다운 시작"""
+        self.countdown_active = True
+        self.countdown_value = total_seconds
+        
+        # 기존 카운트다운 이벤트가 있으면 취소
+        if self.countdown_event:
+            pyglet.clock.unschedule(self.countdown_event)
+        
+        # 1초마다 카운트다운 업데이트
+        def update_countdown(dt):
+            self.countdown_value -= 1
+            if self.countdown_value <= 0:
+                self.countdown_active = False
+                pyglet.clock.unschedule(self.countdown_event)
+                self.countdown_event = None
+        
+        self.countdown_event = pyglet.clock.schedule_interval(update_countdown, 1.0)
+        print(f"카운트다운 시작: {total_seconds}초")
+    
     
     def initialize_face_app(self):
         """별도 스레드에서 Insightface 모델 초기화"""
@@ -742,6 +834,24 @@ class RealSenseFaceLiveness:
             except:
                 pass
         
+        # 카메라를 끄는 경우 진행 중인, 인식 프로세스도 중단
+        if not enabled and self.processing_api_request:
+            print("카메라 비활성화로 인한 인식 프로세스 중단")
+            self.processing_api_request = False
+            # 결과 이벤트 설정으로 대기 중인 요청도 완료 처리
+            self.api_result = {
+                "success": False,
+                "face_detected": False,
+                "message": "사용자에 의해 인식이 취소되었습니다."
+            }
+            self.api_result_event.set()
+        
+        # 제스처 감지 모드도 중단
+        if not enabled and self.detecting_gesture:
+            print("카메라 비활성화로 인한 제스처 감지 중단")
+            self.detecting_gesture = False
+            self.current_gesture_session = None
+        
         self.camera_mode = enabled
         print(f"카메라 모드: {'활성화' if enabled else '비활성화'}")
         
@@ -785,11 +895,135 @@ class RealSenseFaceLiveness:
         else:
             print(f"수집 시간: {self.recognition_time}초")
     
+    
+    def start_gesture_detection(self, session_id):
+        """제스처 감지 모드 시작"""
+        # 이미 다른 세션에서 제스처 감지 중인지 확인
+        if self.detecting_gesture and self.current_gesture_session != session_id:
+            print(f"다른 세션에서 이미 제스처 감지 중: {self.current_gesture_session}")
+            return False
+        
+        # 제스처 감지 모드 활성화
+        self.detecting_gesture = True
+        self.current_gesture_session = session_id
+        
+        # 제스처 감지 관련 변수 초기화
+        self.last_landmarks = None
+        self.nod_count = 0
+        self.shake_count = 0
+        self.gesture_start_time = time.time()
+        
+        print(f"제스처 감지 모드 시작: 세션 {session_id}")
+        return True
+    
+    def stop_gesture_detection(self):
+        """제스처 감지 모드 종료"""
+        self.detecting_gesture = False
+        self.current_gesture_session = None
+        self.last_landmarks = None
+        print("제스처 감지 모드 종료")
+    
+    def detect_head_gesture(self, current_landmarks, previous_landmarks):
+        """얼굴 랜드마크를 이용한 고개 끄덕임/좌우로 흔들어감지"""
+        if not previous_landmarks:
+            return None
+        
+        # 코 끝(landmark 1)과 이마 중앙(landmark 9) 사용
+        nose_tip = current_landmarks.landmark[1]
+        prev_nose_tip = previous_landmarks.landmark[1]
+        
+        forehead = current_landmarks.landmark[9]
+        prev_forehead = previous_landmarks.landmark[9]
+        
+        # 변화량 계산
+        y_diff = (nose_tip.y - prev_nose_tip.y) + (forehead.y - prev_forehead.y)  # 수직 이동 (끄덕임)
+        x_diff = (nose_tip.x - prev_nose_tip.x) + (forehead.x - prev_forehead.x)  # 수평 이동 (좌우로 흔들어
+        
+        # 임계값 설정
+        threshold = 0.015
+        
+        if abs(y_diff) > threshold and abs(y_diff) > abs(x_diff) * 1.5:
+            return "nod" if y_diff > 0 else "nod_up"  # 끄덕임(아래/위)
+        elif abs(x_diff) > threshold and abs(x_diff) > abs(y_diff) * 1.5:
+            return "shake_left" if x_diff > 0 else "shake_right"  # 좌우로 흔들어좌/우)
+        
+        return None
+    
+    def process_gesture_frame(self, color_image):
+        """제스처 감지를 위한 프레임 처리"""
+        if not self.detecting_gesture or not self.current_gesture_session:
+            return None
+        
+        # 경과 시간 확인 (타임아웃)
+        elapsed_time = time.time() - self.gesture_start_time
+        if elapsed_time > 120.0:  # 120초 타임아웃
+            print(f"제스처 감지 타임아웃: {elapsed_time:.1f}초")
+            return {"type": "timeout", "elapsed_time": elapsed_time}
+        
+        # 얼굴 랜드마크 추출을 위해 RGB로 변환
+        rgb_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB)
+        
+        # MediaPipe 얼굴 메시 처리
+        results = self.face_mesh.process(rgb_image)
+        
+        if not results.multi_face_landmarks:
+            return None  # 얼굴이 감지되지 않음
+        
+        # 첫 번째 얼굴의 랜드마크 사용
+        face_landmarks = results.multi_face_landmarks[0]
+        
+        # 제스처 감지
+        gesture = self.detect_head_gesture(face_landmarks, self.last_landmarks)
+        self.last_landmarks = face_landmarks
+        
+        if not gesture:
+            return None  # 제스처가 감지되지 않음
+        
+        # 제스처 카운트 업데이트
+        if gesture.startswith("nod"):
+            self.nod_count += 1
+            gesture_type = "nod"
+            gesture_name = "끄덕임"
+        elif gesture.startswith("shake"):
+            self.shake_count += 1
+            gesture_type = "shake"
+            gesture_name = "절레절레"
+        
+        # 임계값 설정 (예: 3번 이상 같은 제스처가 감지되면 확정)
+        is_confirmed = (self.nod_count >= 3 or self.shake_count >= 3)
+        
+        # 제스처 감지 결과 반환
+        result = {
+            "type": "gesture_update",
+            "gesture_type": gesture_type if is_confirmed else None,
+            "gesture_name": gesture_name,
+            "nod_count": self.nod_count,
+            "shake_count": self.shake_count,
+            "is_confirmed": is_confirmed
+        }
+        
+        # 확정된 제스처 감지시 모드 종료
+        if is_confirmed:
+            result["type"] = "gesture_detected"
+        
+        return result
+    
     # 멀티스레드 구조로 개선된 update 함수 (렌더링 전용으로 분리)
     def update(self, dt):
         try:
             # API 요청 처리 시간 확인 및 종료 처리
             if self.processing_api_request:
+                # 카메라가 꺼진 경우 인식 중단
+                if not self.camera_mode:
+                    print("update에서 카메라 꺼짐 감지 - 인식 프로세스 중단")
+                    self.processing_api_request = False
+                    self.api_result = {
+                        "success": False,
+                        "face_detected": False,
+                        "message": "카메라가 비활성화되어 인식이 취소되었습니다."
+                    }
+                    self.api_result_event.set()
+                
                 # 현재 경과 시간
                 elapsed_time = time.time() - self.collection_start_time
                 
@@ -842,7 +1076,6 @@ class RealSenseFaceLiveness:
             traceback.print_exc()
 
 
-    # 새로운 카메라 캡처 전용 쓰레드 함수
     def start_frame_capture_thread(self):
         def capture_loop():
             while True:
@@ -863,12 +1096,6 @@ class RealSenseFaceLiveness:
 
                     color_image = cv2.flip(color_image, -1)
                     depth_image = cv2.flip(depth_image, -1)
-
-                    # 가이드 원은 PNG 오버레이 없을 때만 사용
-                    if self.guide_circle and not self.overlay_sprite:
-                        center = (color_image.shape[1] // 2, color_image.shape[0] // 2)
-                        radius = min(color_image.shape[1], color_image.shape[0]) // 4
-                        color_image = draw_guide_circle(color_image, center, radius)
 
                     color_image = crop_to_target_ratio(color_image, self.target_ratio)
 
@@ -1054,7 +1281,20 @@ class RealSenseFaceLiveness:
                 if not self.initialization_done:
                     time.sleep(0.1)
                     continue
-
+                
+                # API 요청 처리 중 카메라가 꺼진 경우 처리 중단
+                if self.processing_api_request and not self.camera_mode:
+                    print("카메라 꺼짐 감지 - 인식 프로세스 중단")
+                    self.processing_api_request = False
+                    self.api_result = {
+                        "success": False,
+                        "face_detected": False,
+                        "message": "카메라가 비활성화되어 인식이 취소되었습니다."
+                    }
+                    self.api_result_event.set()
+                    time.sleep(0.1)
+                    continue
+                
                 if not self.camera_mode and not self.processing_api_request:
                     try:
                         while True:
@@ -1071,11 +1311,22 @@ class RealSenseFaceLiveness:
 
                 # 매 프레임마다 화면 업데이트용 이미지 먼저 큐에 넣음 (지연 방지)
                 display_image = rotated_color.copy()
+                
+                # 제스처 감지 모드인 경우 처리
+                if self.detecting_gesture and self.current_gesture_session:
+                    gesture_result = self.process_gesture_frame(original_color)
+                    if gesture_result and gesture_result.get("type") == "gesture_detected":
+                        # 확정된 제스처 감지됨
+                        print(f"제스처 감지됨: {gesture_result['gesture_name']} (세션: {self.current_gesture_session})")
+                
                 # 화면 업데이트 (항상 최신 프레임으로 수행)
                 self.result_queue.put((display_image, last_faces_results, self.processing_fps))
                 
                 # 프레임 카운터 증가
                 self.frame_counter += 1
+                
+                if self.detecting_gesture:
+                    continue
                 
                 # 프레임 스킵 로직 변경: API 요청 중이거나 필요한 프레임 수에 미치지 못한 경우 우선 처리
                 if self.processing_api_request:
@@ -1488,6 +1739,8 @@ class FaceRecognitionServer:
             allow_methods=["*"],  # Allows all methods
             allow_headers=["*"],  # Allows all headers
         )
+        # 웹소켓 제스처 관리자 초기화
+        self.gesture_manager = GestureWebSocketManager()
         
         self.setup_routes()
         self.server_thread = None
@@ -1567,9 +1820,37 @@ class FaceRecognitionServer:
             
             # 카메라 모드 활성화
             self.app_instance.set_camera_mode(True)
+            self.app_instance.start_countdown(3)
+            # 사용자가 얼굴 위치를 맞출 수 있도록 3초 대기
+            print("얼굴 위치 맞추기: 3초 대기 중...")
             
-            # 프레임 수집 시작 (프레임 기반 모드, 최대 13개 프레임, 1.5초 제한)
-            await asyncio.sleep(0.1)  # UI 업데이트를 위한 짧은 지연
+            # 세분화된 대기로 중간에 카메라 상태 확인 가능하게 함
+            for i in range(30):  # 0.1초 간격으로 30번 = 3초
+                if not self.app_instance.camera_mode:
+                    # 중간에 카메라가 꺼진 경우
+                    return {
+                        "success": False,
+                        "message": "카메라가 비활성화되어 인식이 취소되었습니다."
+                    }
+                await asyncio.sleep(0.1)
+            
+            # 대기 후 카메라가 여전히 켜져 있는지 확인
+            if not self.app_instance.camera_mode:
+                return {
+                    "success": False,
+                    "message": "카메라가 비활성화되어 인식이 취소되었습니다."
+                }
+            
+            # 이미 다른 요청이 시작되었는지 확인
+            if self.app_instance.processing_api_request:
+                # 카메라 모드 종료
+                background_tasks.add_task(self.delayed_camera_off, 0.1)
+                return {
+                    "success": False,
+                    "message": "대기 중 다른 처리가 시작되었습니다. 잠시 후 다시 시도하세요."
+                }
+            
+            print("얼굴 인식 시작!")
             
             # 프레임 수집 설정 업데이트
             self.app_instance.required_frames = 13  # 최대 13개 프레임
@@ -1710,6 +1991,172 @@ class FaceRecognitionServer:
             
             return result
         
+        # 제스처 감지 시작 API
+        @self.api.post("/gesture/start")
+        async def start_gesture_detection(background_tasks: BackgroundTasks):
+            """제스처 감지를 시작합니다"""
+            # 세션 ID 생성 (UUID 형식)
+            import uuid
+            session_id = str(uuid.uuid4())
+            
+            # 이미 처리 중인지 확인
+            if self.app_instance.detecting_gesture:
+                return {
+                    "success": False,
+                    "message": "이미 다른 제스처 감지 세션이 진행 중입니다.",
+                    "session_id": None
+                }
+            
+            # 카메라 모드 활성화
+            if not self.app_instance.camera_mode:
+                self.app_instance.set_camera_mode(True)
+            
+            # 제스처 감지 모드 활성화
+            success = self.app_instance.start_gesture_detection(session_id)
+            
+            if not success:
+                return {
+                    "success": False,
+                    "message": "제스처 감지 시작 실패",
+                    "session_id": None
+                }
+            
+            return {
+                "success": True,
+                "message": "제스처 감지가 시작되었습니다. WebSocket에 연결하세요.",
+                "session_id": session_id,
+                "websocket_url": f"/ws/gesture/{session_id}"
+            }
+        
+        # 제스처 감지 중지 API
+        @self.api.post("/gesture/stop")
+        async def stop_gesture_detection(background_tasks: BackgroundTasks, session_id: str = None):
+            """제스처 감지를 중지합니다"""
+            if not self.app_instance.detecting_gesture:
+                return {
+                    "success": False,
+                    "message": "현재 진행 중인 제스처 감지 세션이 없습니다."
+                }
+            
+            # 세션 ID 확인 (제공된 경우)
+            if session_id and self.app_instance.current_gesture_session != session_id:
+                return {
+                    "success": False,
+                    "message": f"제공된 세션 ID({session_id})가 현재 진행 중인 세션 ID({self.app_instance.current_gesture_session})와 일치하지 않습니다."
+                }
+            
+            # 제스처 감지 중지
+            self.app_instance.stop_gesture_detection()
+            
+            # 웹소켓 연결 종료 (해당 세션 ID)
+            if self.app_instance.current_gesture_session:
+                self.gesture_manager.disconnect(self.app_instance.current_gesture_session)
+            
+            # 카메라 끄기 (지연 후)
+            background_tasks.add_task(self.delayed_camera_off, 0.2)
+            
+            return {
+                "success": True,
+                "message": "제스처 감지가 중지되었습니다."
+            }
+        
+        # 웹소켓 엔드포인트 - 제스처 감지용
+        @self.api.websocket("/ws/gesture/{session_id}")
+        async def gesture_websocket(websocket: WebSocket, session_id: str):
+            # 현재 제스처 감지 세션이 이 세션 ID와 일치하는지 확인
+            if (self.app_instance.detecting_gesture and 
+                self.app_instance.current_gesture_session != session_id):
+                # 연결을 수락하지만 에러 메시지 전송 후 종료
+                await websocket.accept()
+                await websocket.send_json({
+                    "type": "error",
+                    "message": f"다른 세션({self.app_instance.current_gesture_session})에서 이미 제스처 감지 중입니다."
+                })
+                await websocket.close()
+                return
+            
+            # 제스처 감지가 활성화되어 있지 않다면 자동으로 시작
+            if not self.app_instance.detecting_gesture:
+                success = self.app_instance.start_gesture_detection(session_id)
+                if not success:
+                    await websocket.accept()
+                    await websocket.send_json({
+                        "type": "error",
+                        "message": "제스처 감지 시작에 실패했습니다."
+                    })
+                    await websocket.close()
+                    return
+            
+            # 웹소켓 연결 관리
+            await self.gesture_manager.connect(websocket, session_id)
+            
+            # 초기 메시지 전송
+            await self.gesture_manager.send_message(
+                session_id,
+                {
+                    "type": "start",
+                    "message": "제스처 감지를 시작합니다. 끄덕이거나 좌우로 흔들어 주세요."
+                }
+            )
+            
+            try:
+                # 제스처 처리 루프
+                while True:
+                    # 클라이언트로부터 메시지 수신 (비동기)
+                    data = await websocket.receive_json()
+                    
+                    # 중지 요청 처리
+                    if data.get("type") == "stop":
+                        self.app_instance.stop_gesture_detection()
+                        await self.gesture_manager.send_message(
+                            session_id,
+                            {
+                                "type": "stopped",
+                                "message": "제스처 감지가 중지되었습니다."
+                            }
+                        )
+                        break
+                    
+                    # 결과를 확인할 제스처 업데이트 처리
+                    color_image = None
+                    try:
+                        # 프레임 캡처 (제스처 감지용)
+                        frames = self.app_instance.pipeline.wait_for_frames()
+                        aligned_frames = self.app_instance.align.process(frames)
+                        color_frame = aligned_frames.get_color_frame()
+                        
+                        if color_frame:
+                            color_image = np.asanyarray(color_frame.get_data())
+                            # 제스처 감지 처리
+                            gesture_result = self.app_instance.process_gesture_frame(color_image)
+                            
+                            if gesture_result:
+                                # 제스처 결과 전송
+                                await self.gesture_manager.send_message(session_id, gesture_result)
+                                
+                                # 제스처가 확정되면 세션 종료
+                                if gesture_result.get("type") == "gesture_detected":
+                                    # 3초 후 자동 종료
+                                    await asyncio.sleep(3.0)
+                                    break
+                    except Exception as e:
+                        print(f"제스처 처리 중 오류: {e}")
+                        traceback.print_exc()
+                    
+                    # 짧은 지연 추가
+                    await asyncio.sleep(0.05)
+            
+            except WebSocketDisconnect:
+                print(f"WebSocket 연결 종료: {session_id}")
+            except Exception as e:
+                print(f"WebSocket 오류: {e}")
+                traceback.print_exc()
+            finally:
+                # 연결 종료 시 제스처 감지 중단 및 세션 정리
+                if self.app_instance.current_gesture_session == session_id:
+                    self.app_instance.stop_gesture_detection()
+                self.gesture_manager.disconnect(session_id)
+        
         @self.api.get("/weather")
         async def weather_get():
             korea_timezone = pytz.timezone('Asia/Seoul')
@@ -1749,67 +2196,86 @@ class FaceRecognitionServer:
             return result
         
         @self.api.post("/camera")
-        def camera_control(enable: bool = True, timeout: Optional[float] = None):
-            self.app_instance.set_camera_mode(enable, timeout)
+        def camera_control(request: CameraControlRequest):
+            """카메라 모드 제어 - 요청 본문으로 데이터 수신"""
+            self.app_instance.set_camera_mode(request.enable, request.timeout)
             return {
                 "success": True,
-                "camera_mode": enable,
-                "timeout": timeout,
-                "message": f"카메라 모드 {'활성화' if enable else '비활성화'} 성공"
+                "camera_mode": request.enable,
+                "timeout": request.timeout,
+                "message": f"카메라 모드 {'활성화' if request.enable else '비활성화'} 성공"
             }
         
         @self.api.get("/status")
         def get_status():
-            # 현재 처리 중인지 확인
-            is_processing = self.app_instance.processing_api_request
+            result = {
+                "camera_mode": self.app_instance.camera_mode,
+                "processing_api_request": self.app_instance.processing_api_request,
+                "detecting_gesture": self.app_instance.detecting_gesture,
+                "initialization_done": self.app_instance.initialization_done
+            }
             
-            if not is_processing:
-                return {
+            # 현재 처리 중인지 확인
+            if self.app_instance.processing_api_request:
+                # 프레임 기반 모드 확인
+                frame_based = hasattr(self.app_instance, 'frame_based_collection') and self.app_instance.frame_based_collection
+                
+                # 경과 시간
+                elapsed_time = time.time() - self.app_instance.collection_start_time
+                
+                # 현재까지 수집된 프레임 수
+                frames_collected = len(self.app_instance.collected_frames)
+                
+                if frame_based:
+                    required_frames = getattr(self.app_instance, 'required_frames', 10)
+                    max_wait_time = getattr(self.app_instance, 'max_wait_time', 5.0)
+                    progress = min(100, frames_collected * 100 / required_frames)
+                    remaining_time = max(0, max_wait_time - elapsed_time)
+                    
+                    result.update({
+                        "status": "processing",
+                        "mode": "frame_based",
+                        "frames_collected": frames_collected,
+                        "required_frames": required_frames,
+                        "progress": progress,
+                        "elapsed_time": elapsed_time,
+                        "remaining_time": remaining_time,
+                        "message": f"프레임 수집 중: {frames_collected}/{required_frames} ({progress:.1f}%)"
+                    })
+                else:
+                    # 시간 기반 모드
+                    progress = min(100, elapsed_time * 100 / self.app_instance.recognition_time)
+                    remaining_time = max(0, self.app_instance.recognition_time - elapsed_time)
+                    
+                    result.update({
+                        "status": "processing",
+                        "mode": "time_based",
+                        "frames_collected": frames_collected,
+                        "elapsed_time": elapsed_time,
+                        "total_time": self.app_instance.recognition_time,
+                        "progress": progress,
+                        "remaining_time": remaining_time,
+                        "message": f"시간 기반 수집 중: {elapsed_time:.2f}/{self.app_instance.recognition_time:.2f}초 ({progress:.1f}%)"
+                    })
+            elif self.app_instance.detecting_gesture:
+                # 제스처 감지 상태 정보
+                elapsed_time = time.time() - getattr(self.app_instance, 'gesture_start_time', time.time())
+                result.update({
+                    "status": "detecting_gesture",
+                    "session_id": self.app_instance.current_gesture_session,
+                    "nod_count": getattr(self.app_instance, 'nod_count', 0),
+                    "shake_count": getattr(self.app_instance, 'shake_count', 0),
+                    "elapsed_time": elapsed_time,
+                    "message": "제스처 감지 중"
+                })
+            else:
+                result.update({
                     "status": "idle",
                     "message": "대기 중"
-                }
+                })
             
-            # 프레임 기반 모드 확인
-            frame_based = hasattr(self.app_instance, 'frame_based_collection') and self.app_instance.frame_based_collection
-            
-            # 경과 시간
-            elapsed_time = time.time() - self.app_instance.collection_start_time
-            
-            # 현재까지 수집된 프레임 수
-            frames_collected = len(self.app_instance.collected_frames)
-            
-            if frame_based:
-                required_frames = getattr(self.app_instance, 'required_frames', 10)
-                max_wait_time = getattr(self.app_instance, 'max_wait_time', 5.0)
-                progress = min(100, frames_collected * 100 / required_frames)
-                remaining_time = max(0, max_wait_time - elapsed_time)
-                
-                return {
-                    "status": "processing",
-                    "mode": "frame_based",
-                    "frames_collected": frames_collected,
-                    "required_frames": required_frames,
-                    "progress": progress,
-                    "elapsed_time": elapsed_time,
-                    "remaining_time": remaining_time,
-                    "message": f"프레임 수집 중: {frames_collected}/{required_frames} ({progress:.1f}%)"
-                }
-            else:
-                # 시간 기반 모드
-                progress = min(100, elapsed_time * 100 / self.app_instance.recognition_time)
-                remaining_time = max(0, self.app_instance.recognition_time - elapsed_time)
-                
-                return {
-                    "status": "processing",
-                    "mode": "time_based",
-                    "frames_collected": frames_collected,
-                    "elapsed_time": elapsed_time,
-                    "total_time": self.app_instance.recognition_time,
-                    "progress": progress,
-                    "remaining_time": remaining_time,
-                    "message": f"시간 기반 수집 중: {elapsed_time:.2f}/{self.app_instance.recognition_time:.2f}초 ({progress:.1f}%)"
-                }
-    
+            return result
+        
     def get_best_face_embedding(self):
             """수집된 프레임에서 임베딩 추출"""
             if not self.app_instance.collected_frames or not self.app_instance.faces_results:
@@ -1822,7 +2288,7 @@ class FaceRecognitionServer:
                 original_color = None
                 original_depth = None
                 
-                # 1. 가장 최근 프레임 데이터 사용 시도
+                # 가장 최근 프레임 데이터 사용 시도
                 try:
                     with self.app_instance.frame_queue.mutex:
                         if self.app_instance.frame_queue.queue:
@@ -1832,7 +2298,7 @@ class FaceRecognitionServer:
                 except Exception as e:
                     print(f"프레임 큐 접근 오류 (무시됨): {e}")
                 
-                # 2. 수집된 얼굴 결과에서 가장 좋은 얼굴 선택
+                # 수집된 얼굴 결과에서 가장 좋은 얼굴 선택
                 if original_color is not None:
                     # 얼굴 인식 직접 실행
                     faces = self.app_instance.face_app.get(original_color)
@@ -1844,7 +2310,7 @@ class FaceRecognitionServer:
                     else:
                         print("새 프레임에서 얼굴 감지 실패")
                 
-                # 3. 대체 방법: 현재 프레임에서 새로 얼굴 감지 시도
+                # 대체 방법: 현재 프레임에서 새로 얼굴 감지 시도
                 print("대체 방법으로 임베딩 추출 시도 중...")
                 try:
                     # 원본 이미지 준비

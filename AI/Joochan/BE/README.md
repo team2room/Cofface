@@ -4,6 +4,10 @@
 
 [VS BuildTools 16.10.4](https://download.visualstudio.microsoft.com/download/pr/acfc792d-506b-4868-9924-aeedc61ae654/72ae7ec0c234bbe0e655dc4776110c23178c8fbb7bbcf9b5b96a683b95e8d755/vs_BuildTools.exe)
 
+**C++를 사용한 데스크톱 개발** 를 선택하여 설치
+
+- 이때 Cmake, Windows SDK, MSVC v142 필수 설치
+
 #### 1. pip 설치
 
 ```bash
