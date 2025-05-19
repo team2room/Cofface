@@ -23,7 +23,6 @@ import java.util.concurrent.ExecutionException;
 @Slf4j
 public class FcmService {
     private final FcmTokenMapper fcmTokenMapper;
-    private final ObjectMapper objectMapper;
 
     /**
      * FCM을 통해 메시지 전송 (Google Firebase Admin SDK 사용)
