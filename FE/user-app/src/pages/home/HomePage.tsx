@@ -115,7 +115,7 @@ export default function HomePage() {
   const mainButtonProps: HomeMainButtonProps[] = [
     {
       title: '얼굴 등록',
-      content: '얼굴 정보를 등록하고\n 오더미 키오스크에서 편리하게 주문해요',
+      content: '얼굴 정보를 등록하고\n 커페이스 키오스크에서 편리하게 주문해요',
       src: phone,
       onClick: () => {
         navigate('/register/face')
@@ -123,7 +123,8 @@ export default function HomePage() {
     },
     {
       title: '결제 정보 등록',
-      content: '나의 결제 정보를 등록하고\n 오더미 키오스크에서 바로 결제해요',
+      content:
+        '나의 결제 정보를 등록하고\n 커페이스 키오스크에서 바로 결제해요',
       src: wallet,
       onClick: () => {
         navigate('/register/pay')

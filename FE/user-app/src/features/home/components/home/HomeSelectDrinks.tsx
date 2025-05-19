@@ -72,7 +72,7 @@ const CafeLabel = styled.div<{
   isActive: boolean
   storeId: number
 }>`
-  ${tw`absolute z-20 bg-brightModal rounded-full px-2 py-1 shadow-md transition-all duration-500 cursor-pointer flex`}
+  ${tw`absolute z-20 bg-brightModal rounded-full px-1 py-1 shadow-md transition-all duration-500 cursor-pointer flex`}
   opacity: ${(props) => (props.isActive && props.isVisible ? 1 : 0)};
   left: ${(props) => props.left + 20}%;
   top: ${(props) =>

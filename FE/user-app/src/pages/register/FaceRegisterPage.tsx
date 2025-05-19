@@ -80,7 +80,7 @@ export function FaceRegisterPage() {
       <ContentWrapper>
         <TextWrapper>
           <Text variant="title3" weight="heavy" color="main">
-            ORDER.ME
+            COFFACE
           </Text>
           <Text variant="title3" weight="semibold" className="pl-2">
             키오스크에서
