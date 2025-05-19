@@ -372,6 +372,14 @@ public class AutoPaymentService {
     }
 
     /**
+     * 사용자의 등록된 카드 여부 확인
+     */
+    public boolean hasRegisteredCards(String userId) {
+        List<PaymentInfo> cards = paymentInfoMapper.getCardList(userId);
+        return cards != null && !cards.isEmpty();
+    }
+
+    /**
      * 대표 카드 변경
      */
     @Transactional
