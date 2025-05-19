@@ -9,6 +9,7 @@ import LoadingPage from './pages/LoadingPage'
 import { SuccessPage } from './pages/pay/SuccessPage'
 import { FailPage } from './pages/pay/FailPage'
 import PayPage from './pages/pay/PayPage'
+import ProgressPage from './pages/pay/ProgressPage'
 
 function App() {
   return (
@@ -17,7 +18,8 @@ function App() {
       <GlobalRippleEffect />
       <Routes>
         {/* 관리자 로그인 */}
-        <Route path="/" element={<AdminLoginPage />} />
+        {/* <Route path="/" element={<AdminLoginPage />} /> */}
+        <Route path="/" element={<ProgressPage />} />
 
         {/* 시작 화면 */}
         <Route path="/user" element={<UserLoginPage />} />
