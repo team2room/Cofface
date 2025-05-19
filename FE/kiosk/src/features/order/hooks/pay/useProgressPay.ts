@@ -1,33 +1,44 @@
 import { useState, useRef, useEffect } from 'react'
-import { Text } from '@/styles/typography'
-import tw from 'twin.macro'
 
-const ImageWrapper = tw.div`absolute w-full h-full flex bg-darkModal py-32`
-const Content = tw.div`flex flex-col items-center flex-1 gap-[450px] z-10 relative`
-const TerminalContainer = tw.div`relative w-[400px] flex flex-col items-center justify-center`
-const CardContainer = tw.div`absolute bottom-0 transform translate-y-[480px] cursor-grab active:cursor-grabbing`
+interface UseCardPaymentReturn {
+  cardRef: React.RefObject<HTMLDivElement>
+  isDragging: boolean
+  isPaymentComplete: boolean
+  cardZIndex: number
+  showGuide: boolean
+  calculateCardStyle: () => React.CSSProperties
+  handleMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void
+  handleTouchStart: (e: React.TouchEvent<HTMLDivElement>) => void
+}
 
-export default function ProgressPage() {
+export const useProgressPay = (): UseCardPaymentReturn => {
   const [isDragging, setIsDragging] = useState<boolean>(false)
   const [cardPosition, setCardPosition] = useState<number>(0) // 0 = bottom, 100 = top (fully inserted)
   const [startDragY, setStartDragY] = useState<number>(0)
   const [startCardPosition, setStartCardPosition] = useState<number>(0)
   const [isPaymentComplete, setIsPaymentComplete] = useState<boolean>(false)
   const [cardZIndex, setCardZIndex] = useState<number>(0) // 카드의 z-index를 동적으로 제어합니다
+  const [showGuide, setShowGuide] = useState<boolean>(true) // 가이드 화살표 표시 여부
   const cardRef = useRef<HTMLDivElement>(null)
 
   // 결제 완료 후 처리 - 카드는 꽂힌 상태로 유지
   useEffect(() => {
     if (isPaymentComplete) {
-      // // 결제 완료 메시지만 3초 후 리셋하고, 카드는 그대로 유지
-      // const timer = setTimeout(() => {
-      //   // 카드 위치와 상태는 리셋하지 않고 메시지만 변경하기 위해 상태를 유지
-      //   setIsPaymentComplete(false)
-      //   setCardPosition(0)
-      // }, 3000)
-      // return () => clearTimeout(timer)
+      // 결제 완료 후 가이드 화살표 숨기기
+      setShowGuide(false)
     }
   }, [isPaymentComplete])
+
+  // 첫 렌더링 시 가이드 표시를 위한 효과
+  useEffect(() => {
+    // 컴포넌트 마운트 시 가이드 표시
+    setShowGuide(true)
+
+    // 드래그가 시작되면 가이드 숨기기
+    if (isDragging) {
+      setShowGuide(false)
+    }
+  }, [isDragging])
 
   // 카드 위치 계산 (픽셀 단위)
   const calculateCardStyle = (): React.CSSProperties => {
@@ -52,6 +63,8 @@ export default function ProgressPage() {
     setStartCardPosition(cardPosition)
     // 드래그 시작 시 카드가 카드리더기 앞에 보이도록 z-index 변경
     setCardZIndex(0)
+    // 드래그 시작 시 가이드 숨기기
+    setShowGuide(false)
   }
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
@@ -102,6 +115,8 @@ export default function ProgressPage() {
     if (isPaymentComplete) {
       // 카드가 삽입된 상태로 유지하고 z-index만 조정
       setCardZIndex(0)
+      // 결제 완료 후 가이드 화살표 숨기기
+      setShowGuide(false)
       return
     }
 
@@ -112,6 +127,10 @@ export default function ProgressPage() {
       setTimeout(() => {
         setCardZIndex(0)
       }, 300)
+      // 카드가 원위치로 돌아가면 가이드 다시 표시
+      setTimeout(() => {
+        setShowGuide(true)
+      }, 500)
     } else {
       // 충분히 삽입되었지만 아직 결제 완료되지 않은 경우
       setCardZIndex(0)
@@ -121,6 +140,8 @@ export default function ProgressPage() {
   // 결제 완료 처리
   const completePayment = (): void => {
     if (!isPaymentComplete) {
+      // 결제 완료 상태로 설정하기 전에 먼저 가이드를 숨김
+      setShowGuide(false)
       setIsPaymentComplete(true)
       setCardPosition(100) // 카드 완전히 삽입
       // 카드가 리더기 안으로 들어갔을 때 z-index를 낮춰 리더기 뒤로 가게 함
@@ -156,58 +177,14 @@ export default function ProgressPage() {
     }
   }, [isDragging])
 
-  return (
-    <div>
-      <ImageWrapper>
-        <Content>
-          <TerminalContainer>
-            {isPaymentComplete && (
-              <Text
-                variant="title1"
-                weight="bold"
-                color="white"
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 text-center z-100"
-                fontFamily="Suite"
-              >
-                결제 인증완료
-              </Text>
-            )}
-            {/* 카드 단말기 이미지 */}
-            <img
-              src="/cardreader.png"
-              alt="카드 단말기"
-              className="w-full h-auto z-20"
-              draggable={false}
-            />
-
-            {/* 드래그 가능한 카드 */}
-            <CardContainer
-              ref={cardRef}
-              style={calculateCardStyle()}
-              onMouseDown={handleMouseDown}
-              onTouchStart={handleTouchStart}
-            >
-              <img
-                src="/card.png"
-                alt="신용 카드"
-                className="w-250 h-auto"
-                draggable={false}
-              />
-            </CardContainer>
-          </TerminalContainer>
-          <Text
-            variant="title1"
-            weight="bold"
-            color="white"
-            className="whitespace-pre-line text-center"
-            fontFamily="Suite"
-          >
-            {isPaymentComplete
-              ? '결제가 완료되었습니다!\nㅤ'
-              : '카드를 위로 슬라이드하면\n자동결제됩니다'}
-          </Text>
-        </Content>
-      </ImageWrapper>
-    </div>
-  )
+  return {
+    cardRef,
+    isDragging,
+    isPaymentComplete,
+    cardZIndex,
+    showGuide,
+    calculateCardStyle,
+    handleMouseDown,
+    handleTouchStart,
+  }
 }
