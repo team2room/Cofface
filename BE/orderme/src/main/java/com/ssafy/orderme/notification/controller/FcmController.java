@@ -13,7 +13,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.io.IOException;
 
 @Slf4j
 @RestController
@@ -27,11 +26,11 @@ public class FcmController {
      * FCM 메시지 직접 전송 API
      */
     @PostMapping("/send")
-    public ResponseEntity<ApiResponse<?>> pushMessage(@RequestBody @Validated FcmSendDto fcmSendDto) throws IOException {
+    public ResponseEntity<ApiResponse<?>> pushMessage(@RequestBody @Validated FcmSendDto fcmSendDto) {
         log.debug("[+] 푸시 메시지를 전송합니다.");
-        int result = fcmService.sendMessageTo(fcmSendDto);
+        boolean success = fcmService.sendMessageTo(fcmSendDto);
 
-        if (result > 0) {
+        if (success) {
             return ResponseEntity.ok(ApiResponse.success("푸시 알림이 성공적으로 전송되었습니다."));
         } else {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

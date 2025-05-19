@@ -7,8 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -38,12 +36,16 @@ public class NotificationService {
                         .body(body)
                         .build();
 
-                fcmService.sendMessageTo(fcmSendDto);
-                log.info("주문 완료 알림 전송: userId={}, orderNumber={}", userId, orderNumber);
+                boolean success = fcmService.sendMessageTo(fcmSendDto);
+                if (success) {
+                    log.info("주문 완료 알림 전송 성공: userId={}, orderNumber={}", userId, orderNumber);
+                } else {
+                    log.warn("주문 완료 알림 전송 실패: userId={}, orderNumber={}", userId, orderNumber);
+                }
             } else {
                 log.info("FCM 토큰이 없거나 비활성화 상태입니다: userId={}", userId);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("푸시 알림 전송 중 오류 발생: {}", e.getMessage(), e);
         }
     }
