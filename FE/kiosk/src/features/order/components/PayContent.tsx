@@ -43,7 +43,7 @@ export default function PayContent() {
   if (couponLoading) return <div>쿠폰 정보를 불러오는 중...</div>
 
   return (
-    <>
+    <div className="px-7">
       <Content>
         <div>
           {/* 쿠폰 버튼 */}
@@ -156,6 +156,6 @@ export default function PayContent() {
           }}
         />
       </Content>
-    </>
+    </div>
   )
 }

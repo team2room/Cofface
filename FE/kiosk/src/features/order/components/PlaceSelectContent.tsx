@@ -2,7 +2,7 @@ import tw from 'twin.macro'
 import { Text } from '@/styles/typography'
 import { usePayStore } from '@/stores/payStore'
 
-const Content = tw.div`flex flex-col items-center justify-center flex-1 gap-12`
+const Content = tw.div`flex flex-col items-center justify-center flex-1 gap-12 px-7`
 const ImageButton = tw.button`
   w-[716px] h-[446px] rounded-[20px] bg-white shadow-[1px_3px_15px_5px_rgba(0,0,0,0.25)]
   flex flex-col items-center justify-center gap-3 

@@ -10,10 +10,11 @@ import { useNavigate } from 'react-router-dom'
 import { useLogout } from '@/features/userLogin/hooks/useLogout'
 import { useExtendSession } from '@/features/userLogin/hooks/useExtendSession'
 import { useUserStore } from '@/stores/loginStore'
+import MainContent from '@/features/order/components/MainContent'
 
-const Container = tw.div`flex flex-col min-h-screen bg-white px-7 my-4`
+const Container = tw.div`flex flex-col min-h-screen bg-white my-4`
 
-type Step = 'menu' | 'place' | 'pay'
+type Step = 'main' | 'menu' | 'place' | 'pay'
 
 export default function OrderPage() {
   const navigate = useNavigate()
@@ -21,7 +22,7 @@ export default function OrderPage() {
   const { extend } = useExtendSession()
   const { isMember } = useUserStore()
 
-  const [step, setStep] = useState<Step>('menu')
+  const [step, setStep] = useState<Step>('main')
 
   const [remainingSeconds, setRemainingSeconds] = useState(120)
   const [showTimeoutModal, setShowTimeoutModal] = useState(false)
@@ -120,6 +121,7 @@ export default function OrderPage() {
       <Container>
         <Header remainingSeconds={remainingSeconds} />
 
+        {step === 'main' && <MainContent onNext={() => setStep('menu')} />}
         {step === 'menu' && <MenuContent onNext={() => setStep('place')} />}
         {step === 'place' && (
           <PlaceSelectContent onNext={() => setStep('pay')} />

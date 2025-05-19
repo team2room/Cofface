@@ -4,6 +4,10 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      backgroundImage: {
+        mainBgIce: "url('/mainBg-ice.png')",
+        mainBgHot: "url('/mainBg-hot.png')",
+      },
       animation: {
         ripple: 'ripple 0.5s ease-out',
       },
