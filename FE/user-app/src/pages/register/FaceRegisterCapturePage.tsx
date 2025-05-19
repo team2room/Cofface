@@ -10,7 +10,7 @@ import {
   Message,
 } from '@/features/register/components/capture/styles'
 import { FaceDetectionState } from '@/interfaces/FaceRegisterInterfaces'
-import { getMessage } from '@/utils/CaptureUtils'
+import { getMessage } from '@/utils/captureUtils'
 import { useFaceDetection } from '@/features/register/hooks/useFaceDetection'
 import { Text } from '@/styles/typography'
 

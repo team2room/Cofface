@@ -12,7 +12,7 @@ import {
   checkFaceInCustomOval,
   getBorderStatusMessage,
   isCorrectOrientation,
-} from '@/utils/CaptureUtils'
+} from '@/utils/captureUtils'
 import { registerFace } from '@/features/register/services/captureService'
 import { useAuthStore } from '@/stores/authStore'
 
