@@ -17,9 +17,9 @@ export default defineConfig({
         enabled: true,
       },
       manifest: {
-        name: 'order.me',
-        short_name: 'order.me',
-        description: 'AI 얼굴인식 키오스크 오더미, 사용자를 위한 앱 입니다.',
+        name: 'COFFACE',
+        short_name: 'COFFACE',
+        description: 'AI 얼굴인식 키오스크 커페이스, 사용자를 위한 앱 입니다.',
         start_url: '.',
         display: 'standalone',
         background_color: '#ffffff',

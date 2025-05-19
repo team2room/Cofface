@@ -50,6 +50,12 @@ export const useUserStore = create<UserState>((set) => ({
 
   reset: () => {
     removeCookie(USER_TOKEN)
-    set({ token: null, user: null, loginMethod: null, guestInfo: null })
+    set({
+      token: null,
+      user: null,
+      isMember: null,
+      loginMethod: null,
+      guestInfo: null,
+    })
   },
 }))

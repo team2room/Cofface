@@ -17,6 +17,9 @@ interface AuthState {
   initialized: boolean
   isNewUser: boolean
 
+  // 상태 직접 설정 가능하도록 함수 추가
+  setState: (state: Partial<AuthState>) => void
+
   initialize: () => Promise<void>
 
   login: (
@@ -50,7 +53,12 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
       initialized: false,
-      isNewUser: true,
+      isNewUser: false, // API 응답에 의존하는 값이므로 초기값 설정은 크게 중요하지 않음
+
+      // 상태를 직접 업데이트할 수 있는 함수 추가
+      setState: (state: Partial<AuthState>) => {
+        set(state)
+      },
 
       initialize: async () => {
         const refreshTokenValue = getCookie('refreshToken')
@@ -129,6 +137,8 @@ export const useAuthStore = create<AuthState>()(
             password,
           })
 
+          console.log('로그인 응답 데이터:', response)
+
           // 토큰 저장
           const expiresDate = new Date()
           expiresDate.setSeconds(expiresDate.getSeconds() + response.expiresIn)
@@ -145,8 +155,12 @@ export const useAuthStore = create<AuthState>()(
             sameSite: 'strict',
           })
 
+          // 응답에서 isNewUser 값을 명시적으로 확인하여 set
+          const isUserNew = response.isNewUser === true // === true를 사용하여 확실히 불리언으로 변환
+          console.log('신규 사용자 여부:', isUserNew)
+
           set({
-            isNewUser: response.isNewUser,
+            isNewUser: isUserNew,
             user: response.user,
             isAuthenticated: true,
             isLoading: false,
@@ -209,18 +223,52 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         try {
+          // 백엔드 로그아웃 API 호출
           await logoutRequest(getCookie('refreshToken'))
 
+          // 쿠키 제거
           removeCookie('accessToken')
           removeCookie('refreshToken')
 
+          // 스토어 상태 초기화
           set({
             user: null,
             isAuthenticated: false,
             error: null,
+            isNewUser: false, // 로그아웃 시 isNewUser도 초기화
           })
+
+          // localStorage에서 모든 zustand 저장소 데이터 제거
+          Object.keys(localStorage).forEach((key) => {
+            if (key.endsWith('-storage')) {
+              localStorage.removeItem(key)
+            }
+          })
+
+          return Promise.resolve()
         } catch (error) {
           console.log('로그아웃 중 에러', error)
+
+          // 오류가 발생해도 쿠키는 제거
+          removeCookie('accessToken')
+          removeCookie('refreshToken')
+
+          // 스토어 상태 초기화
+          set({
+            user: null,
+            isAuthenticated: false,
+            error: null,
+            isNewUser: false, // 로그아웃 시 isNewUser도 초기화
+          })
+
+          // localStorage에서 모든 zustand 저장소 데이터 제거
+          Object.keys(localStorage).forEach((key) => {
+            if (key.endsWith('-storage')) {
+              localStorage.removeItem(key)
+            }
+          })
+
+          return Promise.reject(error)
         }
       },
     }),
@@ -229,7 +277,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
-        isNewUser: state.isNewUser,
+        isNewUser: state.isNewUser, // 이 값도 유지
       }),
     },
   ),

@@ -50,6 +50,13 @@ export function SettingPage() {
           >
             <Text variant="body1">결제 수단 관리</Text>
           </MenuItem>
+          <MenuItem
+            onClick={() => {
+              navigate('/survey')
+            }}
+          >
+            <Text variant="body1">선호 메뉴/옵션 변경</Text>
+          </MenuItem>
         </SectionWrapper>
         {/* 설정 - 구색맞추기용 */}
         <SectionWrapper>
@@ -70,7 +77,7 @@ export function SettingPage() {
             </Text>
           </SectionTitle>
           <MenuItem>
-            <Text variant="body1">오더미가 궁금해요</Text>
+            <Text variant="body1">COFFACE 가 궁금해요</Text>
           </MenuItem>
           <MenuItem>
             <Text variant="body1">고객센터</Text>

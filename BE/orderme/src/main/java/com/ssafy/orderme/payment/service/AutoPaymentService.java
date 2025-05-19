@@ -14,6 +14,7 @@ import com.ssafy.orderme.payment.dto.request.OptionOrderRequest;
 import com.ssafy.orderme.payment.dto.response.CardCompanyResponse;
 import com.ssafy.orderme.payment.dto.response.PaymentInfoResponse;
 import com.ssafy.orderme.payment.dto.response.PaymentResponseDto;
+import com.ssafy.orderme.payment.exception.CardNotFoundException;
 import com.ssafy.orderme.payment.mapper.OrderMapper;
 import com.ssafy.orderme.payment.mapper.PaymentInfoMapper;
 import com.ssafy.orderme.payment.mapper.PaymentMapper;
@@ -65,13 +66,13 @@ public class AutoPaymentService {
             // 지정된 결제 정보 가져오기
             paymentInfo = paymentInfoMapper.findById(request.getPaymentInfoId());
             if (paymentInfo == null || !paymentInfo.getUserId().equals(userId)) {
-                throw new IllegalArgumentException("유효하지 않은 결제 정보입니다.");
+                throw new CardNotFoundException("유효하지 않은 결제 정보입니다.");
             }
         } else {
             // 기본 결제 정보 가져오기
             paymentInfo = paymentInfoMapper.findDefaultByUserId(userId);
             if (paymentInfo == null) {
-                throw new IllegalArgumentException("등록된 결제 정보가 없습니다.");
+                throw new CardNotFoundException("등록된 결제 정보가 없습니다.");
             }
         }
 

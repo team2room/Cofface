@@ -8,7 +8,7 @@ export function HomeTitleLock() {
   return (
     <HomeTitle>
       <Text variant="title3" weight="heavy" color="main" className="mr-1">
-        ORDER.ME
+        COFFACE
       </Text>
       <Text variant="title3" weight="semibold">
         를<br />

@@ -51,7 +51,7 @@ export function FaceRegisterCheckModal({
                 필수
               </Text>
               <Text variant="caption1" weight="medium" color="darkGray">
-                오더미 페이 서비스
+                커페이스 페이 서비스
               </Text>
             </CheckboxLabel>
             <NavArrowDown color="darkGray" />

@@ -1,3 +1,12 @@
+export interface FaceRecognitionResponse {
+  phone_number: string
+  success: boolean
+  genderage: {
+    age: number
+    gender: string
+  }
+}
+
 export interface User {
   id: string
   name: string

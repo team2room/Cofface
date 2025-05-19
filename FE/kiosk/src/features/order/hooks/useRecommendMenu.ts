@@ -3,7 +3,7 @@ import { getRecommendMenus } from '../services/recommendMenuService'
 import { useUserStore } from '@/stores/loginStore'
 
 export const useRecommendMenu = (storeId: number) => {
-  const { isMember } = useUserStore()
+  const { isMember, guestInfo } = useUserStore()
 
   const [recentMenus, setRecentMenus] = useState([])
   const [customMenus, setCustomMenus] = useState([])
@@ -18,7 +18,11 @@ export const useRecommendMenu = (storeId: number) => {
         if (isMember) {
           data = await getRecommendMenus(storeId)
         } else {
-          data = await getRecommendMenus(storeId, 30, 'MALE')
+          data = await getRecommendMenus(
+            storeId,
+            guestInfo?.age,
+            guestInfo?.gender,
+          )
         }
 
         setRecentMenus(data.frequentMenus)

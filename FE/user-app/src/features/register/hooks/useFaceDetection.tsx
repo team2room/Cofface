@@ -65,6 +65,10 @@ export function useFaceDetection() {
   const timerInProgressRef = useRef<boolean>(false)
   const isFirstMount = useRef<boolean>(true)
 
+  // 타이머 관련 ref - 절대 시간 기반 타이머를 위해 추가
+  const timerStartTimeRef = useRef<number>(0)
+  const timerDurationRef = useRef<number>(3000) // 3초 (3000ms)
+
   // detectionState가 변경될 때마다 ref 값도 업데이트
   useEffect(() => {
     currentStateRef.current = detectionState
@@ -141,6 +145,11 @@ export function useFaceDetection() {
       }
       if (faceMeshRef.current) {
         faceMeshRef.current.close()
+      }
+      // 타이머가 활성화된 경우 정리
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+        timerRef.current = null
       }
     }
   }, [])
@@ -362,7 +371,7 @@ export function useFaceDetection() {
     }
   }
 
-  // 상태 타이머 처리 및 원형 게이지 업데이트
+  // 상태 타이머 처리 및 원형 게이지 업데이트 - 실제 시간 기반으로 변경
   const handleStateTimer = (): void => {
     // 이미 타이머가 진행 중이면 중복 호출 무시
     if (timerInProgressRef.current) {
@@ -386,46 +395,46 @@ export function useFaceDetection() {
     // 처리 중 상태 설정
     setProcessing(true)
 
-    // 3초 카운트다운
-    let count = 3
-    let progress = 0
-    setStateTimer(count)
-    setTimerProgress(progress)
+    // 타이머 설정 - 실제 시간 기준
+    const timerDuration = timerDurationRef.current // 3000ms (3초)
+    const startTime = Date.now()
+    timerStartTimeRef.current = startTime
 
-    // 50ms 단위로 진행도 업데이트 (부드러운 애니메이션)
-    const updateInterval = 50
-    const totalDuration = 3000
-    const totalSteps = totalDuration / updateInterval
-    let currentStep = 0
+    // 초기 타이머 상태 설정
+    setStateTimer(3) // 시작은 3초부터
+    setTimerProgress(0) // 진행률 0에서 시작
 
+    // 타이머 인터벌 설정 (50ms마다 업데이트)
     const interval = setInterval(() => {
-      // 타이머 진행 중 얼굴 위치와 방향이 유효하지 않으면
-      // onResults에서 timerInProgressRef.current = false로 설정됨
       if (!timerInProgressRef.current) {
+        // 타이머가 중지되었다면
         clearInterval(interval)
         timerRef.current = null
-        setProcessing(false)
-        setStateTimer(0)
-        setTimerProgress(0)
         return
       }
 
-      currentStep++
-      progress = currentStep / totalSteps
+      // 현재 경과 시간 계산
+      const currentTime = Date.now()
+      const elapsedTime = currentTime - startTime
+
+      // 남은 시간 계산 (밀리초)
+      const remainingTime = Math.max(0, timerDuration - elapsedTime)
+
+      // 진행률 계산 (0.0 ~ 1.0)
+      const progress = Math.min(1, elapsedTime / timerDuration)
       setTimerProgress(progress)
 
-      if (currentStep % (totalSteps / 3) === 0) {
-        // 1초마다 카운트 감소
-        count--
-        setStateTimer(count)
-      }
+      // 초 단위 카운트다운 (3, 2, 1)
+      const remainingSeconds = Math.ceil(remainingTime / 1000)
+      setStateTimer(remainingSeconds)
 
-      if (currentStep >= totalSteps) {
+      // 타이머 완료 확인
+      if (remainingTime <= 0) {
         clearInterval(interval)
         timerRef.current = null
 
         // 타이머 완료 후 캡처 진행
-        captureFace() // 카운트 완료 후 얼굴 캡처
+        captureFace()
 
         // 상태 리셋
         setProcessing(false)
@@ -434,7 +443,7 @@ export function useFaceDetection() {
         timerActiveRef.current = false
         timerInProgressRef.current = false
       }
-    }, updateInterval)
+    }, 50) // 50ms 간격으로 업데이트
 
     // 타이머 ID 저장
     timerRef.current = interval as unknown as number

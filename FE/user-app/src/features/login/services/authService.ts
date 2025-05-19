@@ -32,6 +32,7 @@ export const loginConfirm = async (
       `${BASE_URL}/api/auth/verify/confirm`,
       loginConfirmProps,
     )
+    console.log('로그인 응답:', response.data.data)
     return response.data.data
   } catch (error) {
     console.error('로그인 중 오류 발생:', error)

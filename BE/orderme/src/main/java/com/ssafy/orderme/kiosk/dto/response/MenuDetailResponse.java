@@ -1,6 +1,7 @@
 package com.ssafy.orderme.kiosk.dto.response;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 메뉴 상세 정보 응답 DTO
@@ -14,8 +15,16 @@ public class MenuDetailResponse {
     private Boolean isSoldOut;            // 품절 여부
     private String imageUrl;              // 이미지 URL
     private List<MenuOptionCategoryResponse> options; // 옵션 목록
-    private String description;
+    private String description;           // 설명
 
+    // 추가된 필드
+    private String keyword1;             // 키워드1
+    private String keyword2;             // 키워드2
+    private Integer orderCount;          // 주문 수
+    private Double percentage;           // 퍼센트
+    private Map<String, Object> additionalInfo; // 추가 정보 (나이, 성별 등)
+
+    // getter와 setter 메서드
     public Long getMenuId() {
         return menuId;
     }
@@ -86,5 +95,45 @@ public class MenuDetailResponse {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getKeyword1() {
+        return keyword1;
+    }
+
+    public void setKeyword1(String keyword1) {
+        this.keyword1 = keyword1;
+    }
+
+    public String getKeyword2() {
+        return keyword2;
+    }
+
+    public void setKeyword2(String keyword2) {
+        this.keyword2 = keyword2;
+    }
+
+    public Integer getOrderCount() {
+        return orderCount;
+    }
+
+    public void setOrderCount(Integer orderCount) {
+        this.orderCount = orderCount;
+    }
+
+    public Double getPercentage() {
+        return percentage;
+    }
+
+    public void setPercentage(Double percentage) {
+        this.percentage = percentage;
+    }
+
+    public Map<String, Object> getAdditionalInfo() {
+        return additionalInfo;
+    }
+
+    public void setAdditionalInfo(Map<String, Object> additionalInfo) {
+        this.additionalInfo = additionalInfo;
     }
 }

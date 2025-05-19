@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
 import { useState, useCallback } from 'react'
+import { clearAllStores } from '@/utils/storeUtils'
 
 export function useAuth() {
   const navigate = useNavigate()
@@ -125,10 +126,23 @@ export function useAuth() {
     [authStore],
   )
 
-  // 로그아웃
+  // 로그아웃 - 간결한 방식으로 변경
   const logout = useCallback(async () => {
-    authStore.logout()
-    navigate('/login', { replace: true })
+    try {
+      // 백엔드 로그아웃 API 호출
+      await authStore.logout()
+
+      // 로컬 스토리지에서 모든 스토어 데이터 제거
+      clearAllStores()
+
+      // 로그인 페이지로 리다이렉트
+      navigate('/login', { replace: true })
+    } catch (error) {
+      console.error('로그아웃 중 오류:', error)
+      // 오류가 발생해도 로컬 스토어는 정리
+      clearAllStores()
+      navigate('/login', { replace: true })
+    }
   }, [authStore, navigate])
 
   // 로그인 작업 수행

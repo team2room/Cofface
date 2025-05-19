@@ -38,7 +38,7 @@ const ContentWrapper = styled.div`
 `
 
 const ButtonWrapper = tw.div`
-  mt-auto
+  mt-auto flex gap-3
 `
 
 type SurveyStep = 'menu' | 'option'
@@ -165,6 +165,10 @@ export default function SurveyPage() {
     }
   }
 
+  const handlePrevClick = () => {
+    navigate(-1)
+  }
+
   const handleMenuSelect = (menuId: number) => {
     setSelectedMenus((prev) => {
       // 이미 선택된 경우 제거
@@ -242,6 +246,7 @@ export default function SurveyPage() {
       </ContentWrapper>
 
       <ButtonWrapper>
+        <MainButton text="이전" onClick={handlePrevClick} sub />
         <MainButton
           text={displayButtonText}
           onClick={handleNextClick}

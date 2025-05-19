@@ -33,3 +33,31 @@ export interface PayData {
   paymentInfoId: number | null
   menuOrders: PayMenuOrder[]
 }
+
+// 일반 결제
+export interface ClientKeyResponse {
+  data: {
+    clientKey: string
+  }
+  success: boolean
+}
+
+export interface PreparePayResponse {
+  orderId: string
+  orderNumber: string
+}
+
+export interface ConfirmPayRequest {
+  paymentKey: string
+  orderId: string
+  amount: number
+  paymentType: 'CARD' | 'TRANSFER' | 'MOBILE' | 'VIRTUAL_ACCOUNT'
+}
+
+export interface ConfirmPayResponse {
+  orderId: number
+  orderNumber: string
+  paymentKey: string
+  status: string
+  amount: number
+}

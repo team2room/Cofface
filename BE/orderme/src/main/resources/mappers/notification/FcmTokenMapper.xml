@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.orderme.notification.mapper.FcmTokenMapper">
+
+    <!-- FCM 토큰 정보 조회 -->
+    <select id="findByUserId" parameterType="String" resultType="com.ssafy.orderme.notification.model.FcmToken">
+        SELECT
+            token_id AS tokenId,
+            user_id AS userId,
+            token,
+            device_info AS deviceInfo,
+            is_active AS isActive
+        FROM
+            fcm_tokens
+        WHERE
+            user_id = #{userId}
+          AND is_active = true
+        ORDER BY
+            token_id DESC
+            LIMIT 1
+    </select>
+
+    <!-- FCM 토큰 정보 저장 -->
+    <insert id="saveToken" parameterType="com.ssafy.orderme.notification.model.FcmToken" useGeneratedKeys="true" keyProperty="tokenId">
+        INSERT INTO fcm_tokens (
+            user_id,
+            token,
+            device_info,
+            is_active
+        ) VALUES (
+                     #{userId},
+                     #{token},
+                     #{deviceInfo},
+                     #{isActive}
+                 )
+    </insert>
+
+    <!-- FCM 토큰 정보 업데이트 -->
+    <update id="updateToken" parameterType="com.ssafy.orderme.notification.model.FcmToken">
+        UPDATE fcm_tokens
+        SET
+            token = #{token},
+            device_info = #{deviceInfo},
+            is_active = #{isActive},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE
+            token_id = #{tokenId}
+    </update>
+
+    <!-- 특정 사용자의 FCM 토큰 비활성화 -->
+    <update id="deactivateTokensByUserId" parameterType="String">
+        UPDATE fcm_tokens
+        SET
+            is_active = false,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE
+            user_id = #{userId}
+    </update>
+
+    <!-- 특정 토큰 ID로 FCM 토큰 비활성화 -->
+    <update id="deactivateToken" parameterType="Integer">
+        UPDATE fcm_tokens
+        SET
+            is_active = false,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE
+            token_id = #{tokenId}
+    </update>
+
+    <!-- 특정 토큰 값(tokenValue)으로 FCM 토큰 검색 -->
+    <select id="findByToken" parameterType="String" resultType="com.ssafy.orderme.notification.model.FcmToken">
+        SELECT
+            token_id AS tokenId,
+            user_id AS userId,
+            token,
+            device_info AS deviceInfo,
+            is_active AS isActive
+        FROM
+            fcm_tokens
+        WHERE
+            token = #{token}
+    </select>
+
+    <!-- 사용자 ID로 모든 FCM 토큰 조회 -->
+    <select id="findAllByUserId" parameterType="String" resultType="com.ssafy.orderme.notification.model.FcmToken">
+        SELECT
+            token_id AS tokenId,
+            user_id AS userId,
+            token,
+            device_info AS deviceInfo,
+            is_active AS isActive
+        FROM
+            fcm_tokens
+        WHERE
+            user_id = #{userId}
+        ORDER BY
+            created_at DESC
+    </select>
+
+    <!-- 토큰 삭제 -->
+    <delete id="deleteToken" parameterType="Integer">
+        DELETE FROM fcm_tokens
+        WHERE token_id = #{tokenId}
+    </delete>
+
+    <!-- 특정 사용자의 모든 토큰 삭제 -->
+    <delete id="deleteAllTokensByUserId" parameterType="String">
+        DELETE FROM fcm_tokens
+        WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 특정 사용자의 토큰 개수 조회 -->
+    <select id="countTokensByUserId" parameterType="String" resultType="Integer">
+        SELECT COUNT(*)
+        FROM fcm_tokens
+        WHERE user_id = #{userId}
+          AND is_active = true
+    </select>
+
+    <!-- FCM 토큰 존재 여부 확인 -->
+    <select id="existsByUserIdAndToken" resultType="Boolean">
+        SELECT
+            CASE WHEN COUNT(*) > 0 THEN true ELSE false END
+        FROM
+            fcm_tokens
+        WHERE
+            user_id = #{userId}
+          AND token = #{token}
+    </select>
+
+    <!-- 만료된 FCM 토큰 조회 (일정 기간 이상 업데이트되지 않은 토큰) -->
+    <select id="findExpiredTokens" parameterType="Integer" resultType="com.ssafy.orderme.notification.model.FcmToken">
+        SELECT
+            token_id AS tokenId,
+            user_id AS userId,
+            token,
+            device_info AS deviceInfo,
+            is_active AS isActive
+        FROM
+            fcm_tokens
+        WHERE
+            updated_at &lt; DATE_SUB(CURRENT_TIMESTAMP, INTERVAL #{days} DAY)
+          AND is_active = true
+    </select>
+</mapper>

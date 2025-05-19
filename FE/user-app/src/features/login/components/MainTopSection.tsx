@@ -1,4 +1,5 @@
 import { Text } from '@/styles/typography'
+import logo from '@/assets/logo.png'
 
 export default function MainTopSection() {
   return (
@@ -11,9 +12,7 @@ export default function MainTopSection() {
         </Text>
       </div>
       <div>
-        <Text weight="heavy" variant="logo1" color="main">
-          ORDER.ME
-        </Text>
+        <img src={logo} alt="logo" />
       </div>
     </div>
   )
