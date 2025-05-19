@@ -1,6 +1,7 @@
 package com.ssafy.orderme.user.controller;
 
 import com.ssafy.orderme.common.ApiResponse;
+import com.ssafy.orderme.payment.service.AutoPaymentService;
 import com.ssafy.orderme.security.JwtTokenProvider;
 import com.ssafy.orderme.user.dto.request.*;
 import com.ssafy.orderme.user.model.Admin;
@@ -25,6 +26,7 @@ public class AuthController {
     private final AdminService adminService;
     private final SmsService smsService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AutoPaymentService autoPaymentService;
 
     // 회원가입 인증번호 요청
     @PostMapping("/verify/request")
@@ -135,27 +137,32 @@ public class AuthController {
     // 키오스크 전화번호 로그인
     @PostMapping("/kiosk/phone-login")
     public ResponseEntity<ApiResponse<?>> kioskPhoneLogin(@RequestBody PhoneLoginRequest request){
-            // 1. 사용자 조회
-            User user = userService.findByPhoneNumber(request.getPhoneNumber());
+        // 1. 사용자 조회
+        User user = userService.findByPhoneNumber(request.getPhoneNumber());
 
-            if(user==null){
-                return ResponseEntity.ok(ApiResponse.error(404, "등록되지 않은 전화번호입니다."));
-            }
+        if(user==null){
+            return ResponseEntity.ok(ApiResponse.error(404, "등록되지 않은 전화번호입니다."));
+        }
 
-            // 2. JWT 토큰 생성(키오스크용 - 짧은 유효기간)
-            String accessToken = jwtTokenProvider.createToken(
-                    user.getId().toString(),
-                    JwtTokenProvider.TokenType.KIOSK
-            );
+        // 2. 자동결제 카드 연결 여부 확인
+        boolean hasAutoPayment = autoPaymentService.hasRegisteredCards(user.getId().toString());
 
-            // 3. 응답
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("accessToken", accessToken);
-            responseData.put("tokenType", "Bearer");
-            responseData.put("expiresIn", 150); // 150초
-            responseData.put("user", user.toDto());
 
-            return ResponseEntity.ok(ApiResponse.success("로그인이 완료되었습니다.", responseData));
+        // 3. JWT 토큰 생성(키오스크용 - 짧은 유효기간)
+        String accessToken = jwtTokenProvider.createToken(
+                user.getId().toString(),
+                JwtTokenProvider.TokenType.KIOSK
+        );
+
+        // 4. 응답
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("accessToken", accessToken);
+        responseData.put("tokenType", "Bearer");
+        responseData.put("expiresIn", 150); // 150초
+        responseData.put("user", user.toDto());
+        responseData.put("hasAutoPayment", hasAutoPayment);
+
+        return ResponseEntity.ok(ApiResponse.success("로그인이 완료되었습니다.", responseData));
     }
 
     // 키오스크 얼굴인식 로그인
