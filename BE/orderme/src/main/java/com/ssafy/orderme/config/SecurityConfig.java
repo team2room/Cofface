@@ -73,8 +73,8 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "http://localhost:8080",
                 "http://localhost:5173", // 프론트엔드 개발 서버
-                "https://app.orderme.store",
-                "https://kiosk.orderme.store",
+                "https://app.cofface.store",
+                "https://kiosk.cofface.store",
                 "http://k12e202.p.ssafy.io"
         ));
 
