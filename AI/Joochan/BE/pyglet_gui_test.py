@@ -36,6 +36,8 @@ class CameraControlRequest(BaseModel):
     enable: bool = True
     timeout: Optional[float] = None
 
+class DisplayChangeRequest(BaseModel):
+    display_type: str
 
 # 제스처 감지 결과 모델
 class GestureDetectionResult(BaseModel):
@@ -43,6 +45,78 @@ class GestureDetectionResult(BaseModel):
     confidence: float
     session_id: str
     timestamp: datetime
+
+class CountdownTimer:
+    def __init__(self):
+        self.active = False
+        self.value = 0
+        self.start_time = 0
+        self.duration = 0
+        self.delay = 0
+        self.delay_start_time = 0
+        self.is_in_delay = False
+    
+    def start(self, duration=3, delay=0):
+        """타이머 시작"""
+        self.active = True
+        self.value = duration
+        self.duration = duration
+        self.delay = delay
+        self.delay_start_time = time.time()
+        self.is_in_delay = delay > 0
+        print(f"타이머 시작: {delay}초 후 {duration}초 카운트다운")
+        return self
+    
+    def stop(self):
+        """타이머 중지"""
+        self.active = False
+        self.value = 0
+        print("타이머 중지")
+        return self
+    
+    def update(self):
+        """타이머 업데이트 (매 프레임마다 호출)"""
+        if not self.active:
+            return self
+        
+        current_time = time.time()
+        
+        # 지연 시간 처리
+        if self.is_in_delay:
+            elapsed_delay = current_time - self.delay_start_time
+            if elapsed_delay >= self.delay:
+                # 지연 시간 종료, 본 카운트다운 시작
+                self.is_in_delay = False
+                self.start_time = current_time
+                print(f"지연 시간 종료, 카운트다운 시작: {self.duration}초")
+            return self
+        
+        # 카운트다운 처리
+        elapsed = current_time - self.start_time
+        seconds_passed = int(elapsed)
+        new_value = self.duration - seconds_passed
+        
+        # 값이 변경된 경우에만 업데이트
+        if new_value != self.value:
+            self.value = new_value
+            print(f"카운트다운: {self.value}")
+            
+            # 카운트다운 종료
+            if self.value <= 0:
+                self.active = False
+                print("카운트다운 완료")
+        
+        return self
+        
+    @property
+    def is_active(self):
+        """타이머가 활성화되어 있는지 여부"""
+        return self.active
+    
+    @property
+    def current_value(self):
+        """현재 카운트다운 값"""
+        return max(0, self.value)
 
 
 # 웹소켓 제스처 감지 관리자
@@ -99,10 +173,8 @@ def parse_args():
     parser.add_argument('--gpu_id', type=int, default=0, help='사용할 GPU ID')
     parser.add_argument('--idle_image', type=str, default=None, 
                         help='대기 상태에서 표시할 이미지 파일 경로')
-    parser.add_argument('--idle_gif', type=str, default='orderme.gif', 
+    parser.add_argument('--idle_gif', type=str, default='assets/orderme.gif', 
                         help='대기 상태에서 표시할 GIF 파일 경로')
-    parser.add_argument('--guide_circle', action='store_true', default=False,
-                        help='얼굴 인식 가이드 원 표시 (PNG 오버레이 대신)')
     parser.add_argument('--age_gender', action='store_true', default=True,
                         help='나이 및 성별 추정 사용')
     parser.add_argument('--screen', type=int, default=0, 
@@ -123,7 +195,7 @@ def parse_args():
                         help='얼굴 인식 시간 (초)')
     parser.add_argument('--max_fps', type=int, default=30,
                         help='얼굴 인식 최대 처리 FPS (성능 최적화)')
-    parser.add_argument('--overlay_path', type=str, default="mask_overlay.png", 
+    parser.add_argument('--overlay_path', type=str, default="assets/mask_overlay.png", 
                         help='가이드 오버레이 PNG 파일 경로')
     parser.add_argument('--frame_skip', type=int, default=1,
                         help='얼굴 인식 프레임 건너뛰기 (1=모든 프레임 처리, 2=2프레임마다 처리)')
@@ -149,6 +221,9 @@ class AnimatedGIF:
                 response = urlopen(filename)
                 gif = Image.open(BytesIO(response.read()))
             else:
+                if not os.path.exists(filename):
+                    print(f"GIF 파일이 존재하지 않음: {filename}")
+                    return
                 # 로컬 파일에서 이미지 로드
                 gif = Image.open(filename)
                 
@@ -182,10 +257,14 @@ class AnimatedGIF:
             print(f"GIF 로드 오류: {e}")
             traceback.print_exc()
     
+    
     def get_current_frame(self, dt):
+        if not self.frames:
+            return None
+        
         # 경과 시간 업데이트
         self.elapsed += dt
-        if self.elapsed >= self.total_duration:
+        if self.elapsed >= self.total_duration and self.total_duration > 0:
             self.elapsed = 0
         
         # 현재 표시할 프레임 계산
@@ -252,10 +331,10 @@ class RealSenseFaceLiveness:
         self.show_depth = args.show_depth
         self.save_embeddings = args.save_embeddings
         self.gpu_id = args.gpu_id
-        self.guide_circle = args.guide_circle
         self.age_gender = args.age_gender
         self.idle_image_path = args.idle_image
         self.idle_gif_path = args.idle_gif
+        self.original_idle_gif_path = args.idle_gif
         self.target_width = args.target_width
         self.target_height = args.target_height
         self.min_depth = args.min_depth  # 감지할 최소 깊이 (미터)
@@ -267,6 +346,7 @@ class RealSenseFaceLiveness:
         self.overlay_path = args.overlay_path
         self.frame_skip = args.frame_skip  # 프레임 스킵 설정 (2 = 2프레임당 1번 처리)
         self.frame_counter = 0  # 프레임 카운터
+        self.pending_display_change = None
         
         # 필요한 얼굴 인식 프레임 개수
         self.required_frames = args.required_frames
@@ -305,6 +385,10 @@ class RealSenseFaceLiveness:
         # 제스처 감지 플래그
         self.detecting_gesture = False
         self.current_gesture_session = None
+        
+        self.motion_gif = "assets/motioncheck.gif"
+        self.pay_gif = "assets/pay.gif"
+        self.loading_png = "assets/loading.png"
         
         if self.idle_gif_path:
             try:
@@ -470,12 +554,7 @@ class RealSenseFaceLiveness:
         
         # Sprite 생성
         self.color_sprite = None
-        self.depth_sprite = None
         self.idle_sprite = None
-        self.mask_sprite = None  # 가림막 스프라이트
-        
-        # 가림막 생성 (검은색 배경)
-        self.create_mask_sprite()
         
         # RealSense 파이프라인 초기화
         self.pipeline = rs.pipeline()
@@ -539,8 +618,8 @@ class RealSenseFaceLiveness:
         self.target_ratio = self.target_width / self.target_height
         
         # PNG 오버레이 로드
-        self.overlay_path_no_face = "mask_overlay_not.png"  # 얼굴이 감지되지 않았을 때 사용할 오버레이
-        self.overlay_path_liveness = "mask_overlay_liveness.png"  # 라이브니스 감지 시 사용할 오버레이
+        self.overlay_path_no_face = "assets/mask_overlay_not.png"  # 얼굴이 감지되지 않았을 때 사용할 오버레이
+        self.overlay_path_liveness = "assets/mask_overlay_liveness.png"  # 라이브니스 감지 시 사용할 오버레이
         self.face_detected = False  # 얼굴 감지 상태를 추적하는 변수
         self.overlay_sprite = None  # 기본 오버레이 (얼굴 감지 시)
         self.overlay_no_face_sprite = None  # 얼굴 미감지 시 오버레이
@@ -566,13 +645,15 @@ class RealSenseFaceLiveness:
             print(f"[Overlay] PNG 로드 실패: {e}")
         
         
+        self.countdown_timer = CountdownTimer()
+        
         # 카운트다운 레이블 추가
         self.countdown_label = pyglet.text.Label(
             '',
             font_name='Arial',
             font_size=120,  # 큰 글씨
-            x=self.window.width // 2,
-            y=self.window.height // 2,
+            x=self.target_width // 2,
+            y=(self.target_height // 2)+100,
             anchor_x='center',
             anchor_y='center',
             color=(255, 255, 255, 255),
@@ -591,9 +672,28 @@ class RealSenseFaceLiveness:
             try:
                 self.window.clear()
                 
-                # 항상 가림막 먼저 그리기
-                if self.mask_sprite:
-                    self.mask_sprite.draw()
+                self.process_pending_display_change()
+                
+                if hasattr(self, 'countdown_timer'):
+                    self.countdown_timer.update()
+                # 제스쳐 모드
+                if self.detecting_gesture:
+                    if self.idle_gif:
+                        current_frame = self.idle_gif.get_current_frame(1/60.0)
+                        if current_frame:
+                            self.idle_sprite = pyglet.sprite.Sprite(current_frame, x=0, y=0)
+                            # 창 크기에 맞게 스케일 조정
+                            scale_x = self.window.width / current_frame.width
+                            scale_y = self.window.height / current_frame.height
+                            scale = min(scale_x, scale_y)
+                            self.idle_sprite.scale = scale
+                            # 중앙 정렬
+                            self.idle_sprite.x = (self.window.width - self.idle_sprite.width) / 2
+                            self.idle_sprite.y = (self.window.height - self.idle_sprite.height) / 2
+                            self.idle_sprite.draw()
+                    
+                    # 제스처 설명 라벨 표시 (배경 위에)
+                    self.gesture_label.draw()
                 
                 if self.camera_mode:
                     # 카메라 모드: 얼굴 인식 화면 표시
@@ -629,48 +729,57 @@ class RealSenseFaceLiveness:
 
                                 current_overlay.draw()
                     
-                    if self.countdown_active and self.countdown_value > 0:
-                        self.countdown_label.text = str(self.countdown_value)
-                        self.countdown_label.draw()
-                    
-                    # 깊이 이미지 스프라이트 그리기
-                    if self.show_depth and self.depth_sprite:
-                        self.depth_sprite.draw()
-                    
                     # UI 텍스트가 활성화된 경우에만 레이블 렌더링
                     if self.show_ui:
                         for label in self.labels:
                             label.draw()
                 else:
                     # 유휴 모드: 대기 화면 표시
-                    if self.idle_gif:
+                    if self.idle_gif and hasattr(self.idle_gif, 'frames') and self.idle_gif.frames:
                         # GIF 애니메이션 표시
                         current_frame = self.idle_gif.get_current_frame(1/60.0)
                         if current_frame:
-                            self.idle_sprite = pyglet.sprite.Sprite(current_frame, x=0, y=0)
-                            # 창 크기에 맞게 스케일 조정
-                            scale_x = self.window.width / current_frame.width
-                            scale_y = self.window.height / current_frame.height
-                            scale = min(scale_x, scale_y)
-                            self.idle_sprite.scale = scale
-                            # 중앙 정렬
-                            self.idle_sprite.x = (self.window.width - self.idle_sprite.width) / 2
-                            self.idle_sprite.y = (self.window.height - self.idle_sprite.height) / 2
+                            if not self.idle_sprite:
+                                self.idle_sprite = pyglet.sprite.Sprite(current_frame, x=0, y=0)
+                                # 창 크기에 맞게 스케일 조정
+                                scale_x = self.window.width / current_frame.width
+                                scale_y = self.window.height / current_frame.height
+                                scale = min(scale_x, scale_y)
+                                self.idle_sprite.scale = scale
+                                # 중앙 정렬
+                                self.idle_sprite.x = (self.window.width - self.idle_sprite.width) / 2
+                                self.idle_sprite.y = (self.window.height - self.idle_sprite.height) / 2
+                            else:
+                                self.idle_sprite.image = current_frame
+                                
                             self.idle_sprite.draw()
+                            
                     elif self.idle_image_texture:
-                        # 정적 이미지 표시
-                        if not self.idle_sprite and self.idle_image_texture:
-                            self.idle_sprite = pyglet.sprite.Sprite(self.idle_image_texture, x=0, y=0)
-                            # 창 크기에 맞게 스케일 조정
-                            scale_x = self.window.width / self.idle_image_texture.width
-                            scale_y = self.window.height / self.idle_image_texture.height
-                            scale = min(scale_x, scale_y)
-                            self.idle_sprite.scale = scale
-                            # 중앙 정렬
-                            self.idle_sprite.x = (self.window.width - self.idle_sprite.width) / 2
-                            self.idle_sprite.y = (self.window.height - self.idle_sprite.height) / 2
-                        if self.idle_sprite:
+                        # 정적 이미지 스프라이트가 이미 생성되어 있으면 그대로 사용
+                        try:
+                            if not self.idle_sprite:
+                                self.idle_sprite = pyglet.sprite.Sprite(self.idle_image_texture, x=0, y=0)
+                                # 창 크기에 맞게 스케일 조정
+                                scale_x = self.window.width / self.idle_image_texture.width
+                                scale_y = self.window.height / self.idle_image_texture.height
+                                scale = min(scale_x, scale_y)
+                                self.idle_sprite.scale = scale
+                                # 중앙 정렬
+                                self.idle_sprite.x = (self.window.width - self.idle_sprite.width) / 2
+                                self.idle_sprite.y = (self.window.height - self.idle_sprite.height) / 2
+                                print(f"정적 이미지 스프라이트 생성: {self.idle_image_path}, 위치: ({self.idle_sprite.x}, {self.idle_sprite.y}), 스케일: {self.idle_sprite.scale}")
+                            
+                            # 스프라이트 그리기
                             self.idle_sprite.draw()
+                            
+                            # 로그 줄이기: 2분에 한 번만 출력
+                            if int(time.time() / 120) != getattr(self, '_last_log_period', 0):
+                                self._last_log_period = int(time.time() / 120)
+                                print(f"정적 이미지 그리기: {self.idle_image_path}")
+                        except Exception as e:
+                            print(f"정적 이미지 그리기 오류: {e}")
+                            traceback.print_exc()
+                            
                     elif self.show_ui:
                         # UI 텍스트가 활성화된 경우에만 텍스트 표시
                         label = pyglet.text.Label(
@@ -684,6 +793,10 @@ class RealSenseFaceLiveness:
                             color=(255, 255, 255, 255)
                         )
                         label.draw()
+                
+                if self.countdown_timer.is_active and not self.countdown_timer.is_in_delay:
+                    self.countdown_label.text = str(self.countdown_timer.current_value)
+                    self.countdown_label.draw()
                 
                 # UI 텍스트가 활성화된 경우에만 FPS 및 상태 표시
                 if self.show_ui:
@@ -719,25 +832,10 @@ class RealSenseFaceLiveness:
             print(f"마스크 생성 오류 (무시됨): {e}")
             self.mask_sprite = None
     
-    def start_countdown(self, total_seconds=3):
-        """카운트다운 시작"""
-        self.countdown_active = True
-        self.countdown_value = total_seconds
-        
-        # 기존 카운트다운 이벤트가 있으면 취소
-        if self.countdown_event:
-            pyglet.clock.unschedule(self.countdown_event)
-        
-        # 1초마다 카운트다운 업데이트
-        def update_countdown(dt):
-            self.countdown_value -= 1
-            if self.countdown_value <= 0:
-                self.countdown_active = False
-                pyglet.clock.unschedule(self.countdown_event)
-                self.countdown_event = None
-        
-        self.countdown_event = pyglet.clock.schedule_interval(update_countdown, 1.0)
-        print(f"카운트다운 시작: {total_seconds}초")
+    def start_countdown(self, total_seconds=3, delay_before_start=1.0):
+        self.countdown_timer.stop()
+        self.countdown_timer.start(duration=total_seconds, delay=delay_before_start)
+        print(f"카운트다운 시작: {delay_before_start}초 지연 후 {total_seconds}초 카운트다운")
     
     
     def initialize_face_app(self):
@@ -769,19 +867,9 @@ class RealSenseFaceLiveness:
             self.set_camera_mode(not self.camera_mode)
         elif symbol == pyglet.window.key.S:
             self.show_scores = not self.show_scores
-        elif symbol == pyglet.window.key.D:
-            self.show_depth = not self.show_depth
-        elif symbol == pyglet.window.key.G:
-            # 가이드 원 토글
-            self.guide_circle = not self.guide_circle
-            print(f"가이드 원 {'활성화' if self.guide_circle else '비활성화'}")
         elif symbol == pyglet.window.key.E:
             self.save_embeddings = not self.save_embeddings
             print(f"임베딩 저장 {'활성화' if self.save_embeddings else '비활성화'}")
-        elif symbol == pyglet.window.key.A:
-            # 나이/성별 추정 토글
-            self.age_gender = not self.age_gender
-            print(f"나이/성별 추정 {'활성화' if self.age_gender else '비활성화'}")
         elif symbol == pyglet.window.key.P:
             # 프레임 스킵 값 변경
             if self.frame_skip < 5:  # 최대 5프레임 스킵 허용
@@ -940,11 +1028,11 @@ class RealSenseFaceLiveness:
         x_diff = (nose_tip.x - prev_nose_tip.x) + (forehead.x - prev_forehead.x)  # 수평 이동 (좌우로 흔들어
         
         # 임계값 설정
-        threshold = 0.015
+        threshold = 0.01
         
-        if abs(y_diff) > threshold and abs(y_diff) > abs(x_diff) * 1.5:
+        if abs(y_diff) > threshold and abs(y_diff) > abs(x_diff) * 1.2:
             return "nod" if y_diff > 0 else "nod_up"  # 끄덕임(아래/위)
-        elif abs(x_diff) > threshold and abs(x_diff) > abs(y_diff) * 1.5:
+        elif abs(x_diff) > threshold and abs(x_diff) > abs(y_diff) * 1.3:
             return "shake_left" if x_diff > 0 else "shake_right"  # 좌우로 흔들어좌/우)
         
         return None
@@ -990,21 +1078,25 @@ class RealSenseFaceLiveness:
             gesture_name = "절레절레"
         
         # 임계값 설정 (예: 3번 이상 같은 제스처가 감지되면 확정)
-        is_confirmed = (self.nod_count >= 3 or self.shake_count >= 3)
+        is_confirmed = (self.nod_count >= 1 or self.shake_count >= 2)
         
         # 제스처 감지 결과 반환
         result = {
-            "type": "gesture_update",
+            "type": "gesture_update" if not is_confirmed else "gesture_detected",
             "gesture_type": gesture_type if is_confirmed else None,
-            "gesture_name": gesture_name,
+            "gesture_name": gesture_name if is_confirmed else None,
             "nod_count": self.nod_count,
             "shake_count": self.shake_count,
-            "is_confirmed": is_confirmed
+            "is_confirmed": is_confirmed,
+            "timestamp": datetime.now().isoformat()
         }
         
-        # 확정된 제스처 감지시 모드 종료
+        # 확정된 제스처 감지시 카운터 리셋
         if is_confirmed:
-            result["type"] = "gesture_detected"
+            print(f"제스처 확정: {gesture_name} (계속 감지 중)")
+            # 카운터 리셋
+            self.nod_count = 0
+            self.shake_count = 0
         
         return result
     
@@ -1428,6 +1520,72 @@ class RealSenseFaceLiveness:
                 traceback.print_exc()
                 time.sleep(0.1)
 
+    def process_pending_display_change(self):
+        """대기 중인 디스플레이 변경 요청 처리"""
+        if hasattr(self, 'pending_display_change') and self.pending_display_change:
+            try:
+                path = self.pending_display_change['path']
+                is_gif = self.pending_display_change['is_gif']
+                display_type = self.pending_display_change['display_type']
+                
+                if is_gif and path:
+                    # GIF 로드
+                    self.idle_gif = AnimatedGIF(path)
+                    self.idle_gif_path = path
+                    self.idle_image_texture = None
+                    self.idle_image_path = None
+                    self.idle_sprite = None
+                    print(f"GIF 로드 완료: {path}")
+                elif not is_gif and path:
+                    print(f"이미지 로드 시작: {path}")
+                    try:
+                        if path.startswith('http'):
+                            # URL에서 이미지 로드
+                            response = urlopen(path)
+                            img = Image.open(BytesIO(response.read()))
+                            img_array = np.array(img.convert('RGB'))
+                        else:
+                            img_array = cv2.imread(path)
+                            # 로컬 파일에서 이미지 로드
+                            if img_array is None:
+                                print(f"[경고] 이미지 파일이 존재하지 않음: {path}")
+                                self.pending_display_change = None
+                                return
+                                
+                            img_array = cv2.flip(img_array, -1)
+                            img_array = cv2.flip(img_array, 1)
+                        
+                        if img_array is not None and img_array.size > 0:
+                            self.idle_image_texture = self.texture_generator.create_texture_from_numpy(img_array)
+                            self.idle_image_path = path
+                            # 이미지 사용 시 GIF 초기화
+                            self.idle_gif = None
+                            self.idle_gif_path = None
+                            
+                            self.idle_sprite = pyglet.sprite.Sprite(self.idle_image_texture, x=0, y=0)
+                            
+                            scale_x = self.window.width / self.idle_image_texture.width
+                            scale_y = self.window.height / self.idle_image_texture.height
+                            scale = min(scale_x, scale_y)
+                            self.idle_sprite.scale = scale
+                            # 중앙 정렬
+                            self.idle_sprite.x = (self.window.width - self.idle_sprite.width) / 2
+                            self.idle_sprite.y = (self.window.height - self.idle_sprite.height) / 2
+                            
+                            print(f"이미지 로드 완료: {path}, 크기: {img_array.shape}")
+                        else:
+                            print(f"[오류] 이미지 로드 실패 (빈 이미지): {path}")
+                    except Exception as e:
+                        print(f"[오류] 이미지 로드 실패: {path}, 오류: {e}")
+                        traceback.print_exc()
+                    
+                # 요청 처리 완료
+                self.pending_display_change = None
+            except Exception as e:
+                print(f"디스플레이 변경 처리 오류: {e}")
+                traceback.print_exc()
+                self.pending_display_change = None
+
     def get_face_depth(self, depth_frame, face_bbox, landmarks):
         """얼굴의 평균 깊이 계산"""
         x1, y1, x2, y2 = [int(val) for val in face_bbox]
@@ -1749,53 +1907,86 @@ class FaceRecognitionServer:
             "last_update": None
         }
     
+    def change_display_helper(self, display_type):
+        path = None
+        is_gif = False
+        
+        if display_type == "motion":
+            path = self.app_instance.motion_gif
+            is_gif = True
+        elif display_type == "pay":
+            path = self.app_instance.pay_gif
+            is_gif = True
+        elif display_type == "loading":
+            path = self.app_instance.loading_png
+            is_gif = False
+        elif display_type == "default":
+            path = self.app_instance.original_idle_gif_path
+            is_gif = True
+        else:
+            print(f"유효하지 않은 디스플레이 타입: {display_type}")
+            return False
+        
+        # 화면 변경 요청 설정
+        self.app_instance.pending_display_change = {
+            'path': path,
+            'is_gif': is_gif,
+            'display_type': display_type
+        }
+        
+        print(f"화면 변경 요청 전송: {display_type} ({path})")
+        return True
+    
     
     def setup_routes(self):
         @self.api.get("/")
         def root():
             return {"message": "RealSense 얼굴 인식 API 서버"}
         
-        @self.api.post("/genderage")
-        async def recognize(background_tasks: BackgroundTasks, frame_based: bool = True, required_frames: int = 30):
-            # 이미 처리 중인지 확인
-            if self.app_instance.processing_api_request:
-                return {
-                    "success": False,
-                    "message": "이미 처리 중인 요청이 있습니다. 잠시 후 다시 시도하세요."
-                }
+        @self.api.post("/display")
+        async def change_display(background_tasks: BackgroundTasks, request: DisplayChangeRequest):
+            """
+            request body: {"display_type": "motion|pay|loading|default"}
+            """
+            display_type = request.display_type
             
-            # 필요한 프레임 수 설정 (파라미터로 전달되었으면 해당 값 사용)
-            if required_frames is not None and required_frames > 0:
-                self.app_instance.required_frames = required_frames
-                
-            # 기존 프레임 큐 비우기 (이전 데이터 정리)
-            try:
-                while not self.app_instance.frame_queue.empty():
-                    self.app_instance.frame_queue.get_nowait()
-                while not self.app_instance.result_queue.empty():
-                    self.app_instance.result_queue.get_nowait()
-            except queue.Empty:
-                pass
+            result = {
+                "success": False,
+                "message": "유효한 디스플레이 타입이 제공되지 않았습니다."
+            }
             
-            # 카메라 모드 활성화
-            self.app_instance.set_camera_mode(True)
+            # 경로 변수 설정
+            path = None
+            is_gif = False
             
-            # 프레임 수집 시작
-            await asyncio.sleep(0.1)
-            self.app_instance.start_frame_collection(frame_based=frame_based)
+            if display_type == "motion":
+                path = self.app_instance.motion_gif
+                is_gif = True
+            elif display_type == "pay":
+                path = self.app_instance.pay_gif
+                is_gif = True
+            elif display_type == "loading":
+                path = self.app_instance.loading_png
+                is_gif = False
+            elif display_type == "default":
+                path = self.app_instance.original_idle_gif_path
+                is_gif = True
+            else:
+                return result
             
-            # 결과 대기
-            await asyncio.get_event_loop().run_in_executor(
-                None, self.app_instance.api_result_event.wait
-            )
+            self.app_instance.pending_display_change = {
+                'path': path,
+                'is_gif': is_gif,
+                'display_type': display_type
+            }
             
-            # 결과 가져오기
-            result = self.app_instance.api_result
-            
-            print(f"수집된 프레임 수: {len(self.app_instance.collected_frames)}")
-            
-            # 카메라 모드 종료 (짧은 지연 후)
-            background_tasks.add_task(self.delayed_camera_off, 0.2)
+            result = {
+                "success": True,
+                "message": f"화면 변경 요청이 전송되었습니다: {display_type} ({path})",
+                "display_type": display_type,
+                "path": path,
+                "pending": True
+            }
             
             return result
         
@@ -1820,12 +2011,12 @@ class FaceRecognitionServer:
             
             # 카메라 모드 활성화
             self.app_instance.set_camera_mode(True)
-            self.app_instance.start_countdown(3)
+            self.app_instance.start_countdown()
             # 사용자가 얼굴 위치를 맞출 수 있도록 3초 대기
             print("얼굴 위치 맞추기: 3초 대기 중...")
             
             # 세분화된 대기로 중간에 카메라 상태 확인 가능하게 함
-            for i in range(30):  # 0.1초 간격으로 30번 = 3초
+            for i in range(40):  # 0.1초 간격으로 30번 = 3초
                 if not self.app_instance.camera_mode:
                     # 중간에 카메라가 꺼진 경우
                     return {
@@ -1934,7 +2125,7 @@ class FaceRecognitionServer:
             
             try:
                 # 서버에 얼굴 임베딩 비교 요청
-                verification_url = "https://face.orderme.store/verify"
+                verification_url = "https://face.cofface.store/verify"
                 print(f"서버에 얼굴 검증 요청: {verification_url}, 프레임 수: {len(live_face_frames)}")
                 
                 # 라이브니스 정보 구성 (로컬에서 이미 검증됨)
@@ -1988,7 +2179,7 @@ class FaceRecognitionServer:
                 }
             
             background_tasks.add_task(self.delayed_camera_off, 0.1)
-            
+            background_tasks.add_task(self.change_display_helper, "loading")
             return result
         
         # 제스처 감지 시작 API
@@ -2006,6 +2197,18 @@ class FaceRecognitionServer:
                     "message": "이미 다른 제스처 감지 세션이 진행 중입니다.",
                     "session_id": None
                 }
+            
+            try:
+                # GIF 로드 시도
+                motion_gif_path = self.app_instance.motion_gif
+                self.app_instance.idle_gif = AnimatedGIF(motion_gif_path)
+                self.app_instance.idle_gif_path = motion_gif_path
+                # GIF 사용 시 이미지 초기화
+                self.app_instance.idle_image_texture = None
+                self.app_instance.idle_image_path = None
+                print(f"모션 체크 GIF 로드 완료: {motion_gif_path}")
+            except Exception as e:
+                print(f"모션 체크 GIF 로드 실패: {e}")
             
             # 카메라 모드 활성화
             if not self.app_instance.camera_mode:
@@ -2049,11 +2252,20 @@ class FaceRecognitionServer:
             self.app_instance.stop_gesture_detection()
             
             # 웹소켓 연결 종료 (해당 세션 ID)
-            if self.app_instance.current_gesture_session:
+            if hasattr(self, 'gesture_manager') and self.app_instance.current_gesture_session:
                 self.gesture_manager.disconnect(self.app_instance.current_gesture_session)
+            
+            # 기본 GIF로 복귀
+            try:
+                default_gif_path = self.app_instance.idle_gif_path
+                if default_gif_path:
+                    self.app_instance.idle_gif = AnimatedGIF(default_gif_path)
+            except Exception as e:
+                print(f"기본 GIF 로드 실패: {e}")
             
             # 카메라 끄기 (지연 후)
             background_tasks.add_task(self.delayed_camera_off, 0.2)
+            background_tasks.add_task(self.change_display_helper, "loading")
             
             return {
                 "success": True,
@@ -2102,20 +2314,36 @@ class FaceRecognitionServer:
             try:
                 # 제스처 처리 루프
                 while True:
-                    # 클라이언트로부터 메시지 수신 (비동기)
-                    data = await websocket.receive_json()
-                    
-                    # 중지 요청 처리
-                    if data.get("type") == "stop":
-                        self.app_instance.stop_gesture_detection()
-                        await self.gesture_manager.send_message(
-                            session_id,
-                            {
-                                "type": "stopped",
-                                "message": "제스처 감지가 중지되었습니다."
-                            }
-                        )
-                        break
+                    last_gesture_detected_time = 0
+                    gesture_cooldown = 1.0
+                    try:
+                        # 클라이언트로부터 메시지 수신 (비동기)
+                        data = await asyncio.wait_for(websocket.receive_json(), timeout=0.5)
+                        
+                        # 중지 요청 처리
+                        if data.get("type") == "stop":
+                            self.app_instance.stop_gesture_detection()
+                            
+                            try:
+                                default_gif_path = self.app_instance.idle_gif_path
+                                if default_gif_path:
+                                    self.app_instance.idle_gif = AnimatedGIF(default_gif_path)
+                            except Exception as e:
+                                print(f"기본 GIF 로드 실패: {e}")
+                            
+                            await self.gesture_manager.send_message(
+                                session_id,
+                                {
+                                    "type": "stopped",
+                                    "message": "제스처 감지가 중지되었습니다."
+                                }
+                            )
+                            break
+                    # 타임아웃은 무시하고 계속 진행
+                    except asyncio.TimeoutError:
+                        pass
+                    except Exception as e:
+                        print(f"웹소켓 메시지 수신 중 오류: {e}")
                     
                     # 결과를 확인할 제스처 업데이트 처리
                     color_image = None
@@ -2131,13 +2359,30 @@ class FaceRecognitionServer:
                             gesture_result = self.app_instance.process_gesture_frame(color_image)
                             
                             if gesture_result:
-                                # 제스처 결과 전송
-                                await self.gesture_manager.send_message(session_id, gesture_result)
+                                # 현재 시간
+                                current_time = time.time()
                                 
-                                # 제스처가 확정되면 세션 종료
-                                if gesture_result.get("type") == "gesture_detected":
-                                    # 3초 후 자동 종료
-                                    await asyncio.sleep(3.0)
+                                # 제스처가 확정되었고 쿨다운 시간이 지난 경우만 전송
+                                if (gesture_result.get("type") == "gesture_detected" and 
+                                    current_time - last_gesture_detected_time > gesture_cooldown):
+                                    # 시간 업데이트
+                                    last_gesture_detected_time = current_time
+                                    
+                                    # 제스처 결과에 세션 정보 추가
+                                    gesture_result["session_id"] = session_id
+                                    
+                                    # 제스처 확정 결과 전송
+                                    await self.gesture_manager.send_message(session_id, gesture_result)
+                                    
+                                    print(f"제스처 확정 결과 전송: {gesture_result['gesture_name']}")
+                                
+                                # 업데이트 메시지는 항상 전송 (과도한 메시지 방지)
+                                elif gesture_result.get("type") == "gesture_update" and (current_time % 1 < 0.1):
+                                    await self.gesture_manager.send_message(session_id, gesture_result)
+                                
+                                # 타임아웃 메시지 전송 후 종료
+                                elif gesture_result.get("type") == "timeout":
+                                    await self.gesture_manager.send_message(session_id, gesture_result)
                                     break
                     except Exception as e:
                         print(f"제스처 처리 중 오류: {e}")
