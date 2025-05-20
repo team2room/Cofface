@@ -4,6 +4,7 @@ import { extendSession } from '../services/extendSessionService'
 
 export const useExtendSession = () => {
   const user = useUserStore((state) => state.user)
+  const hasAutoPayment = useUserStore((state) => state.hasAutoPayment)
   const loginMethod = useUserStore((state) => state.loginMethod)
   const setLogin = useUserStore((state) => state.setLogin)
 
@@ -11,8 +12,8 @@ export const useExtendSession = () => {
     async (kioskId: number) => {
       const { accessToken } = await extendSession(kioskId)
 
-      if (user && loginMethod) {
-        setLogin(accessToken, user, loginMethod)
+      if (hasAutoPayment && user && loginMethod) {
+        setLogin(hasAutoPayment, accessToken, user, loginMethod)
       }
     },
     [user, setLogin],
