@@ -17,8 +17,8 @@ RUN chown -R 1001:1001 /app
 USER 1001
 
 # 헬스체크 설정
-HEALTHCHECK --interval=30s --timeout=5s --start-period=50s --retries=3 \
-  CMD curl -k -f http://localhost:8080/actuator/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=50s --retries=3 \
+  CMD curl -s -f http://localhost:8080/actuator/health/liveness > /dev/null || exit 1
 
 # 애플리케이션 실행
 CMD java -jar app.jar
