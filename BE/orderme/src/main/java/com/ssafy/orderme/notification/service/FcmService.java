@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,10 +38,14 @@ public class FcmService {
                     .setToken(fcmSendDto.getToken())
                     .build();
 
-            String response = FirebaseMessaging.getInstance().sendAsync(message).get();
-            log.info("FCM 메시지 전송 성공: {}", response);
+            // 비동기로 처리하고 결과를 기다리지 않음
+            FirebaseMessaging.getInstance().sendAsync(message)
+                    .addListener(() -> {
+                        log.info("FCM 메시지 전송 완료: 토큰={}", fcmSendDto.getToken());
+                    }, Executors.newSingleThreadExecutor());
+
             return true;
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
             log.error("FCM 메시지 전송 실패: {}", e.getMessage(), e);
             return false;
         }

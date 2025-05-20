@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -101,11 +102,13 @@ public class PaymentController {
 
             // 푸시 알림 전송 (비회원이 아닌 경우에만)
             if (order.getUserId() != null && !order.getIsGuest()) {
-                notificationService.sendOrderCompletionNotification(
-                        order.getUserId(),
-                        response.getOrderNumber(),
-                        response.getAmount()
-                );
+                CompletableFuture.runAsync(() -> {
+                    notificationService.sendOrderCompletionNotification(
+                            order.getUserId(),
+                            response.getOrderNumber(),
+                            response.getAmount()
+                    );
+                });
             }
 
             return ResponseEntity.ok(ApiResponse.success("결제가 성공적으로 승인되었습니다.", response));

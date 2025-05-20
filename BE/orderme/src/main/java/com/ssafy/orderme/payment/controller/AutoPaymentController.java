@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/auto-payments")
@@ -94,12 +95,14 @@ public class AutoPaymentController {
             // 자동 결제 처리
             PaymentResponseDto response = autoPaymentService.processAutoPayment(request, userId);
 
-            // 푸시 알림 전송 시도 (실패해도 결제 처리에는 영향 없음)
-            notificationService.sendOrderCompletionNotification(
-                    userId,
-                    response.getOrderNumber(),
-                    response.getAmount()
-            );
+            // 푸시 알림 전송 시도 - 비동기로 처리하고 결과를 기다리지 않음
+            CompletableFuture.runAsync(() -> {
+                notificationService.sendOrderCompletionNotification(
+                        userId,
+                        response.getOrderNumber(),
+                        response.getAmount()
+                );
+            });
 
             return ResponseEntity.ok(ApiResponse.success("결제가 성공적으로 승인되었습니다.", response));
         } catch (CardNotFoundException e){
