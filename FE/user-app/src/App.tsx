@@ -14,6 +14,7 @@ import { SettingPayPage } from './pages/setting/SettingPayPage'
 import SurveyPage from './pages/survey/SurveyPage'
 import Fonts from './styles/fonts'
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import '@/firebaseConfig'
 
 function App() {
   return (

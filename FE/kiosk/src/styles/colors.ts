@@ -22,6 +22,7 @@ export const colors = {
   // background
   modal: 'rgba(0, 0, 0, 0.5)',
   lightModal: 'rgba(0, 0, 0, 0.3)',
+  darkModal: 'rgba(0, 0, 0, 0.9)',
 
   // button
   default: '#E0115F',

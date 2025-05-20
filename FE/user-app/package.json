@@ -21,6 +21,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "face-api.js": "^0.22.2",
+    "firebase": "^11.7.3",
     "iconoir-react": "^7.11.0",
     "lucide-react": "^0.503.0",
     "react": "^18.3.1",
