@@ -5,48 +5,43 @@ import { BrowserRouter } from 'react-router-dom'
 import { CookiesProvider } from 'react-cookie'
 import '@/firebaseConfig'
 
-createRoot(document.getElementById('root')!).render(
-  <CookiesProvider>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </CookiesProvider>,
-)
+// Service Worker 등록 함수
+const registerServiceWorker = async () => {
+  if ('serviceWorker' in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.register(
+        '/firebase-messaging-sw.js',
+        {
+          scope: '/',
+        },
+      )
+      console.log('Service Worker 등록 성공:', registration)
 
-// public/mockServiceWorker.js 파일이 있는지 확인
-// 없다면 다음 명령어로 생성해야 합니다
-// npx msw init public/ --save
+      // 개발 환경에서 Service Worker 강제 업데이트
+      if (process.env.NODE_ENV === 'development') {
+        registration.update()
+      }
+    } catch (error) {
+      console.error('Service Worker 등록 실패:', error)
+    }
+  } else {
+    console.warn('이 브라우저는 Service Worker를 지원하지 않습니다.')
+  }
+}
 
-// // 서비스 워커 로딩 로직 수정
-// import { createRoot } from 'react-dom/client'
-// import './index.css'
-// import App from './App.tsx'
-// import { BrowserRouter } from 'react-router-dom'
-// import { CookiesProvider } from 'react-cookie'
-// import { startMSW } from './mocks/mockStore.ts'
+// 앱 시작 함수
+const startApp = async () => {
+  // Service Worker 등록
+  await registerServiceWorker()
 
-// // MSW 활성화
-// async function startApp() {
-//   // 개발 환경에서만 MSW 시작
-//   if (process.env.NODE_ENV === 'development') {
-//     try {
-//       // 서비스 워커 등록이 완료될 때까지 기다림
-//       await startMSW()
-//       console.log('MSW 초기화 완료, 애플리케이션 시작')
-//     } catch (error) {
-//       console.error('MSW 초기화 오류:', error)
-//       // 오류가 발생해도 애플리케이션은 계속 실행
-//     }
-//   }
+  // 앱 렌더링
+  createRoot(document.getElementById('root')!).render(
+    <CookiesProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </CookiesProvider>,
+  )
+}
 
-//   // 애플리케이션 렌더링
-//   createRoot(document.getElementById('root')!).render(
-//     <CookiesProvider>
-//       <BrowserRouter>
-//         <App />
-//       </BrowserRouter>
-//     </CookiesProvider>,
-//   )
-// }
-
-// startApp()
+startApp()

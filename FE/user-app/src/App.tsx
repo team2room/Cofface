@@ -15,8 +15,29 @@ import SurveyPage from './pages/survey/SurveyPage'
 import Fonts from './styles/fonts'
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import '@/firebaseConfig'
+import { registerForegroundMessageHandler } from './utils/firebaseUtils'
+import { useEffect } from 'react'
 
 function App() {
+  // 포그라운드 알림 설정
+  useEffect(() => {
+    const handleForegroundMessage = (payload: any) => {
+      console.log('App에서 포그라운드 메시지 처리:', payload)
+      // 여기서 추가적인 처리를 할 수 있습니다 (소리 재생, UI 업데이트 등)
+    }
+
+    // 포그라운드 메시지 핸들러 등록
+    const unsubscribe = registerForegroundMessageHandler(
+      handleForegroundMessage,
+    )
+
+    // 컴포넌트 언마운트 시 정리
+    return () => {
+      if (unsubscribe) {
+        unsubscribe()
+      }
+    }
+  }, [])
   return (
     <>
       <Fonts />
