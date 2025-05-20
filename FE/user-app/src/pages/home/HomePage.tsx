@@ -18,7 +18,11 @@ import scrollDown from '@/assets/scroll-down.gif'
 import { useAuthStore } from '@/stores/authStore'
 import { checkRegistered } from '@/features/home/services/homeService'
 import LoadingMessage from '@/components/LoadingMessage'
-import { registerDeviceToken } from '@/services/notificationService'
+import {
+  initNotificationListeners,
+  registerDeviceToken,
+} from '@/services/notificationService'
+import { registerServiceWorker } from '@/utils/firebaseUtils'
 
 const Container = tw.div`
   w-full
@@ -125,6 +129,8 @@ export default function HomePage() {
       if (success) {
         console.log('FCM 토큰 등록 성공')
         setFcmTokenRegistered(true)
+        // 알림 리스너 초기화 명시적 호출
+        initNotificationListeners()
       } else {
         console.log('FCM 토큰 등록 실패 또는 권한 거부')
       }

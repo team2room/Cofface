@@ -1,66 +1,28 @@
-import { messaging } from '@/firebaseConfig'
-import { getToken, onMessage } from 'firebase/messaging'
+import { messaging, VAPID_KEY } from '@/firebaseConfig'
+import { getToken } from 'firebase/messaging'
 
 // FCM 토큰 가져오기
 export const requestNotificationPermission = async (): Promise<
   string | null
 > => {
   try {
-    console.log('알림 권한 요청 시작')
-
-    // Service Worker 등록 확인
-    if (!('serviceWorker' in navigator)) {
-      console.error('이 브라우저는 Service Worker를 지원하지 않습니다.')
-      return null
-    }
-
-    // 알림 권한 요청
+    // 브라우저에 알림 권한 요청
     const permission = await Notification.requestPermission()
-    console.log('알림 권한 상태:', permission)
 
-    if (permission !== 'granted') {
-      console.log('알림 권한이 거부되었습니다.')
-      return null
-    }
+    if (permission === 'granted') {
+      console.log('알림 권한 허용됨')
 
-    // Service Worker 등록 확인
-    let swRegistration
-    try {
-      swRegistration = await navigator.serviceWorker.getRegistration()
-      if (!swRegistration) {
-        console.warn('Service Worker가 등록되지 않았습니다. 등록을 시도합니다.')
-        swRegistration = await navigator.serviceWorker.register(
-          '/firebase-messaging-sw.js',
-          {
-            scope: '/',
-          },
-        )
-      }
-    } catch (swError) {
-      console.error('Service Worker 등록 확인 중 오류:', swError)
-    }
+      // 이미 서비스 워커가 등록되어 있는지 확인
+      await registerServiceWorker()
 
-    // 환경 변수에서 VAPID 키 확인
-    const vapidKey = import.meta.env.VITE_VAPID_KEY
-    if (!vapidKey) {
-      console.error('VAPID 키가 설정되지 않았습니다.')
-      return null
-    }
+      const token = await getToken(messaging, {
+        vapidKey: VAPID_KEY,
+      })
 
-    // FCM 토큰 요청
-    const tokenOptions = {
-      vapidKey,
-      serviceWorkerRegistration: swRegistration,
-    }
-
-    console.log('FCM 토큰 요청 시작:', tokenOptions)
-    const token = await getToken(messaging, tokenOptions)
-
-    if (token) {
       console.log('FCM 토큰 발급 성공:', token)
       return token
     } else {
-      console.log('FCM 토큰을 발급받지 못했습니다.')
+      console.log('알림 권한이 거부되었습니다.')
       return null
     }
   } catch (error) {
@@ -69,42 +31,70 @@ export const requestNotificationPermission = async (): Promise<
   }
 }
 
-// 포그라운드 메시지 수신 핸들러 등록
-export const registerForegroundMessageHandler = (
-  callback: (payload: any) => void,
-) => {
+// 서비스워커 등록 - 이전 방식으로 되돌리기
+export const registerServiceWorker = async (): Promise<boolean> => {
+  if (!('serviceWorker' in navigator)) {
+    console.error('이 브라우저는 서비스 워커를 지원하지 않습니다.')
+    return false
+  }
+
   try {
-    return onMessage(messaging, (payload) => {
-      console.log('포그라운드 메시지 수신:', payload)
-
-      // 브라우저 알림 표시 (포그라운드에서는 onMessage 이벤트만 발생하므로 직접 알림 표시)
-      if (payload.notification && Notification.permission === 'granted') {
-        const notificationTitle = payload.notification.title || '새 알림'
-        const notificationBody = payload.notification.body || ''
-
-        const notification = new Notification(notificationTitle, {
-          body: notificationBody,
-          icon: '/icons/mstile-150x150.png',
-          data: payload.data,
-        })
-
-        notification.onclick = (event) => {
-          event.preventDefault()
-          window.focus()
-          notification.close()
-
-          // 데이터에 URL이 있으면 해당 URL로 이동
-          if (payload.data?.url) {
-            window.location.href = payload.data.url
-          }
-        }
+    // 기존 서비스 워커 확인 및 제거
+    const registrations = await navigator.serviceWorker.getRegistrations()
+    for (const registration of registrations) {
+      if (
+        registration.active &&
+        registration.active.scriptURL.includes('firebase-messaging-sw.js')
+      ) {
+        console.log('기존 Firebase 서비스 워커가 있습니다:', registration)
+        return true // 이미 등록된 서비스 워커가 있으면 성공으로 처리
       }
+    }
 
-      // 콜백 호출
-      callback(payload)
-    })
-  } catch (error) {
-    console.error('포그라운드 메시지 핸들러 등록 중 오류:', error)
-    return null
+    // 직접 서비스 워커 등록 (이전 방식)
+    const registration = await navigator.serviceWorker.register(
+      '/firebase-messaging-sw.js',
+    )
+    console.log('Service Worker가 scope에 등록되었습니다:', registration.scope)
+    return true
+  } catch (err) {
+    console.error('Service Worker 등록 실패:', err)
+    return false
   }
 }
+
+// // 기존 함수는 참조용으로 유지 (사용하지 않음)
+// export const ensureServiceWorkerRegistered =
+//   async (): Promise<ServiceWorkerRegistration | null> => {
+//     // 기존 코드...
+//     if ('serviceWorker' in navigator) {
+//       try {
+//         // 이미 등록된 서비스 워커 확인
+//         const registrations = await navigator.serviceWorker.getRegistrations()
+//         const existingWorker = registrations.find(
+//           (reg) =>
+//             reg.active &&
+//             reg.active.scriptURL.includes('firebase-messaging-sw.js'),
+//         )
+
+//         if (existingWorker) {
+//           console.log(
+//             'Firebase 서비스 워커가 이미 등록되어 있습니다:',
+//             existingWorker,
+//           )
+//           return existingWorker
+//         }
+
+//         // 등록된 서비스 워커가 없으면 새로 등록
+//         const registration = await navigator.serviceWorker.register(
+//           '/firebase-messaging-sw.js',
+//         )
+//         console.log('Firebase 서비스 워커 등록 성공:', registration.scope)
+//         return registration
+//       } catch (err) {
+//         console.error('Firebase 서비스 워커 등록 실패:', err)
+//         return null
+//       }
+//     }
+//     return null
+//   }

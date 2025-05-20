@@ -15,29 +15,34 @@ import SurveyPage from './pages/survey/SurveyPage'
 import Fonts from './styles/fonts'
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import '@/firebaseConfig'
-import { registerForegroundMessageHandler } from './utils/firebaseUtils'
 import { useEffect } from 'react'
+import { registerServiceWorker } from './utils/firebaseUtils'
+import { initNotificationListeners } from './services/notificationService'
 
 function App() {
-  // 포그라운드 알림 설정
+  // 앱 시작 시 FCM 초기화
   useEffect(() => {
-    const handleForegroundMessage = (payload: any) => {
-      console.log('App에서 포그라운드 메시지 처리:', payload)
-      // 여기서 추가적인 처리를 할 수 있습니다 (소리 재생, UI 업데이트 등)
-    }
+    const initFCM = async () => {
+      try {
+        // 직접 서비스 워커 등록 시도
+        const swRegistered = await registerServiceWorker()
+        console.log('앱 초기화 중 서비스 워커 등록 결과:', swRegistered)
 
-    // 포그라운드 메시지 핸들러 등록
-    const unsubscribe = registerForegroundMessageHandler(
-      handleForegroundMessage,
-    )
-
-    // 컴포넌트 언마운트 시 정리
-    return () => {
-      if (unsubscribe) {
-        unsubscribe()
+        // FCM 토큰이 로컬 스토리지에 있는지 확인
+        const fcmToken = localStorage.getItem('fcm_token')
+        if (fcmToken) {
+          // Foreground 알림 리스너 등록
+          initNotificationListeners()
+          console.log('FCM 초기화 완료')
+        }
+      } catch (error) {
+        console.error('FCM 초기화 중 오류:', error)
       }
     }
+
+    initFCM()
   }, [])
+
   return (
     <>
       <Fonts />
