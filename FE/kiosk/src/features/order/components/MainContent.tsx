@@ -4,7 +4,8 @@ import CustomButton from '@/components/CustomButton'
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { useStepStore } from '@/stores/stepStore'
 import { useRecommend } from '../hooks/useNewRecommend'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import GestureDetector from '@/components/GestureDetector'
 
 const OptionBtn = tw.div`bg-white rounded-full shadow-md w-[175px] h-[175px] flex flex-col items-center justify-center`
 
@@ -80,9 +81,28 @@ const labelMap: Record<string, string> = {
 }
 
 export default function MainContent() {
-  const { setStep } = useStepStore()
+  const { step, setStep } = useStepStore()
   const { data, loading, error } = useRecommend(1)
   const [currentIndex, setCurrentIndex] = useState(0)
+
+  // 제스처 감지 활성화 상태
+  const [gestureEnabled, setGestureEnabled] = useState(false)
+
+  // 제스처 감지 활성화
+  useEffect(() => {
+    if (step === 'main') {
+      setGestureEnabled(true)
+    } else {
+      setGestureEnabled(false)
+    }
+  }, [step])
+
+  // 페이지 언마운트 시 제스처 감지 비활성화
+  useEffect(() => {
+    return () => {
+      setGestureEnabled(false)
+    }
+  }, [])
 
   if (loading) return <> 로딩 중... </>
   if (error) return <> 에러 발생 </>
@@ -105,8 +125,19 @@ export default function MainContent() {
     )
   }
 
+  const handleOrder = () => {
+    setStep('place', 'main')
+  }
+
   return (
     <div>
+      {/* 제스처 감지 컴포넌트 */}
+      <GestureDetector
+        enabled={gestureEnabled}
+        onNodDetected={handleOrder}
+        onShakeDetected={handleNext}
+      />
+
       {/* 추천 메뉴 진행 바 */}
 
       {/* 추천 텍스트 */}
@@ -214,9 +245,7 @@ export default function MainContent() {
           <CustomButton
             text={'바로 주문하기'}
             variant={'main'}
-            onClick={() => {
-              setStep('place', 'main')
-            }}
+            onClick={handleOrder}
           />
         </div>
       </div>
