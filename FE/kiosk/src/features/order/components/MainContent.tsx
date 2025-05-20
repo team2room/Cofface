@@ -10,7 +10,6 @@ const OptionBtn = tw.div`bg-white rounded-full shadow-md w-[175px] h-[175px] fle
 
 // 원형 배경과 이미지 클리핑을 위한 설정값
 const circleRadius = 225 // 원형 배경 반지름 (w-56 = 224px의 절반)
-const circleCenterX = 250 // 이미지 중앙 X 좌표 (w-[500px]의 절반)
 const bottomCutoffY = 400 // 이미지에서 하단 자르기 시작점
 
 // 이미지 아랫부분을 정확한 원형으로 자르는 SVG 패스 생성
@@ -137,17 +136,17 @@ export default function MainContent() {
                   </svg>
 
                   {/* 원형 흰색 배경 */}
-                  <div className="absolute w-[450px] h-[450px] bg-white rounded-full z-10" />
+                  <div className="absolute w-[450px] h-[450px] bg-white rounded-full z-10 bottom-10" />
 
                   {/* 아랫부분이 원형으로 잘린 음료 이미지 */}
-                  <div className="absolute z-20">
+                  <div className="absolute z-20 bottom-0">
                     <img
                       src={currentMenu.imageUrl}
                       alt={currentMenu.menuName}
                       className="w-[500px] h-[700px] object-contain"
                       style={{
                         clipPath: 'url(#circleBottomPath)',
-                        transform: 'translateY(-10px)',
+                        transform: 'translateY(8px)',
                       }}
                     />
                   </div>
