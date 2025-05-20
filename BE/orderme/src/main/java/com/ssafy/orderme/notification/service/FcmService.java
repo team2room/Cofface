@@ -30,11 +30,10 @@ public class FcmService {
      */
     public boolean sendMessageTo(FcmSendDto fcmSendDto) {
         try {
+            // 알림 대신 데이터 페이로드로 메시지 구성
             Message message = Message.builder()
-                    .setNotification(Notification.builder()
-                            .setTitle(fcmSendDto.getTitle())
-                            .setBody(fcmSendDto.getBody())
-                            .build())
+                    .putData("title", fcmSendDto.getTitle())
+                    .putData("body", fcmSendDto.getBody())
                     .setToken(fcmSendDto.getToken())
                     .build();
 
