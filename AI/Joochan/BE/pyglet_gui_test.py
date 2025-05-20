@@ -1001,107 +1001,67 @@ class RealSenseFaceLiveness:
         print("제스처 감지 모드 종료")
     
     def detect_head_gesture(self, current_landmarks, previous_landmarks):
-        """얼굴 랜드마크를 이용한 고개 끄덕임/좌우로 흔들기 감지 (향상된 오프셋 방식)"""
+        """얼굴 랜드마크를 이용한 고개 끄덕임/좌우로 흔들기 감지 - 향상된 각도 방식"""
         if not previous_landmarks:
             return None
         
-        # 움직임 감지를 위한 주요 랜드마크 그룹 정의
-        # 그룹 1: 얼굴 상단 (이마, 눈썹 영역)
-        top_points = [10, 67, 69, 104, 108, 336, 296, 334]
-        # 그룹 2: 얼굴 중앙 (코, 눈 영역)
-        middle_points = [1, 4, 5, 6, 168, 197, 195, 5, 4, 33, 263, 362, 398]
-        # 그룹 3: 얼굴 하단 (입, 턱 영역)
-        bottom_points = [152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234]
+        # 여러 주요 랜드마크 포인트 선택 (더 안정적인 감지를 위해)
+        key_points = [
+            1,    # 코 끝
+            9,    # 이마 중앙
+            152,  # 턱 아래
+            6,    # 코 위쪽
+            197,  # 입 중앙
+            5     # 코 중앙
+        ]
         
-        # 각 그룹별 움직임 계산
-        def calculate_group_movement(point_indices):
-            x_movements = []
-            y_movements = []
-            for idx in point_indices:
-                try:
-                    curr = current_landmarks.landmark[idx]
-                    prev = previous_landmarks.landmark[idx]
-                    dx = curr.x - prev.x
-                    dy = curr.y - prev.y
-                    x_movements.append(dx)
-                    y_movements.append(dy)
-                except IndexError:
-                    continue  # 특정 인덱스가 없는 경우 스킵
+        # 각 포인트별 변화량 계산
+        x_diffs = []
+        y_diffs = []
+        
+        for point_idx in key_points:
+            current_point = current_landmarks.landmark[point_idx]
+            prev_point = previous_landmarks.landmark[point_idx]
             
-            if not x_movements or not y_movements:  # 빈 리스트 확인
-                return (0, 0, 1, 1)  # 기본값 반환 (변화 없음, 높은 표준편차)
-                
-            # 평균 및 표준편차 계산
-            avg_x = sum(x_movements) / len(x_movements)
-            avg_y = sum(y_movements) / len(y_movements)
-            std_x = np.std(x_movements) if len(x_movements) > 1 else 0
-            std_y = np.std(y_movements) if len(y_movements) > 1 else 0
+            # 변화량 계산
+            x_diff = current_point.x - prev_point.x
+            y_diff = current_point.y - prev_point.y
             
-            return avg_x, avg_y, std_x, std_y
+            x_diffs.append(x_diff)
+            y_diffs.append(y_diff)
         
-        # 각 그룹의 움직임 계산
-        top_x, top_y, top_std_x, top_std_y = calculate_group_movement(top_points)
-        mid_x, mid_y, mid_std_x, mid_std_y = calculate_group_movement(middle_points)
-        bot_x, bot_y, bot_std_x, bot_std_y = calculate_group_movement(bottom_points)
+        # 평균 변화량 계산
+        avg_x_diff = sum(x_diffs) / len(x_diffs)
+        avg_y_diff = sum(y_diffs) / len(y_diffs)
         
-        # 움직임 특성 분석
-        # 1. 세로 방향 움직임 분석 (끄덕임)
-        y_movement_pattern = []
-        if abs(top_y) > 0.005:  # 상단 부분 움직임이 충분히 큰 경우
-            y_movement_pattern.append(('top', top_y))
-        if abs(mid_y) > 0.005:  # 중앙 부분 움직임이 충분히 큰 경우
-            y_movement_pattern.append(('mid', mid_y))
-        if abs(bot_y) > 0.005:  # 하단 부분 움직임이 충분히 큰 경우
-            y_movement_pattern.append(('bot', bot_y))
+        # 임계값 설정 - 최소 움직임 필요
+        min_threshold = 0.01
         
-        # 2. 가로 방향 움직임 분석 (좌우 흔들기)
-        x_movement_pattern = []
-        if abs(top_x) > 0.005:
-            x_movement_pattern.append(('top', top_x))
-        if abs(mid_x) > 0.005:
-            x_movement_pattern.append(('mid', mid_x))
-        if abs(bot_x) > 0.005:
-            x_movement_pattern.append(('bot', bot_x))
+        # 움직임 방향 비율 계산
+        # - 1.0은 완벽한 45도 대각선
+        # - 값이 클수록 수직 움직임 강조
+        # - 값이 작을수록 수평 움직임 강조
+        direction_ratio = abs(avg_y_diff) / (abs(avg_x_diff) + 0.0001)  # 0으로 나누기 방지
         
-        # 3. 움직임 일관성 분석
-        y_consistent = (top_std_y < 0.008 and mid_std_y < 0.008 and bot_std_y < 0.008)
-        x_consistent = (top_std_x < 0.008 and mid_std_x < 0.008 and bot_std_x < 0.008)
+        # 방향 결정을 위한 임계값
+        vertical_threshold = 2.5    # 2.5:1 비율 이상이면 확실한 수직 움직임
+        horizontal_threshold = 0.4  # 1:2.5 비율 이하면 확실한 수평 움직임
         
-        # 4. 주요 움직임 방향 판단
-        vertical_stronger = (abs(top_y) + abs(mid_y) + abs(bot_y))/3 > (abs(top_x) + abs(mid_x) + abs(bot_x))/3 * 1.3
-        horizontal_stronger = (abs(top_x) + abs(mid_x) + abs(bot_x))/3 > (abs(top_y) + abs(mid_y) + abs(bot_y))/3 * 1.3
+        # 수직 움직임 감지 (위/아래)
+        if abs(avg_y_diff) > min_threshold and direction_ratio > vertical_threshold:
+            # 움직임이 충분히 크고, 수직 방향 비율이 임계값을 넘으면 끄덕임으로 판단
+            return "nod" if avg_y_diff > 0 else "nod_up"  # 아래로 끄덕임 또는 위로 끄덕임
         
-        # 5. 특정 제스처 패턴 식별
-        # 끄덕임 패턴 (상단과 하단이 반대 방향 또는 모두 같은 방향으로 이동)
-        nod_threshold = 0.007  # 끄덕임 감지 기준 임계값 (미세 조정 가능)
+        # 수평 움직임 감지 (좌/우)
+        elif abs(avg_x_diff) > min_threshold and direction_ratio < horizontal_threshold:
+            # 움직임이 충분히 크고, 수평 방향 비율이 임계값 미만이면 좌우 흔들기로 판단
+            return "shake_left" if avg_x_diff > 0 else "shake_right"  # 좌/우 흔들기
         
-        # 5.1 끄덕임 감지 (상하 움직임)
-        if len(y_movement_pattern) >= 2 and y_consistent and vertical_stronger:
-            # 평균 Y 움직임 계산
-            avg_y_movement = (top_y + mid_y + bot_y) / 3
-            
-            # 움직임 강도 충분히 큰지 확인
-            if abs(avg_y_movement) > nod_threshold:
-                # 움직임 방향에 따라 구분
-                return "nod"
-        
-        # 5.2 좌우 흔들기 감지 (좌우 움직임)
-        shake_threshold = 0.007  # 흔들기 감지 기준 임계값
-        
-        if len(x_movement_pattern) >= 2 and x_consistent and horizontal_stronger:
-            # 평균 X 움직임 계산
-            avg_x_movement = (top_x + mid_x + bot_x) / 3
-            
-            # 움직임 강도 충분히 큰지 확인
-            if abs(avg_x_movement) > shake_threshold:
-                # 움직임 방향에 따라 구분
-                return "shake"
-        
-        # 특정 패턴이 감지되지 않음
+        # 명확한 방향이 아닌 경우 (대각선 움직임 등) 제스처로 인식하지 않음
         return None
-
+    
     def process_gesture_frame(self, color_image):
-        """제스처 감지를 위한 프레임 처리 (개선된 버전)"""
+        """제스처 감지를 위한 프레임 처리"""
         if not self.detecting_gesture or not self.current_gesture_session:
             return None
         
@@ -1113,7 +1073,11 @@ class RealSenseFaceLiveness:
             
             if 120.0 <= elapsed_time < 120.1:
                 print("타임아웃으로 제스처 감지 종료 처리")
+                
+                # 웹소켓 및 제스처 감지 상태 종료
                 self.stop_gesture_detection()
+                
+                # 화면 전환 요청
                 self.pending_display_change = {
                     'path': self.loading_png,
                     'is_gif': False,
@@ -1128,6 +1092,7 @@ class RealSenseFaceLiveness:
                     lambda dt: self.set_camera_mode(False), 0.5
                 )
                 
+                # 타임아웃 결과 반환
                 return {"type": "timeout", "elapsed_time": elapsed_time}
             
             return {"type": "timeout", "elapsed_time": elapsed_time}
@@ -1146,54 +1111,23 @@ class RealSenseFaceLiveness:
         
         # 제스처 감지
         gesture = self.detect_head_gesture(face_landmarks, self.last_landmarks)
-        
-        # 움직임 연속성을 위한 타임스탬프 및 제스처 기록 추가
-        current_time = time.time()
-        if not hasattr(self, 'gesture_history'):
-            self.gesture_history = []
-            self.last_confirmed_gesture_time = 0
-        
-        # 새 랜드마크 저장 (다음 프레임의 비교를 위해)
         self.last_landmarks = face_landmarks
         
         if not gesture:
             return None  # 제스처가 감지되지 않음
         
-        # 제스처 기록에 추가 (타임스탬프와 함께)
-        self.gesture_history.append((gesture, current_time))
+        # 제스처 카운트 업데이트
+        if gesture.startswith("nod"):
+            self.nod_count += 1
+            gesture_type = "nod"
+            gesture_name = "updown"
+        elif gesture.startswith("shake"):
+            self.shake_count += 1
+            gesture_type = "shake"
+            gesture_name = "leftright"
         
-        # 오래된 제스처 제거 (최근 2초만 유지)
-        self.gesture_history = [(g, t) for g, t in self.gesture_history if current_time - t < 2.0]
-        
-        # 제스처 카운트 계산 (최근 2초 내의 기록 기준)
-        nod_gestures = [g for g, _ in self.gesture_history if g.startswith("nod")]
-        shake_gestures = [g for g, _ in self.gesture_history if g.startswith("shake")]
-        
-        self.nod_count = len(nod_gestures)
-        self.shake_count = len(shake_gestures)
-        
-        # 제스처 확정 판단 (쿨다운 적용)
-        is_confirmed = False
-        gesture_type = None
-        gesture_name = None
-        
-        # 쿨다운 검사 (마지막 확정 제스처로부터 1.5초 이상 경과해야 함)
-        cooldown_passed = current_time - getattr(self, 'last_confirmed_gesture_time', 0) > 1.5
-        
-        # 제스처 확정을 위한 임계값 - 짧은 시간에 여러 번의 일관된 제스처
-        if cooldown_passed:
-            if self.nod_count:  # 끄덕임
-                print(self.nod_count)
-                is_confirmed = True
-                gesture_type = "nod"
-                gesture_name = "updown"
-                self.last_confirmed_gesture_time = current_time
-            elif self.shake_count: # 좌우 흔들림
-                print(self.shake_count)
-                is_confirmed = True
-                gesture_type = "shake"
-                gesture_name = "leftright"
-                self.last_confirmed_gesture_time = current_time
+        # 임계값 설정 (예: 3번 이상 같은 제스처가 감지되면 확정)
+        is_confirmed = (self.nod_count >= 2 or self.shake_count >= 2)
         
         # 제스처 감지 결과 반환
         result = {
@@ -1209,11 +1143,11 @@ class RealSenseFaceLiveness:
         # 확정된 제스처 감지시 카운터 리셋
         if is_confirmed:
             print(f"제스처 확정: {gesture_name} (계속 감지 중)")
-            # 카운터 리셋 (히스토리는 유지)
-            self.gesture_history = []
+            # 카운터 리셋
+            self.nod_count = 0
+            self.shake_count = 0
         
         return result
-    
     
     # 멀티스레드 구조로 개선된 update 함수 (렌더링 전용으로 분리)
     def update(self, dt):
@@ -2419,7 +2353,7 @@ class FaceRecognitionServer:
                 # 제스처 처리 루프
                 while True:
                     last_gesture_detected_time = 0
-                    gesture_cooldown = 1.5
+                    gesture_cooldown = 2.0
                     try:
                         # 클라이언트로부터 메시지 수신 (비동기)
                         data = await asyncio.wait_for(websocket.receive_json(), timeout=0.5)
