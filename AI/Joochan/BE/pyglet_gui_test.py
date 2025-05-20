@@ -544,15 +544,6 @@ class RealSenseFaceLiveness:
             x=20, y=20,
             color=(255, 255, 255, 255),
         )
-        self.gesture_label = pyglet.text.Label(
-            '끄덕이거나 절레절레 해주세요.',
-            font_name='Arial',
-            font_size=20,
-            x=self.window.width // 2,
-            y=self.window.height - 50,
-            anchor_x='center',
-            color=(255, 255, 255, 255),
-        )
         
         # Sprite 생성
         self.color_sprite = None
@@ -680,22 +671,24 @@ class RealSenseFaceLiveness:
                     self.countdown_timer.update()
                 # 제스쳐 모드
                 if self.detecting_gesture:
-                    if self.idle_gif:
+                    if self.idle_gif and hasattr(self.idle_gif, 'frames') and self.idle_gif.frames:
                         current_frame = self.idle_gif.get_current_frame(1/60.0)
                         if current_frame:
-                            self.idle_sprite = pyglet.sprite.Sprite(current_frame, x=0, y=0)
-                            # 창 크기에 맞게 스케일 조정
-                            scale_x = self.window.width / current_frame.width
-                            scale_y = self.window.height / current_frame.height
-                            scale = min(scale_x, scale_y)
-                            self.idle_sprite.scale = scale
-                            # 중앙 정렬
-                            self.idle_sprite.x = (self.window.width - self.idle_sprite.width) / 2
-                            self.idle_sprite.y = (self.window.height - self.idle_sprite.height) / 2
+                            # 기존 스프라이트 확인 또는 새로 생성
+                            if not self.idle_sprite or self.idle_sprite.image != current_frame:
+                                self.idle_sprite = pyglet.sprite.Sprite(current_frame, x=0, y=0)
+                                # 크기 조정
+                                scale_x = self.window.width / current_frame.width
+                                scale_y = self.window.height / current_frame.height
+                                scale = min(scale_x, scale_y)
+                                self.idle_sprite.scale = scale
+                                # 중앙 정렬
+                                self.idle_sprite.x = (self.window.width - self.idle_sprite.width) / 2
+                                self.idle_sprite.y = (self.window.height - self.idle_sprite.height) / 2
+                            
+                            # 스프라이트 그리기
                             self.idle_sprite.draw()
-                    
-                    # 제스처 설명 라벨 표시 (배경 위에)
-                    self.gesture_label.draw()
+                    return
                 
                 if self.camera_mode:
                     # 카메라 모드: 얼굴 인식 화면 표시
@@ -703,33 +696,30 @@ class RealSenseFaceLiveness:
                     if self.color_sprite:
                         self.color_sprite.draw()
                         
-                        if self.detecting_gesture:
-                            self.gesture_label.draw()
-                        else:
-                            # PNG 오버레이 그리기 (상태에 따라 다른 오버레이 사용)
-                            if self.face_detected:
-                                if self.person_detected:
-                                    # 진짜 사람이 감지됨 - 기본 오버레이
-                                    current_overlay = self.overlay_sprite
-                                else:
-                                    # 얼굴은 감지됐지만 진짜 사람이 아님 - 라이브니스 오버레이
-                                    current_overlay = self.overlay_liveness_sprite
-                                    self.guide_label.draw()  # "실제 얼굴을 보여주세요" 메시지
-                            else: # 얼굴 감지 안됨
-                                current_overlay = self.overlay_no_face_sprite
-                            
-                            if current_overlay:
-                                scale_x = self.window.width / current_overlay.image.width
-                                scale_y = self.window.height / current_overlay.image.height
-                                scale = min(scale_x, scale_y)
+                        # PNG 오버레이 그리기 (상태에 따라 다른 오버레이 사용)
+                        if self.face_detected:
+                            if self.person_detected:
+                                # 진짜 사람이 감지됨 - 기본 오버레이
+                                current_overlay = self.overlay_sprite
+                            else:
+                                # 얼굴은 감지됐지만 진짜 사람이 아님 - 라이브니스 오버레이
+                                current_overlay = self.overlay_liveness_sprite
+                                self.guide_label.draw()  # "실제 얼굴을 보여주세요" 메시지
+                        else: # 얼굴 감지 안됨
+                            current_overlay = self.overlay_no_face_sprite
+                        
+                        if current_overlay:
+                            scale_x = self.window.width / current_overlay.image.width
+                            scale_y = self.window.height / current_overlay.image.height
+                            scale = min(scale_x, scale_y)
 
-                                current_overlay.scale = scale
+                            current_overlay.scale = scale
 
-                                # 중앙 정렬
-                                current_overlay.x = (self.window.width - current_overlay.width) / 2
-                                current_overlay.y = (self.window.height - current_overlay.height) / 2
+                            # 중앙 정렬
+                            current_overlay.x = (self.window.width - current_overlay.width) / 2
+                            current_overlay.y = (self.window.height - current_overlay.height) / 2
 
-                                current_overlay.draw()
+                            current_overlay.draw()
                     
                     # UI 텍스트가 활성화된 경우에만 레이블 렌더링
                     if self.show_ui:
@@ -995,6 +985,19 @@ class RealSenseFaceLiveness:
         self.detecting_gesture = False
         self.current_gesture_session = None
         self.last_landmarks = None
+        
+        # 기존 스프라이트 강제 초기화
+        if hasattr(self, 'idle_sprite'):
+            self.idle_sprite = None
+        
+        # 화면 전환 강제 요청
+        self.pending_display_change = {
+            'path': self.pay_gif,
+            'is_gif': True,
+            'display_type': 'pay'
+        }
+        
+        pyglet.clock.schedule_once(lambda dt: self.process_pending_display_change(), 0.1)
         print("제스처 감지 모드 종료")
     
     def detect_head_gesture(self, current_landmarks, previous_landmarks):
@@ -1031,7 +1034,33 @@ class RealSenseFaceLiveness:
         # 경과 시간 확인 (타임아웃)
         elapsed_time = time.time() - self.gesture_start_time
         if elapsed_time > 120.0:  # 120초 타임아웃
-            print(f"제스처 감지 타임아웃: {elapsed_time:.1f}초")
+            if int(elapsed_time * 10) % 10 == 0: 
+                print(f"제스처 감지 타임아웃: {elapsed_time:.1f}초")
+            
+            if 120.0 <= elapsed_time < 120.1:
+                print("타임아웃으로 제스처 감지 종료 처리")
+                
+                # 웹소켓 및 제스처 감지 상태 종료
+                self.stop_gesture_detection()
+                
+                # 화면 전환 요청
+                self.pending_display_change = {
+                    'path': self.loading_png,
+                    'is_gif': False,
+                    'display_type': 'loading'
+                }
+                print(f"타임아웃 발생: 화면 전환 요청 - loading ({self.loading_png})")
+                
+                # 카메라 모드 종료 예약 (0.5초 후)
+                if hasattr(self, 'camera_timeout') and self.camera_timeout:
+                    pyglet.clock.unschedule(self.camera_timeout)
+                self.camera_timeout = pyglet.clock.schedule_once(
+                    lambda dt: self.set_camera_mode(False), 0.5
+                )
+                
+                # 타임아웃 결과 반환
+                return {"type": "timeout", "elapsed_time": elapsed_time}
+            
             return {"type": "timeout", "elapsed_time": elapsed_time}
         
         # 얼굴 랜드마크 추출을 위해 RGB로 변환
@@ -1057,14 +1086,14 @@ class RealSenseFaceLiveness:
         if gesture.startswith("nod"):
             self.nod_count += 1
             gesture_type = "nod"
-            gesture_name = "끄덕임"
+            gesture_name = "updown"
         elif gesture.startswith("shake"):
             self.shake_count += 1
             gesture_type = "shake"
-            gesture_name = "절레절레"
+            gesture_name = "leftright"
         
         # 임계값 설정 (예: 3번 이상 같은 제스처가 감지되면 확정)
-        is_confirmed = (self.nod_count >= 3 or self.shake_count >= 3)
+        is_confirmed = (self.nod_count >= 2 or self.shake_count >= 2)
         
         # 제스처 감지 결과 반환
         result = {
@@ -1894,6 +1923,7 @@ class FaceRecognitionServer:
         }
     
     def change_display_helper(self, display_type):
+        self.idle_sprite = None
         path = None
         is_gif = False
         
@@ -2179,7 +2209,7 @@ class FaceRecognitionServer:
                     "message": "이미 다른 제스처 감지 세션이 진행 중입니다."
                 }
             
-            self.change_display_helper("motion")
+            self.signal_display_change("motion")
             
             # 카메라 모드 활성화
             if not self.app_instance.camera_mode:
@@ -2211,10 +2241,22 @@ class FaceRecognitionServer:
                 }
             
             # 제스처 감지 중지
-            self.app_instance.stop_gesture_detection()
-            
-            # 웹소켓 연결 종료
-            if hasattr(self, 'gesture_manager'):
+            if hasattr(self, 'gesture_manager') and self.gesture_manager.is_active():
+                # 활성 연결이 있는 경우, 연결을 실제로 닫음
+                active_connection = self.gesture_manager.active_connection
+                if active_connection:
+                    # 마지막 메시지 전송 (선택사항)
+                    try:
+                        await active_connection.send_json({
+                            "type": "stopped",
+                            "message": "제스처 감지가 중지되었습니다. 연결이 종료됩니다."
+                        })
+                        # WebSocket 연결 실제로 닫기
+                        await active_connection.close(code=1000)
+                    except Exception as e:
+                        print(f"웹소켓 종료 중 오류: {e}")
+                
+                # 연결 관리자에서 연결 정리
                 self.gesture_manager.disconnect()
             
             # 기본 GIF로 복귀
@@ -2227,7 +2269,7 @@ class FaceRecognitionServer:
             
             # 카메라 끄기 (지연 후)
             background_tasks.add_task(self.delayed_camera_off, 0.2)
-            background_tasks.add_task(self.change_display_helper, "loading")
+            self.signal_display_change("loading")
             
             return {
                 "success": True,
@@ -2304,7 +2346,15 @@ class FaceRecognitionServer:
                     except asyncio.TimeoutError:
                         pass
                     except Exception as e:
-                        print(f"웹소켓 메시지 수신 중 오류: {e}")
+                        error_str = str(e)
+                        if "(1000," in error_str:
+                            print("정상적인 웹소켓 종료 감지: 클라이언트에서 연결 종료")
+                            break
+                        elif "disconnect message has been received" in error_str:
+                            print("웹소켓 연결 종료 감지 - 정리 작업 수행")
+                            break
+                        else:
+                            print(f"웹소켓 메시지 수신 중 오류: {e}")
                     
                     # 결과를 확인할 제스처 업데이트 처리
                     color_image = None
@@ -2342,8 +2392,15 @@ class FaceRecognitionServer:
                                 elif gesture_result.get("type") == "timeout":
                                     await self.gesture_manager.send_message(gesture_result)
                                     break
+                                
+                                if gesture_result and gesture_result.get("type") == "timeout":
+                                    await self.gesture_manager.send_message(gesture_result)
+                                    break
                     except Exception as e:
                         print(f"제스처 처리 중 오류: {e}")
+                        if "disconnect message has been received" in str(e):
+                            print("웹소켓 연결 종료 감지 - 정리 작업 수행")
+                            break
                         traceback.print_exc()
                     
                     # 짧은 지연 추가
@@ -2356,9 +2413,19 @@ class FaceRecognitionServer:
                 traceback.print_exc()
             finally:
                 # 연결 종료 시 제스처 감지 중단 및 세션 정리
-                self.app_instance.stop_gesture_detection()
-                self.gesture_manager.disconnect()
+                print("웹소켓 연결 종료 - 화면 전환 및 정리 작업 수행")
+                if getattr(self.app_instance, 'detecting_gesture', False):
+                    self.app_instance.stop_gesture_detection()
+                
+                if self.gesture_manager.is_active():
+                    self.gesture_manager.disconnect()
+                
+                # 카메라 모드 종료 (지연 후)
+                await self.delayed_camera_off(0.1)
+                
+                # 화면 전환 요청 (연결 종료 시)
                 self.change_display_helper("loading")
+                
         
         @self.api.get("/weather")
         async def weather_get():
@@ -2478,7 +2545,15 @@ class FaceRecognitionServer:
                 })
             
             return result
-        
+    
+    def signal_display_change(self, display_type):
+        result = self.change_display_helper(display_type)
+        return {
+            "success": result,
+            "message": f"화면 변경 요청 전송됨: {display_type}",
+            "pending": True
+        }
+    
     def get_best_face_embedding(self):
             """수집된 프레임에서 임베딩 추출"""
             if not self.app_instance.collected_frames or not self.app_instance.faces_results:
