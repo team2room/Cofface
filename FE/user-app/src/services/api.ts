@@ -8,7 +8,7 @@ const TOKEN_NAME = 'accessToken'
 // axios 인스턴스 생성
 const apiRequester: AxiosInstance = axios.create({
   baseURL: BASE_URL as string,
-  timeout: 5000,
+  timeout: 10000,
 })
 
 // 요청 인터셉터

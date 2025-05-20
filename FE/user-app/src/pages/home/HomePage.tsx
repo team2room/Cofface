@@ -18,6 +18,7 @@ import scrollDown from '@/assets/scroll-down.gif'
 import { useAuthStore } from '@/stores/authStore'
 import { checkRegistered } from '@/features/home/services/homeService'
 import LoadingMessage from '@/components/LoadingMessage'
+import { registerDeviceToken } from '@/services/notificationService'
 
 const Container = tw.div`
   w-full
@@ -32,6 +33,27 @@ const Container = tw.div`
 
 const PageContainter = tw.div`
   w-full h-screen overflow-hidden fixed top-0 left-0 overscroll-none touch-none
+`
+
+// 알림 권한 요청 컴포넌트 추가
+const NotificationBanner = tw.div`
+  fixed bottom-5 left-5 right-5 bg-white p-4 rounded-lg shadow-lg z-50
+`
+
+const NotificationHeader = tw.div`
+  flex items-center justify-between mb-1
+`
+
+const NotificationActions = tw.div`
+  flex gap-2 mt-3
+`
+
+const AllowButton = tw.button`
+  bg-main text-white py-2 px-4 rounded-md flex-1
+`
+
+const LaterButton = tw.button`
+  bg-gray text-darkGray py-2 px-4 rounded-md flex-1
 `
 
 // 스크롤 시 자연스럽게 움직이는 애니메이션 컨테이너
@@ -70,6 +92,55 @@ export default function HomePage() {
   const touchStartY = useRef(0)
 
   const navigate = useNavigate()
+
+  // 알림 관련 상태 추가
+  const [showNotificationBanner, setShowNotificationBanner] = useState(false)
+  const [_fcmTokenRegistered, setFcmTokenRegistered] = useState(false)
+
+  // 알림 배너 표시 여부 결정
+  useEffect(() => {
+    if (user) {
+      // 이미 알림 배너를 닫았거나 토큰이 등록되어 있는지 확인
+      const notificationDismissed = localStorage.getItem(
+        'notification_banner_dismissed',
+      )
+      const fcmToken = localStorage.getItem('fcm_token')
+
+      if (!notificationDismissed && !fcmToken) {
+        // 사용자에게 알림 배너 표시
+        setTimeout(() => {
+          setShowNotificationBanner(true)
+        }, 2000) // 페이지 로드 후 2초 뒤에 표시
+      } else if (fcmToken) {
+        // 이미 토큰이 등록되어 있으면 등록됨으로 상태 설정
+        setFcmTokenRegistered(true)
+      }
+    }
+  }, [user])
+
+  // 알림 허용 버튼 클릭 핸들러
+  const handleAllowNotifications = async () => {
+    try {
+      const success = await registerDeviceToken()
+      if (success) {
+        console.log('FCM 토큰 등록 성공')
+        setFcmTokenRegistered(true)
+      } else {
+        console.log('FCM 토큰 등록 실패 또는 권한 거부')
+      }
+    } catch (error) {
+      console.error('FCM 토큰 등록 중 오류:', error)
+    } finally {
+      setShowNotificationBanner(false)
+    }
+  }
+
+  // 나중에 버튼 클릭 핸들러
+  const handleDismissNotifications = () => {
+    // 배너를 다시 표시하지 않도록 로컬 스토리지에 저장
+    localStorage.setItem('notification_banner_dismissed', 'true')
+    setShowNotificationBanner(false)
+  }
 
   // 페이지 로드 시 얼굴 등록 여부 확인
   useEffect(() => {
@@ -259,6 +330,28 @@ export default function HomePage() {
             ))}
           </ButtonWrapper>
         </Container>
+        {/* 알림 권한 배너 추가 */}
+        {showNotificationBanner && (
+          <NotificationBanner>
+            <NotificationHeader>
+              <Text variant="body2" weight="bold">
+                더 편리한 주문 서비스를 위해
+              </Text>
+            </NotificationHeader>
+            <Text variant="body1">
+              오더미 알림을 허용하면 주문 상태 및 매장 이용 알림을 받을 수
+              있어요.
+            </Text>
+            <NotificationActions>
+              <AllowButton onClick={handleAllowNotifications}>
+                알림 허용하기
+              </AllowButton>
+              <LaterButton onClick={handleDismissNotifications}>
+                나중에
+              </LaterButton>
+            </NotificationActions>
+          </NotificationBanner>
+        )}
       </SmoothScrollContainer>
     </PageContainter>
   )
