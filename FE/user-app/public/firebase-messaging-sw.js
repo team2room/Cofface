@@ -26,7 +26,7 @@ firebase.initializeApp({
 });
 
 const messaging = firebase.messaging();
-console.log('Firebase Messaging 초기화 완료');
+console.log('Firebase Messaging 초기화 완료.');
 
 // 알림 데이터 추출 함수 (모든 플랫폼 호환)
 function extractNotificationData(payload) {
