@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "dev:kiosk": "start chrome --app=http://localhost:5173",
+    "dev:kiosk": "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --app=http://localhost:5173",
     "kiosk": "start chrome --kiosk --app=http://localhost:5173 --user-data-dir=%TEMP%\\kiosk-data\""
   },
   "dependencies": {

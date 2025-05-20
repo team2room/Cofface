@@ -94,14 +94,21 @@ export default function LoadingPage() {
       return (
         <>
           <img src="/pay.gif" className="mb-6" />
-          <Text variant="title1" weight="bold" color="lightBlack">
+          <Text
+            variant="title1"
+            weight="bold"
+            color="lightBlack"
+            fontFamily="Suite"
+          >
             결제가 진행되고 있습니다...
           </Text>
 
           {error && (
             <>
-              <Text variant="title3">❌ 결제 실패</Text>
-              <Text variant="body2" color="darkGray">
+              <Text variant="title3" fontFamily="Suite">
+                ❌ 결제 실패
+              </Text>
+              <Text variant="body2" color="darkGray" fontFamily="Suite">
                 3초 후 주문 화면으로 이동합니다.
               </Text>
             </>
@@ -114,7 +121,12 @@ export default function LoadingPage() {
       return (
         <>
           <img src="/loading.gif" className="mb-6" />
-          <Text variant="title1" color="lightBlack">
+          <Text
+            variant="title1"
+            color="lightBlack"
+            weight="bold"
+            fontFamily="Suite"
+          >
             맞춤 메뉴 추천 중입니다...
           </Text>
         </>
@@ -125,13 +137,18 @@ export default function LoadingPage() {
       return (
         <>
           <img src="/loading.gif" className="mb-6" />
-          <Text variant="title2" weight="bold" color="black">
+          <Text variant="title2" weight="bold" color="black" fontFamily="Suite">
             주문번호 : A-32
           </Text>
-          <Text variant="title1" weight="bold" color="lightBlack">
+          <Text
+            variant="title1"
+            weight="bold"
+            color="lightBlack"
+            fontFamily="Suite"
+          >
             주문이 완료되었습니다!
           </Text>
-          <Text variant="title3" weight="bold" color="dark">
+          <Text variant="title3" weight="bold" color="dark" fontFamily="Suite">
             3초 뒤 첫 화면으로 이동합니다.
           </Text>
           <div className="w-60 mt-40">
@@ -141,7 +158,11 @@ export default function LoadingPage() {
       )
     }
 
-    return <Text variant="title1">⏳ 로딩 중입니다...</Text>
+    return (
+      <Text variant="title1" weight="bold" fontFamily="Suite">
+        ⏳ 로딩 중입니다...
+      </Text>
+    )
   }
 
   return (

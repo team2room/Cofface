@@ -21,19 +21,20 @@ export default function PlaceSelectContent() {
   const isMember = useUserStore((state) => state.isMember)
   const hasAutoPayment = useUserStore((state) => state.hasAutoPayment)
   const payStore = usePayStore()
-  const showProgress = useState(false)
+  const [showProgress, setShowProgress] = useState(false)
 
   const handleSelect = (isTakeout: boolean) => {
     payStore.setIsTakeout(isTakeout)
 
-    console.log(hasAutoPayment)
+    console.log('hasAutoPayment', hasAutoPayment)
+    console.log('isMember', isMember)
 
     if (originStep === 'menu') {
       setStep('pay')
     } else if (originStep === 'main') {
       if (isMember && hasAutoPayment) {
         // 슬라이드 자동 결제
-        
+        setShowProgress(true)
       } else {
         // toss 결제
         navigate('/pay')
@@ -43,6 +44,8 @@ export default function PlaceSelectContent() {
 
   return (
     <>
+      {/* 자동 주문 일시 자동 결제 화면 표시 */}
+      {showProgress && <ProgressContent />}
       <Content>
         <div className="my-20">
           <Text variant="title1" weight="extrabold" color="lightBlack">
@@ -66,9 +69,6 @@ export default function PlaceSelectContent() {
           </ImageButton>
         </div>
       </Content>
-
-      {/* 자동 주문 일시 자동 결제 화면 표시 */}
-      {isMember && hasAutoPayment && <ProgressContent />}
     </>
   )
 }
