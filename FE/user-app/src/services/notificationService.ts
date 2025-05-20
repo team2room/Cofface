@@ -82,7 +82,6 @@ function extractNotificationData(payload: MessagePayload) {
   return result
 }
 
-// 함수로 리스너 등록을 분리하여 나중에 명시적으로 호출할 수 있게 합니다
 export const initNotificationListeners = () => {
   if (listenerRegistered) {
     console.log('알림 리스너가 이미 등록되어 있습니다.')
@@ -93,11 +92,13 @@ export const initNotificationListeners = () => {
 
   onMessage(messaging, async (payload: MessagePayload) => {
     console.log('Foreground 알림 수신:', payload)
-    console.log('payload.data:', payload.data)
-    console.log('payload.notification:', payload.notification)
+    console.log('document.visibilityState:', document.visibilityState)
+    console.log('document.hasFocus():', document.hasFocus())
 
-    // 현재 앱이 포커스 상태인지 확인
-    if (document.visibilityState === 'visible' && document.hasFocus()) {
+    // 수정: 포그라운드 상태 체크 로직 변경 - visibilityState만 확인
+    if (document.visibilityState === 'visible') {
+      console.log('앱이 포커스 상태입니다. Foreground에서 알림을 처리합니다.')
+
       // 메시지 ID 생성 (중복 검사용)
       const messageId = generateMessageId(payload)
 
@@ -113,46 +114,29 @@ export const initNotificationListeners = () => {
       // 일정 시간 후 메시지 ID 제거 (메모리 관리)
       setTimeout(() => {
         processedMessageIds.delete(messageId)
-      }, 5000) // 5초 후 제거 (시간은 조절 가능)
+      }, 60000) // 1분 후 제거
 
       // 알림 데이터 추출
       const notificationData = extractNotificationData(payload)
 
       if (Notification.permission === 'granted') {
         try {
-          // 서비스 워커를 통해 알림 표시
+          // 수정: 포그라운드 상태에서도 시스템 알림 표시
           const registration = await navigator.serviceWorker.ready
 
           await registration.showNotification(notificationData.title, {
             body: notificationData.body,
             icon: notificationData.icon,
             badge: '/icons/favicon-32x32.png',
-            tag: 'fcm-notification', // 태그를 고정하여 같은 태그의 알림은 업데이트
-            requireInteraction: true,
+            tag: 'fcm-notification',
+            requireInteraction: false, // 포커스된 상태에서는 바로 닫힐 수 있게 함
           })
 
-          console.log('서비스 워커를 통해 알림이 생성되었습니다.')
+          console.log('Foreground 상태에서 알림이 생성되었습니다.')
+
+          // 여기에 인앱 알림 UI 표시 코드 추가 가능
         } catch (error) {
-          console.error('서비스 워커 알림 생성 중 오류:', error)
-
-          // 서비스 워커 사용 실패 시 일반 알림 시도
-          try {
-            const notification = new Notification(notificationData.title, {
-              body: notificationData.body,
-              icon: notificationData.icon,
-              tag: 'fcm-notification', // 태그를 고정
-            })
-
-            notification.onclick = () => {
-              console.log('알림 클릭됨')
-              window.focus()
-              notification.close()
-            }
-
-            console.log('일반 Notification API로 알림이 생성되었습니다.')
-          } catch (fallbackError) {
-            console.error('모든 알림 생성 방법 실패:', fallbackError)
-          }
+          console.error('알림 생성 중 오류:', error)
         }
       } else {
         console.warn('알림 권한이 없습니다:', Notification.permission)

@@ -3,12 +3,12 @@ console.log('Firebase Messaging Service Worker 로딩 중...');
 
 self.addEventListener('install', event => {
   console.log('Service Worker 설치 중...');
-  self.skipWaiting(); // 새 서비스 워커가 즉시 활성화되도록 함
+  self.skipWaiting(); 
 });
 
 self.addEventListener('activate', event => {
   console.log('Service Worker 활성화됨');
-  event.waitUntil(self.clients.claim()); // 모든 클라이언트에 대한 제어권 즉시 획득
+  event.waitUntil(self.clients.claim());
 });
 
 // Firebase 스크립트 로드
@@ -37,10 +37,10 @@ function extractNotificationData(payload) {
     title: '알림',
     body: '',
     icon: '/icons/mstile-150x150.png',
-    tag: 'fcm-notification-' + Date.now()
+    tag: 'fcm-notification' // 고정 태그 사용
   };
   
-  // Data 객체에서 정보 추출 (안드로이드를 위해)
+  // Data 객체에서 정보 추출
   if (payload.data) {
     console.log('Data 객체 발견:', payload.data);
     
@@ -49,7 +49,7 @@ function extractNotificationData(payload) {
     if (payload.data.icon) result.icon = payload.data.icon;
   }
   
-  // Notification 객체에서 정보 추출 (iOS/웹을 위해)
+  // Notification 객체에서 정보 추출
   if (payload.notification) {
     console.log('Notification 객체 발견:', payload.notification);
     
@@ -63,82 +63,56 @@ function extractNotificationData(payload) {
     if (payload.notification.icon) {
       result.icon = payload.notification.icon;
     }
+    
+    // 태그가 있으면 사용
+    if (payload.notification.tag) {
+      result.tag = payload.notification.tag;
+    }
   }
   
   console.log('추출된 알림 데이터:', result);
   return result;
 }
 
-// 백그라운드 메시지 처리 수정
-messaging.onBackgroundMessage((payload) => {
-  console.log('백그라운드 메시지 수신:', payload);
-  
-  // 이미 푸시 이벤트에서 처리할 것이므로 여기서는 아무것도 하지 않음
-  console.log('백그라운드 메시지는 push 이벤트에서 처리됩니다.');
+// 1. push 이벤트를 명시적으로 방지 (가장 중요)
+self.addEventListener('push', function(event) {
+  console.log('푸시 이벤트 수신 - 무시됨:', event);
+  // push 이벤트 처리 중지
+  event.stopImmediatePropagation();
+  // 필요한 경우에만 아래 코드 사용
+  event.waitUntil(Promise.resolve());
 });
 
-// 푸시 이벤트 처리 (웹 푸시 API를 통해 직접 들어오는 푸시용)
-self.addEventListener('push', function(event) {
-  console.log('푸시 이벤트 수신:', event);
+// 2. FCM의 백그라운드 처리 사용 (이 방식으로만 알림 표시)
+messaging.onBackgroundMessage(function(payload) {
+  console.log('백그라운드 메시지 수신:', payload);
   
-  // 클라이언트 상태 확인 후 알림 표시
-  event.waitUntil(
-    self.clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true
-    }).then((clients) => {
-      // 열려 있는 창이 있고 포커스된 상태인지 확인
-      const hasFocusedClients = clients.some(client => client.focused);
-      
-      if (hasFocusedClients) {
-        // 페이지가 포커스 상태면 foreground 알림이 처리할 것이므로 여기서는 처리하지 않음
-        console.log('페이지가 포커스 상태임 - 백그라운드 알림 표시하지 않음');
-        return;
-      }
-      
-      // 페이지가 없거나 포커스되지 않은 경우에만 알림 표시
-      if (event.data) {
-        try {
-          // 데이터 파싱 시도
-          let payload;
-          try {
-            payload = event.data.json();
-          } catch (e) {
-            console.error('JSON 파싱 실패:', e);
-            payload = {
-              data: {
-                title: '새 알림',
-                body: event.data.text()
-              }
-            };
-          }
-          
-          console.log('Push 이벤트에서 수신한 데이터:', payload);
-          
-          // 알림 데이터 추출
-          const notificationData = extractNotificationData(payload);
-          
-          // 알림 표시
-          return self.registration.showNotification(notificationData.title, {
-            body: notificationData.body,
-            icon: notificationData.icon,
-            badge: '/icons/favicon-32x32.png',
-            tag: notificationData.tag,
-            requireInteraction: true
-          });
-        } catch (error) {
-          console.error('푸시 데이터 처리 중 오류:', error);
-          
-          // 오류 발생 시 기본 알림 표시
-          return self.registration.showNotification('새 알림', {
-            body: '알림 내용을 확인하려면 클릭하세요.',
-            icon: '/icons/mstile-150x150.png'
-          });
-        }
-      }
-    })
-  );
+  // 앱 상태 확인
+  return self.clients.matchAll({
+    type: 'window',
+    includeUncontrolled: true
+  }).then((clients) => {
+    const hasFocusedClients = clients.some(client => client.focused);
+    
+    if (hasFocusedClients) {
+      console.log('페이지가 포커스 상태임 - 알림 표시하지 않음');
+      return;
+    }
+    
+    // 알림 데이터 추출
+    const notificationData = extractNotificationData(payload);
+    
+    // 알림 표시
+    return self.registration.showNotification(notificationData.title, {
+      body: notificationData.body,
+      icon: notificationData.icon,
+      badge: '/icons/favicon-32x32.png',
+      tag: 'fcm-notification', // 고정 태그 사용
+      requireInteraction: true
+    });
+  });
 });
+
 
 // 알림 클릭 이벤트 처리
 self.addEventListener('notificationclick', function(event) {
