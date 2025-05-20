@@ -69,50 +69,12 @@ function extractNotificationData(payload) {
   return result;
 }
 
-// 백그라운드 메시지 처리
+// 백그라운드 메시지 처리 수정
 messaging.onBackgroundMessage((payload) => {
   console.log('백그라운드 메시지 수신:', payload);
   
-  // 페이지가 포커스 상태인지 확인 (페이지가 열려있으면 알림 표시 안함)
-  self.clients.matchAll({
-    type: 'window',
-    includeUncontrolled: true
-  }).then((clients) => {
-    // 열려 있는 창이 있고 포커스된 상태인지 확인
-    const hasFocusedClients = clients.some(client => client.focused);
-    
-    if (hasFocusedClients) {
-      // 페이지가 포커스 상태면 foreground 알림이 처리할 것이므로 여기서는 처리하지 않음
-      console.log('페이지가 포커스 상태임 - 백그라운드 알림 표시하지 않음');
-      return;
-    }
-    
-    // 페이지가 포커스되지 않은 경우에만 알림 표시
-    try {
-      // 알림 데이터 추출
-      const notificationData = extractNotificationData(payload);
-      
-      // 알림 표시
-      return self.registration.showNotification(notificationData.title, {
-        body: notificationData.body,
-        icon: notificationData.icon,
-        badge: '/icons/favicon-32x32.png',
-        tag: notificationData.tag,
-        requireInteraction: true
-      });
-    } catch (error) {
-      console.error('알림 생성 중 오류:', error);
-      
-      // 오류 발생 시 기본 알림 생성 시도
-      const title = payload.notification?.title || '알림';
-      const body = payload.notification?.body || '';
-      
-      return self.registration.showNotification(title, {
-        body: body,
-        icon: '/icons/mstile-150x150.png'
-      });
-    }
-  });
+  // 이미 푸시 이벤트에서 처리할 것이므로 여기서는 아무것도 하지 않음
+  console.log('백그라운드 메시지는 push 이벤트에서 처리됩니다.');
 });
 
 // 푸시 이벤트 처리 (웹 푸시 API를 통해 직접 들어오는 푸시용)
