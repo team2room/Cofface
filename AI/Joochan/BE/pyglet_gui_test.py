@@ -122,41 +122,43 @@ class CountdownTimer:
 # 웹소켓 제스처 감지 관리자
 class GestureWebSocketManager:
     def __init__(self):
-        self.active_connections = {}  # session_id를 키로 사용
-        self.sessions_data = {}  # 세션별 데이터 저장 (제스처 카운트 등)
-    
-    async def connect(self, websocket: WebSocket, session_id: str):
-        await websocket.accept()
-        self.active_connections[session_id] = websocket
-        self.sessions_data[session_id] = {
+        self.active_connection = None  # 단일 연결만 저장
+        self.session_data = {  # 세션별 데이터 대신 단일 데이터 저장
             "nod_count": 0,
             "shake_count": 0,
             "last_landmarks": None,
             "start_time": time.time(),
             "gesture_detected": False
         }
-        print(f"제스처 웹소켓 연결 시작: 세션 {session_id}")
     
-    def disconnect(self, session_id: str):
-        if session_id in self.active_connections:
-            del self.active_connections[session_id]
-        if session_id in self.sessions_data:
-            del self.sessions_data[session_id]
-        print(f"제스처 웹소켓 연결 종료: 세션 {session_id}")
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connection = websocket
+        self.session_data = {
+            "nod_count": 0,
+            "shake_count": 0,
+            "last_landmarks": None,
+            "start_time": time.time(),
+            "gesture_detected": False
+        }
+        print(f"제스처 웹소켓 연결 시작")
     
-    def is_active(self, session_id: str):
-        return session_id in self.active_connections
+    def disconnect(self):
+        self.active_connection = None
+        print(f"제스처 웹소켓 연결 종료")
     
-    def get_session_data(self, session_id: str):
-        return self.sessions_data.get(session_id, {})
+    def is_active(self):
+        return self.active_connection is not None
     
-    def update_session_data(self, session_id: str, data):
-        if session_id in self.sessions_data:
-            self.sessions_data[session_id].update(data)
+    def get_session_data(self):
+        return self.session_data
     
-    async def send_message(self, session_id: str, message):
-        if session_id in self.active_connections:
-            await self.active_connections[session_id].send_json(message)
+    def update_session_data(self, data):
+        self.session_data.update(data)
+    
+    async def send_message(self, message):
+        if self.active_connection:
+            await self.active_connection.send_json(message)
 
 
 def parse_args():
@@ -816,22 +818,6 @@ class RealSenseFaceLiveness:
             except Exception as e:
                 print(f"화면 그리기 오류 (무시됨): {e}")
     
-    def create_mask_sprite(self):
-        """가림막 스프라이트 생성/갱신 - 검은색 배경"""
-        try:
-            # 안전하게 크기 확인
-            width = max(2, self.window.width)   # 최소 2 픽셀
-            height = max(2, self.window.height) # 최소 2 픽셀
-            
-            # 가림막 생성 (검은색 배경)
-            mask_image = np.ones((height, width, 3), dtype=np.uint8) * 18  # 다크 모드 배경색
-            self.mask_texture = self.texture_generator.create_texture_from_numpy(mask_image)
-            if self.mask_texture:
-                self.mask_sprite = pyglet.sprite.Sprite(self.mask_texture, x=0, y=0)
-        except Exception as e:
-            print(f"마스크 생성 오류 (무시됨): {e}")
-            self.mask_sprite = None
-    
     def start_countdown(self, total_seconds=3, delay_before_start=1.0):
         self.countdown_timer.stop()
         self.countdown_timer.start(duration=total_seconds, delay=delay_before_start)
@@ -984,16 +970,16 @@ class RealSenseFaceLiveness:
             print(f"수집 시간: {self.recognition_time}초")
     
     
-    def start_gesture_detection(self, session_id):
+    def start_gesture_detection(self, session_id=None):
         """제스처 감지 모드 시작"""
         # 이미 다른 세션에서 제스처 감지 중인지 확인
-        if self.detecting_gesture and self.current_gesture_session != session_id:
-            print(f"다른 세션에서 이미 제스처 감지 중: {self.current_gesture_session}")
+        if self.detecting_gesture:
+            print(f"이미 제스처 감지 중")
             return False
         
         # 제스처 감지 모드 활성화
         self.detecting_gesture = True
-        self.current_gesture_session = session_id
+        self.current_gesture_session = "default" 
         
         # 제스처 감지 관련 변수 초기화
         self.last_landmarks = None
@@ -1001,7 +987,7 @@ class RealSenseFaceLiveness:
         self.shake_count = 0
         self.gesture_start_time = time.time()
         
-        print(f"제스처 감지 모드 시작: 세션 {session_id}")
+        print(f"제스처 감지 모드 시작")
         return True
     
     def stop_gesture_detection(self):
@@ -1030,7 +1016,7 @@ class RealSenseFaceLiveness:
         # 임계값 설정
         threshold = 0.01
         
-        if abs(y_diff) > threshold and abs(y_diff) > abs(x_diff) * 1.2:
+        if abs(y_diff) > threshold and abs(y_diff) > abs(x_diff) * 1.3:
             return "nod" if y_diff > 0 else "nod_up"  # 끄덕임(아래/위)
         elif abs(x_diff) > threshold and abs(x_diff) > abs(y_diff) * 1.3:
             return "shake_left" if x_diff > 0 else "shake_right"  # 좌우로 흔들어좌/우)
@@ -1078,7 +1064,7 @@ class RealSenseFaceLiveness:
             gesture_name = "절레절레"
         
         # 임계값 설정 (예: 3번 이상 같은 제스처가 감지되면 확정)
-        is_confirmed = (self.nod_count >= 1 or self.shake_count >= 2)
+        is_confirmed = (self.nod_count >= 3 or self.shake_count >= 3)
         
         # 제스처 감지 결과 반환
         result = {
@@ -1282,7 +1268,7 @@ class RealSenseFaceLiveness:
         if genders:
             male_count = sum(1 for g in genders if g == 1)
             female_count = len(genders) - male_count
-            gender = "남성" if male_count > female_count else "여성"
+            gender = "male" if male_count > female_count else "female"
         
         # 최종 결과 생성
         self.api_result = {
@@ -1332,7 +1318,7 @@ class RealSenseFaceLiveness:
             
             # 나이 및 성별 표시
             if self.age_gender:
-                gender_str = "남성" if gender == 1 else "여성"
+                gender_str = "male" if gender == 1 else "female"
                 age_gender_text = f"나이: {age:.0f}세, 성별: {gender_str}"
                 self.labels.append(pyglet.text.Label(
                     age_gender_text,
@@ -1475,7 +1461,7 @@ class RealSenseFaceLiveness:
                         # 마지막 성공한 결과 저장
                         last_faces_results = faces_results.copy()
 
-                        gender_str = "남성" if gender == 1 else "여성"
+                        gender_str = "male" if gender == 1 else "female"
                         print(f"얼굴 감지: 라이브니스: {'실제' if is_live else '가짜'}, 깊이: {closest_depth:.2f}m, 나이: {age:.1f}세, 성별: {gender_str}")
                         
                         # 라이브니스 상태 업데이트
@@ -2186,54 +2172,37 @@ class FaceRecognitionServer:
         @self.api.post("/gesture/start")
         async def start_gesture_detection(background_tasks: BackgroundTasks):
             """제스처 감지를 시작합니다"""
-            # 세션 ID 생성 (UUID 형식)
-            import uuid
-            session_id = str(uuid.uuid4())
-            
             # 이미 처리 중인지 확인
             if self.app_instance.detecting_gesture:
                 return {
                     "success": False,
-                    "message": "이미 다른 제스처 감지 세션이 진행 중입니다.",
-                    "session_id": None
+                    "message": "이미 다른 제스처 감지 세션이 진행 중입니다."
                 }
             
-            try:
-                # GIF 로드 시도
-                motion_gif_path = self.app_instance.motion_gif
-                self.app_instance.idle_gif = AnimatedGIF(motion_gif_path)
-                self.app_instance.idle_gif_path = motion_gif_path
-                # GIF 사용 시 이미지 초기화
-                self.app_instance.idle_image_texture = None
-                self.app_instance.idle_image_path = None
-                print(f"모션 체크 GIF 로드 완료: {motion_gif_path}")
-            except Exception as e:
-                print(f"모션 체크 GIF 로드 실패: {e}")
+            self.change_display_helper("motion")
             
             # 카메라 모드 활성화
             if not self.app_instance.camera_mode:
                 self.app_instance.set_camera_mode(True)
             
-            # 제스처 감지 모드 활성화
-            success = self.app_instance.start_gesture_detection(session_id)
+            # 제스처 감지 모드 활성화 (세션 ID 제거)
+            success = self.app_instance.start_gesture_detection("default")
             
             if not success:
                 return {
                     "success": False,
-                    "message": "제스처 감지 시작 실패",
-                    "session_id": None
+                    "message": "제스처 감지 시작 실패"
                 }
             
             return {
                 "success": True,
                 "message": "제스처 감지가 시작되었습니다. WebSocket에 연결하세요.",
-                "session_id": session_id,
-                "websocket_url": f"/ws/gesture/{session_id}"
+                "websocket_url": f"/ws/gesture"  # 경로에서 세션 ID 제거
             }
-        
+
         # 제스처 감지 중지 API
         @self.api.post("/gesture/stop")
-        async def stop_gesture_detection(background_tasks: BackgroundTasks, session_id: str = None):
+        async def stop_gesture_detection(background_tasks: BackgroundTasks):
             """제스처 감지를 중지합니다"""
             if not self.app_instance.detecting_gesture:
                 return {
@@ -2241,23 +2210,16 @@ class FaceRecognitionServer:
                     "message": "현재 진행 중인 제스처 감지 세션이 없습니다."
                 }
             
-            # 세션 ID 확인 (제공된 경우)
-            if session_id and self.app_instance.current_gesture_session != session_id:
-                return {
-                    "success": False,
-                    "message": f"제공된 세션 ID({session_id})가 현재 진행 중인 세션 ID({self.app_instance.current_gesture_session})와 일치하지 않습니다."
-                }
-            
             # 제스처 감지 중지
             self.app_instance.stop_gesture_detection()
             
-            # 웹소켓 연결 종료 (해당 세션 ID)
-            if hasattr(self, 'gesture_manager') and self.app_instance.current_gesture_session:
-                self.gesture_manager.disconnect(self.app_instance.current_gesture_session)
+            # 웹소켓 연결 종료
+            if hasattr(self, 'gesture_manager'):
+                self.gesture_manager.disconnect()
             
             # 기본 GIF로 복귀
             try:
-                default_gif_path = self.app_instance.idle_gif_path
+                default_gif_path = self.app_instance.original_idle_gif_path
                 if default_gif_path:
                     self.app_instance.idle_gif = AnimatedGIF(default_gif_path)
             except Exception as e:
@@ -2271,25 +2233,26 @@ class FaceRecognitionServer:
                 "success": True,
                 "message": "제스처 감지가 중지되었습니다."
             }
-        
-        # 웹소켓 엔드포인트 - 제스처 감지용
-        @self.api.websocket("/ws/gesture/{session_id}")
-        async def gesture_websocket(websocket: WebSocket, session_id: str):
-            # 현재 제스처 감지 세션이 이 세션 ID와 일치하는지 확인
-            if (self.app_instance.detecting_gesture and 
-                self.app_instance.current_gesture_session != session_id):
-                # 연결을 수락하지만 에러 메시지 전송 후 종료
-                await websocket.accept()
-                await websocket.send_json({
-                    "type": "error",
-                    "message": f"다른 세션({self.app_instance.current_gesture_session})에서 이미 제스처 감지 중입니다."
-                })
-                await websocket.close()
-                return
-            
-            # 제스처 감지가 활성화되어 있지 않다면 자동으로 시작
-            if not self.app_instance.detecting_gesture:
-                success = self.app_instance.start_gesture_detection(session_id)
+
+        # 웹소켓 엔드포인트 - 제스처 감지용 (경로에서 세션 ID 제거)
+        @self.api.websocket("/ws/gesture")
+        async def gesture_websocket(websocket: WebSocket):
+            # 현재 제스처 감지 중인지 확인
+            if self.app_instance.detecting_gesture:
+                # 이미 다른 연결이 있는지 확인
+                if self.gesture_manager.is_active():
+                    # 연결을 수락하지만 에러 메시지 전송 후 종료
+                    await websocket.accept()
+                    await websocket.send_json({
+                        "type": "error",
+                        "message": "이미 다른 연결에서 제스처 감지 중입니다."
+                    })
+                    await websocket.close()
+                    return
+            else:
+                # 제스처 감지가 활성화되어 있지 않다면 자동으로 시작
+                self.change_display_helper("motion")
+                success = self.app_instance.start_gesture_detection("default")
                 if not success:
                     await websocket.accept()
                     await websocket.send_json({
@@ -2300,11 +2263,10 @@ class FaceRecognitionServer:
                     return
             
             # 웹소켓 연결 관리
-            await self.gesture_manager.connect(websocket, session_id)
+            await self.gesture_manager.connect(websocket)
             
             # 초기 메시지 전송
             await self.gesture_manager.send_message(
-                session_id,
                 {
                     "type": "start",
                     "message": "제스처 감지를 시작합니다. 끄덕이거나 좌우로 흔들어 주세요."
@@ -2315,7 +2277,7 @@ class FaceRecognitionServer:
                 # 제스처 처리 루프
                 while True:
                     last_gesture_detected_time = 0
-                    gesture_cooldown = 1.0
+                    gesture_cooldown = 2.0
                     try:
                         # 클라이언트로부터 메시지 수신 (비동기)
                         data = await asyncio.wait_for(websocket.receive_json(), timeout=0.5)
@@ -2332,7 +2294,6 @@ class FaceRecognitionServer:
                                 print(f"기본 GIF 로드 실패: {e}")
                             
                             await self.gesture_manager.send_message(
-                                session_id,
                                 {
                                     "type": "stopped",
                                     "message": "제스처 감지가 중지되었습니다."
@@ -2368,21 +2329,18 @@ class FaceRecognitionServer:
                                     # 시간 업데이트
                                     last_gesture_detected_time = current_time
                                     
-                                    # 제스처 결과에 세션 정보 추가
-                                    gesture_result["session_id"] = session_id
-                                    
                                     # 제스처 확정 결과 전송
-                                    await self.gesture_manager.send_message(session_id, gesture_result)
+                                    await self.gesture_manager.send_message(gesture_result)
                                     
                                     print(f"제스처 확정 결과 전송: {gesture_result['gesture_name']}")
                                 
                                 # 업데이트 메시지는 항상 전송 (과도한 메시지 방지)
                                 elif gesture_result.get("type") == "gesture_update" and (current_time % 1 < 0.1):
-                                    await self.gesture_manager.send_message(session_id, gesture_result)
+                                    await self.gesture_manager.send_message(gesture_result)
                                 
                                 # 타임아웃 메시지 전송 후 종료
                                 elif gesture_result.get("type") == "timeout":
-                                    await self.gesture_manager.send_message(session_id, gesture_result)
+                                    await self.gesture_manager.send_message(gesture_result)
                                     break
                     except Exception as e:
                         print(f"제스처 처리 중 오류: {e}")
@@ -2392,15 +2350,15 @@ class FaceRecognitionServer:
                     await asyncio.sleep(0.05)
             
             except WebSocketDisconnect:
-                print(f"WebSocket 연결 종료: {session_id}")
+                print(f"WebSocket 연결 종료")
             except Exception as e:
                 print(f"WebSocket 오류: {e}")
                 traceback.print_exc()
             finally:
                 # 연결 종료 시 제스처 감지 중단 및 세션 정리
-                if self.app_instance.current_gesture_session == session_id:
-                    self.app_instance.stop_gesture_detection()
-                self.gesture_manager.disconnect(session_id)
+                self.app_instance.stop_gesture_detection()
+                self.gesture_manager.disconnect()
+                self.change_display_helper("loading")
         
         @self.api.get("/weather")
         async def weather_get():
