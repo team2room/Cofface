@@ -5,6 +5,7 @@ export interface PhoneLoginRequest {
 }
 
 export interface PhoneLoginResponse {
+  hasAutoPayment: boolean
   accessToken: string
   user: {
     id: string
@@ -19,6 +20,6 @@ export const phoneLogin = async (
   body: PhoneLoginRequest,
 ): Promise<PhoneLoginResponse> => {
   const response = await api.post('/api/auth/kiosk/phone-login', body)
-  const { accessToken, user } = response.data.data
-  return { accessToken, user }
+  const { hasAutoPayment, accessToken, user } = response.data.data
+  return { hasAutoPayment, accessToken, user }
 }

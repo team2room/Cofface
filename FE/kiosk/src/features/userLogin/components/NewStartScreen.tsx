@@ -9,7 +9,6 @@ import { newFaceRecogRequest } from '../services/faceRecogService'
 import { maskName } from '@/utils/maskUserName'
 import { useLogout } from '../hooks/useLogout'
 
-const TopLeftText = tw.div`absolute top-4 left-6 z-50`
 const ImageWrapper = tw.div`w-full my-8 flex justify-center items-center`
 const FullImg = tw.img`absolute top-0 left-0 w-full h-full object-contain`
 
@@ -80,8 +79,12 @@ export default function NewStartScreen() {
       description: {
         waiting: '우측 단말기에\n얼굴을 인식해 주세요!',
         success: `${maskName(user?.name || '')}님,\n다시 만나 반갑습니다.`,
-        failure:
-          'COFFACE가 처음이신가요? 등록된 얼굴 정보가 없어요\n하단의 큐알 코드로 회원 가입 및 얼굴 등록을 해주세요',
+        failure: 'COFFACE가 처음이신가요?\n등록된 얼굴 정보가 없어요',
+      }[modalState],
+      subText: {
+        waiting: '',
+        success: '',
+        failure: 'QR 코드를 통해 회원가입 및 얼굴 등록을 할 수 있어요!',
       }[modalState],
       icon: {
         waiting: '/face.gif',
@@ -144,12 +147,6 @@ export default function NewStartScreen() {
             </Text>
           </div>
         </ImageWrapper>
-
-        <TopLeftText>
-          <Text variant="title4" weight="heavy" color="main">
-            COFFACE
-          </Text>
-        </TopLeftText>
       </div>
 
       <CustomDialog
@@ -157,6 +154,7 @@ export default function NewStartScreen() {
         onOpenChange={setShowModal}
         title={modalContent.title}
         description={modalContent.description}
+        subText={modalContent.subText}
         icon={modalContent.icon}
         cancelText={modalContent.cancelText}
         confirmText={modalContent.confirmText}

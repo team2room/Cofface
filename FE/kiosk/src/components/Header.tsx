@@ -5,7 +5,7 @@ import { useLogout } from '@/features/userLogin/hooks/useLogout'
 import { useUserStore } from '@/stores/loginStore'
 import { maskName } from '@/utils/maskUserName'
 
-const HeaderContainer = tw.div`w-full flex justify-between items-center mt-4 mb-8`
+const HeaderContainer = tw.div`w-full flex justify-between items-center mt-4 mb-8 px-7`
 const TimeBox = tw.div`flex w-[250px] justify-center border-b-2 border-gray`
 
 interface HeaderProps {

@@ -129,8 +129,12 @@ export default function OptionModal({
         </Text>
         <FirstSection>
           <div className="flex flex-row items-center gap-6">
-            <div className="w-80 bg-white">
-              <img src={menu.imageUrl} alt={menu.menuName} className="w-80" />
+            <div className="w-80 h-80 bg-white">
+              <img
+                src={menu.imageUrl}
+                alt={menu.menuName}
+                className="w-80 h-80 object-contain"
+              />
             </div>
 
             <RequiredOption>

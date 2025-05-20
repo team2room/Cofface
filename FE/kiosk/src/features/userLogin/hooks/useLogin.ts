@@ -7,18 +7,20 @@ export const useLogin = () => {
 
   const phoneNumLogin = useCallback(
     async (phoneNumber: string) => {
-      const { accessToken, user } = await phoneLogin({
+      const { hasAutoPayment, accessToken, user } = await phoneLogin({
         phoneNumber,
       })
-      setLogin(accessToken, user, 'phone')
+      setLogin(hasAutoPayment, accessToken, user, 'phone')
     },
     [setLogin],
   )
 
   const faceLogin = useCallback(
     async (phoneNumber: string) => {
-      const { accessToken, user } = await phoneLogin({ phoneNumber })
-      setLogin(accessToken, user, 'face')
+      const { hasAutoPayment, accessToken, user } = await phoneLogin({
+        phoneNumber,
+      })
+      setLogin(hasAutoPayment, accessToken, user, 'face')
     },
     [setLogin],
   )

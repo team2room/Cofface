@@ -6,7 +6,7 @@ import OptionModal from '@/features/order/components/Option/OptionDialog'
 import { useOption } from '../../hooks/useOption'
 
 const Container = tw.div`w-56 h-72 px-4 py-3 rounded-xl bg-white grid justify-items-center`
-const Image = tw.img`w-32 h-32 object-cover`
+const Image = tw.img`w-32 h-32 object-contain`
 const Divider = tw.hr`w-full h-px my-2 bg-gray border-0`
 
 export default function MenuCard({ item, boxShadowColor }: MenuCardProps) {

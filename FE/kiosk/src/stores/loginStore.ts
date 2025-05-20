@@ -22,10 +22,16 @@ interface UserState {
   user: User | null
   token: string | null
   isMember: boolean | null
+  hasAutoPayment: boolean | null
   loginMethod: 'face' | 'phone' | null
   guestInfo: GuestInfo | null
   weather: WeatherInfo | null
-  setLogin: (token: string, user: User, loginMethod: 'face' | 'phone') => void
+  setLogin: (
+    hasAutoPayment: boolean,
+    token: string,
+    user: User,
+    loginMethod: 'face' | 'phone',
+  ) => void
   setGuestInfo: (guestInfo: GuestInfo) => void
   setWeather: (weather: WeatherInfo) => void
   reset: () => void
@@ -35,13 +41,14 @@ export const useUserStore = create<UserState>((set) => ({
   user: null,
   token: getCookie(USER_TOKEN) ?? null,
   isMember: null,
+  hasAutoPayment: null,
   loginMethod: null,
   guestInfo: null,
   weather: null,
 
-  setLogin: (token, user, loginMethod) => {
+  setLogin: (hasAutoPayment, token, user, loginMethod) => {
     setCookie(USER_TOKEN, token, { path: '/' })
-    set({ token, user, isMember: true, loginMethod })
+    set({ hasAutoPayment, token, user, isMember: true, loginMethod })
   },
 
   setGuestInfo: (guestInfo) => set({ guestInfo }),
@@ -54,6 +61,7 @@ export const useUserStore = create<UserState>((set) => ({
       token: null,
       user: null,
       isMember: null,
+      hasAutoPayment: null,
       loginMethod: null,
       guestInfo: null,
     })

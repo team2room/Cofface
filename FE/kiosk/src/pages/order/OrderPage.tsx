@@ -10,18 +10,17 @@ import { useNavigate } from 'react-router-dom'
 import { useLogout } from '@/features/userLogin/hooks/useLogout'
 import { useExtendSession } from '@/features/userLogin/hooks/useExtendSession'
 import { useUserStore } from '@/stores/loginStore'
+import MainContent from '@/features/order/components/MainContent'
+import { useStepStore } from '@/stores/stepStore'
 
-const Container = tw.div`flex flex-col min-h-screen bg-white px-7 my-4`
-
-type Step = 'menu' | 'place' | 'pay'
+const Container = tw.div`flex flex-col min-h-screen bg-white my-4`
 
 export default function OrderPage() {
   const navigate = useNavigate()
+  const { step, resetStep } = useStepStore()
   const { logout } = useLogout()
   const { extend } = useExtendSession()
   const { isMember } = useUserStore()
-
-  const [step, setStep] = useState<Step>('menu')
 
   const [remainingSeconds, setRemainingSeconds] = useState(120)
   const [showTimeoutModal, setShowTimeoutModal] = useState(false)
@@ -46,6 +45,7 @@ export default function OrderPage() {
   }
 
   useEffect(() => {
+    resetStep()
     startTimer()
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
@@ -120,12 +120,10 @@ export default function OrderPage() {
       <Container>
         <Header remainingSeconds={remainingSeconds} />
 
-        {step === 'menu' && <MenuContent onNext={() => setStep('place')} />}
-        {step === 'place' && (
-          <PlaceSelectContent onNext={() => setStep('pay')} />
-        )}
+        {step === 'main' && <MainContent />}
+        {step === 'menu' && <MenuContent />}
+        {step === 'place' && <PlaceSelectContent />}
         {step === 'pay' && <PayContent />}
-        {/* {step === 'complete' && <CompleteContent />} */}
       </Container>
 
       <CustomDialog

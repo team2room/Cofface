@@ -15,6 +15,7 @@ interface CommonAlertDialogProps {
   onOpenChange: (open: boolean) => void
   title?: ReactNode
   description?: ReactNode
+  subText?: string
   icon?: string
   cancelText?: string
   confirmText?: string
@@ -30,6 +31,7 @@ export default function CustomDialog({
   onOpenChange,
   title,
   description,
+  subText,
   icon,
   cancelText = '취소',
   confirmText = '확인',
@@ -58,6 +60,9 @@ export default function CustomDialog({
                 />
               </div>
             )}
+            <Text variant="body3" weight="bold" color="lightBlack">
+              {subText}
+            </Text>
             {showKeypad && <NumKeyPad />}
           </AlertDialogDescription>
         )}
