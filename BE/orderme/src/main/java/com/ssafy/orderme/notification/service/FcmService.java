@@ -35,15 +35,6 @@ public class FcmService {
                             .setBody(fcmSendDto.getBody())
                             .build())
                     .setToken(fcmSendDto.getToken())
-                    .setWebpushConfig(WebpushConfig.builder()
-                            .setNotification(WebpushNotification.builder()
-                                    .setIcon("/icons/notification-icon.png") // 웹 앱의 아이콘 경로
-                                    .setRequireInteraction(true)
-                                    .build())
-                            .setFcmOptions(WebpushFcmOptions.builder()
-                                    .setLink("https://orderme.example.com/orders") // 클릭 시 이동할 URL
-                                    .build())
-                            .build())
                     .build();
 
             String response = FirebaseMessaging.getInstance().sendAsync(message).get();

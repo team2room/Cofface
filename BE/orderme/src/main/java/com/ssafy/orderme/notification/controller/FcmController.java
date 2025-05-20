@@ -27,7 +27,6 @@ public class FcmController {
      */
     @PostMapping("/send")
     public ResponseEntity<ApiResponse<?>> pushMessage(@RequestBody @Validated FcmSendDto fcmSendDto) {
-        log.debug("[+] 푸시 메시지를 전송합니다.");
         boolean success = fcmService.sendMessageTo(fcmSendDto);
 
         if (success) {
