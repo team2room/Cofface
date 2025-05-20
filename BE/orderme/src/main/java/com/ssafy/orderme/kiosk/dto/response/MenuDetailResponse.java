@@ -7,14 +7,14 @@ import java.util.Map;
  * 메뉴 상세 정보 응답 DTO
  */
 public class MenuDetailResponse {
-    private Long menuId;                  // 메뉴 ID
+    private Integer menuId;                  // 메뉴 ID (Long에서 Integer로 변경)
     private String menuName;              // 메뉴 이름
     private Integer price;                // 가격
-    private Long categoryId;              // 카테고리 ID
+    private Integer categoryId;           // 카테고리 ID (Long에서 Integer로 변경)
     private String categoryName;          // 카테고리 이름
     private Boolean isSoldOut;            // 품절 여부
     private String imageUrl;              // 이미지 URL
-    private List<MenuOptionCategoryResponse> options; // 옵션 목록
+    private List<Map<String, Object>> options; // 옵션 목록
     private String description;           // 설명
 
     // 추가된 필드
@@ -24,12 +24,12 @@ public class MenuDetailResponse {
     private Double percentage;           // 퍼센트
     private Map<String, Object> additionalInfo; // 추가 정보 (나이, 성별 등)
 
-    // getter와 setter 메서드
-    public Long getMenuId() {
+    // getter와 setter 메서드 수정
+    public Integer getMenuId() {        // 반환 타입 변경: Long -> Integer
         return menuId;
     }
 
-    public void setMenuId(Long menuId) {
+    public void setMenuId(Integer menuId) {   // 매개변수 타입 변경: Long -> Integer
         this.menuId = menuId;
     }
 
@@ -49,11 +49,11 @@ public class MenuDetailResponse {
         this.price = price;
     }
 
-    public Long getCategoryId() {
+    public Integer getCategoryId() {     // 반환 타입 변경: Long -> Integer
         return categoryId;
     }
 
-    public void setCategoryId(Long categoryId) {
+    public void setCategoryId(Integer categoryId) {  // 매개변수 타입 변경: Long -> Integer
         this.categoryId = categoryId;
     }
 
@@ -81,11 +81,11 @@ public class MenuDetailResponse {
         this.imageUrl = imageUrl;
     }
 
-    public List<MenuOptionCategoryResponse> getOptions() {
+    public List<Map<String, Object>> getOptions() {
         return options;
     }
 
-    public void setOptions(List<MenuOptionCategoryResponse> options) {
+    public void setOptions(List<Map<String, Object>> options) {
         this.options = options;
     }
 

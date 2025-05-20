@@ -30,8 +30,11 @@ public class RecommendationService {
      */
     public void updateMenuPopularity(Integer menuId, Integer storeId) {
         try {
+            System.out.println("메뉴 인기도 업데이트 시작 - 메뉴 ID: " + menuId + ", 매장 ID: " + storeId);
             recommendationMapper.updateMenuPopularity(menuId, storeId);
+            System.out.println("메뉴 인기도 업데이트 완료");
         } catch (Exception e) {
+            System.out.println("메뉴 인기도 업데이트 오류: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -40,14 +43,29 @@ public class RecommendationService {
      * 성별/나이 기반 메뉴 선호도 업데이트 (주문 시 호출)
      */
     public void updateGenderAgePreference(Integer menuId, Integer storeId, String gender, String ageGroup) {
-        recommendationMapper.updateGenderAgePreference(menuId, storeId, gender, ageGroup);
+        try {
+            System.out.println("성별/나이 기반 선호도 업데이트 시작 - 메뉴 ID: " + menuId + ", 매장 ID: " + storeId +
+                    ", 성별: " + gender + ", 나이: " + ageGroup);
+            recommendationMapper.updateGenderAgePreference(menuId, storeId, gender, ageGroup);
+            System.out.println("성별/나이 기반 선호도 업데이트 완료");
+        } catch (Exception e) {
+            System.out.println("성별/나이 기반 선호도 업데이트 오류: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**
      * 사용자 개인 선호도 업데이트 (주문 시 호출)
      */
     public void updateUserPreference(Integer menuId, String userId) {
-        recommendationMapper.updateUserPreference(menuId, userId);
+        try {
+            System.out.println("사용자 개인 선호도 업데이트 시작 - 메뉴 ID: " + menuId + ", 사용자 ID: " + userId);
+            recommendationMapper.updateUserPreference(menuId, userId);
+            System.out.println("사용자 개인 선호도 업데이트 완료");
+        } catch (Exception e) {
+            System.out.println("사용자 개인 선호도 업데이트 오류: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -55,8 +73,12 @@ public class RecommendationService {
      */
     public void updateWeatherPreference(Integer menuId, Integer storeId, String weather) {
         try {
+            System.out.println("날씨 기반 선호도 업데이트 시작 - 메뉴 ID: " + menuId + ", 매장 ID: " + storeId +
+                    ", 날씨: " + weather);
             recommendationMapper.updateWeatherPreference(menuId, storeId, weather);
+            System.out.println("날씨 기반 선호도 업데이트 완료");
         } catch (Exception e) {
+            System.out.println("날씨 기반 선호도 업데이트 오류: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -66,9 +88,13 @@ public class RecommendationService {
      */
     public String getLatestWeather(Integer storeId) {
         try {
+            System.out.println("최근 날씨 정보 조회 시작 - 매장 ID: " + storeId);
             String weather = recommendationMapper.findLatestWeather(storeId);
-            return weather != null ? weather : "맑음";
+            String result = weather != null ? weather : "맑음";
+            System.out.println("최근 날씨 정보 조회 결과: " + result);
+            return result;
         } catch (Exception e) {
+            System.out.println("최근 날씨 정보 조회 오류: " + e.getMessage());
             e.printStackTrace();
             return "맑음"; // 기본값
         }
@@ -79,11 +105,15 @@ public class RecommendationService {
      */
     public List<MenuResponse> getMostPopularMenus(Integer storeId, List<Integer> excludeMenuIds) {
         try {
+            System.out.println("인기 메뉴 조회 시작 - 매장 ID: " + storeId);
+
             // 안전한 excludeMenuIds 생성
             List<Integer> safeExcludeMenuIds = excludeMenuIds != null ? excludeMenuIds : new ArrayList<>();
+            System.out.println("제외할 메뉴 ID 목록: " + safeExcludeMenuIds);
 
             // 인기 메뉴 조회 (매장에서 가장 많이 팔린 메뉴)
             List<Menu> menus = recommendationMapper.findMostPopularMenus(storeId, 3);
+            System.out.println("인기 메뉴 조회 결과 수: " + (menus != null ? menus.size() : 0));
 
             // 제외할 메뉴 처리
             if (menus != null && !menus.isEmpty()) {
@@ -91,12 +121,17 @@ public class RecommendationService {
                         .filter(menu -> !safeExcludeMenuIds.contains(menu.getMenuId()))
                         .limit(1)  // 최대 1개로 제한
                         .collect(Collectors.toList());
+                System.out.println("필터링 후 인기 메뉴 수: " + menus.size());
             } else {
                 menus = new ArrayList<>();
+                System.out.println("인기 메뉴 없음");
             }
 
-            return convertToMenuResponses(menus);
+            List<MenuResponse> result = convertToMenuResponses(menus);
+            System.out.println("인기 메뉴 변환 완료: " + result.size() + "개");
+            return result;
         } catch (Exception e) {
+            System.out.println("인기 메뉴 조회 오류: " + e.getMessage());
             e.printStackTrace();
             return Collections.emptyList();
         }
@@ -130,34 +165,102 @@ public class RecommendationService {
     public List<MenuDetailResponse> getMenuDetailsByIds(List<Integer> menuIds) {
         if (menuIds == null || menuIds.isEmpty()) {
             // 메뉴 ID가 없는 경우 전체 인기 메뉴 조회
+            System.out.println("메뉴 ID 목록이 비어있어 인기 메뉴 조회");
             List<Menu> allMenus = recommendationMapper.findMostPopularMenus(1, 1); // 1개만 가져오기
             menuIds = allMenus.stream()
                     .map(Menu::getMenuId)
                     .collect(Collectors.toList());
 
             if (menuIds.isEmpty()) {
+                System.out.println("조회된 인기 메뉴가 없음");
                 return Collections.emptyList();
             }
         }
 
+        System.out.println("메뉴 상세 정보 조회 시작 - 메뉴 ID 목록: " + menuIds);
+
         // 메뉴 ID가 여러 개인 경우 첫 번째 ID만 사용
         if (menuIds.size() > 1) {
             menuIds = menuIds.subList(0, 1);
+            System.out.println("메뉴 ID가 여러 개여서 첫 번째 ID만 사용: " + menuIds);
         }
 
         List<MenuDetailResponse> detailedMenus = new ArrayList<>();
         for (Integer menuId : menuIds) {
             try {
+                System.out.println("메뉴 ID " + menuId + " 상세 정보 조회 시작");
                 MenuDetailResponse detailResponse = menuService.getMenuDetail(menuId);
                 if (detailResponse != null) {
+                    System.out.println("메뉴 ID " + menuId + " 상세 정보 조회 성공: " + detailResponse.getMenuName());
                     detailedMenus.add(detailResponse);
+                } else {
+                    System.out.println("메뉴 ID " + menuId + " 상세 정보 조회 결과 없음");
                 }
             } catch (Exception e) {
                 System.out.println("메뉴 ID " + menuId + " 조회 중 오류 발생: " + e.getMessage());
+                e.printStackTrace();
             }
         }
 
+        System.out.println("메뉴 상세 정보 조회 완료 - 총 " + detailedMenus.size() + "개 메뉴");
         return detailedMenus;
+    }
+
+    // 주문 옵션 데이터를 원하는 형식으로 변환하는 메소드
+    private List<Map<String, Object>> processOptionsDataSimplified(List<Map<String, Object>> optionsData) {
+        if (optionsData == null || optionsData.isEmpty()) {
+            System.out.println("옵션 데이터가 없어 처리 불가");
+            return new ArrayList<>();
+        }
+
+        System.out.println("옵션 데이터 처리 시작 - " + optionsData.size() + "개 옵션");
+
+        try {
+            // 옵션 카테고리별로 그룹화
+            Map<String, Map<String, Object>> optionCategoryMap = new HashMap<>();
+
+            for (Map<String, Object> option : optionsData) {
+                String categoryName = (String) option.get("option_category_name");
+                Boolean isRequired = (Boolean) option.get("is_required");
+
+                // 카테고리가 존재하는지 확인
+                if (!optionCategoryMap.containsKey(categoryName)) {
+                    System.out.println("새 옵션 카테고리 추가: " + categoryName);
+
+                    Map<String, Object> optionCategory = new HashMap<>();
+                    optionCategory.put("optionCategory", categoryName);
+                    optionCategory.put("isRequired", isRequired);
+                    optionCategory.put("optionNames", new ArrayList<String>());
+                    optionCategory.put("additionalPrices", new ArrayList<Integer>());
+                    optionCategory.put("optionIds", new ArrayList<Integer>());
+                    optionCategory.put("isDefault", new ArrayList<Boolean>());
+                    optionCategory.put("maxSelections", 1); // 기본값 설정
+
+                    optionCategoryMap.put(categoryName, optionCategory);
+                }
+
+                // 옵션 정보 추가
+                Map<String, Object> categoryData = optionCategoryMap.get(categoryName);
+                ((List<String>)categoryData.get("optionNames")).add((String) option.get("option_name"));
+                ((List<Integer>)categoryData.get("additionalPrices")).add(((Number) option.get("additional_price")).intValue());
+                ((List<Integer>)categoryData.get("optionIds")).add(((Number) option.get("option_item_id")).intValue());
+                ((List<Boolean>)categoryData.get("isDefault")).add(true); // 주문된 옵션이므로 선택된 것으로 표시
+
+                System.out.println("옵션 추가: " + option.get("option_name") + " (" +
+                        "카테고리: " + categoryName + ", " +
+                        "가격: " + ((Number) option.get("additional_price")).intValue() + ")");
+            }
+
+            // Map에서 List로 변환
+            List<Map<String, Object>> result = new ArrayList<>(optionCategoryMap.values());
+            System.out.println("옵션 데이터 처리 완료 - " + result.size() + "개 카테고리");
+
+            return result;
+        } catch (Exception e) {
+            System.out.println("옵션 데이터 처리 오류: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
     }
 
     // 1. 성별/나이 기반 메뉴 추천
@@ -167,6 +270,8 @@ public class RecommendationService {
             String ageStr,
             List<Integer> excludeMenuIds) {
         try {
+            System.out.println("성별/나이 기반 메뉴 추천 시작 - 매장 ID: " + storeId + ", 성별: " + gender + ", 나이: " + ageStr);
+
             // 나이 문자열에서 숫자만 추출
             int ageGroup;
             if (ageStr.endsWith("대")) {
@@ -177,25 +282,41 @@ public class RecommendationService {
                 int age = Integer.parseInt(ageStr);
                 ageGroup = (age / 10) * 10;
             }
+            System.out.println("변환된 나이대: " + ageGroup + "대");
 
             // 안전한 excludeMenuIds 생성
             List<Integer> safeExcludeMenuIds = excludeMenuIds != null ? excludeMenuIds : new ArrayList<>();
+            System.out.println("제외할 메뉴 ID 목록: " + safeExcludeMenuIds);
 
             // 성별/나이 기반 인기 메뉴 조회
             Map<String, Object> menuData = recommendationMapper.findMenusByGenderAndAge(
                     storeId, gender, ageGroup, safeExcludeMenuIds);
 
             if (menuData == null || menuData.isEmpty()) {
+                System.out.println("성별/나이 기반 메뉴 추천 결과 없음");
                 return null;
             }
 
             // 메뉴 ID 추출
             Integer menuId = ((Number) menuData.get("menu_id")).intValue();
+            System.out.println("추천된 메뉴 ID: " + menuId);
+
+            // 최근 주문된 order_menu_id 추출
+            Long latestOrderMenuId = null;
+            if (menuData.get("latest_order_menu_id") != null) {
+                latestOrderMenuId = ((Number) menuData.get("latest_order_menu_id")).longValue();
+                System.out.println("최근 주문 메뉴 ID: " + latestOrderMenuId);
+            } else {
+                System.out.println("최근 주문 메뉴 ID 없음");
+            }
 
             // 메뉴 상세 정보와 옵션 정보로 MenuDetailResponse 구성
+            System.out.println("메뉴 상세 정보 조회 시작");
             MenuDetailResponse detailResponse = menuService.getMenuDetail(menuId);
 
             if (detailResponse != null) {
+                System.out.println("메뉴 상세 정보 조회 성공: " + detailResponse.getMenuName());
+
                 // 추가 정보 설정 - 키워드, 주문 수, 비율
                 detailResponse.setKeyword1((String) menuData.get("keyword1"));
                 detailResponse.setKeyword2((String) menuData.get("keyword2"));
@@ -208,33 +329,78 @@ public class RecommendationService {
                 additionalInfo.put("성별", gender.equals("MALE") ? "남성" : "여성");
                 detailResponse.setAdditionalInfo(additionalInfo);
 
+                // 주문된 실제 옵션 정보 설정
+                if (latestOrderMenuId != null) {
+                    System.out.println("주문 옵션 정보 조회 시작");
+                    List<Map<String, Object>> optionsData = recommendationMapper.findOptionsForOrderMenu(latestOrderMenuId);
+
+                    if (optionsData != null && !optionsData.isEmpty()) {
+                        System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
+
+                        // 주문된 옵션으로 옵션 정보 대체
+                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
+
+                        if (!simplifiedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(simplifiedOptions);
+                        } else {
+                            System.out.println("처리된 옵션 카테고리가 없음");
+                        }
+                    } else {
+                        System.out.println("주문 옵션 정보 없음");
+                    }
+                }
+
+                System.out.println("성별/나이 기반 메뉴 추천 완료");
                 return detailResponse;
+            } else {
+                System.out.println("메뉴 상세 정보 조회 실패");
             }
 
             return null;
         } catch (Exception e) {
+            System.out.println("성별/나이 기반 메뉴 추천 오류: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
     }
 
-    // 2. 시간대 기반 메뉴 추천
+    // 2. 시간대 기반 메뉴 추천 - 기본 구조는 동일하지만 로그 추가
     public MenuDetailResponse getMenuByTimeOfDay(
             Integer storeId,
             Integer hourOfDay,
             List<Integer> excludeMenuIds) {
         try {
+            System.out.println("시간대 기반 메뉴 추천 시작 - 매장 ID: " + storeId + ", 시간대: " + hourOfDay + "시");
+
+            // 안전한 excludeMenuIds 생성
+            List<Integer> safeExcludeMenuIds = excludeMenuIds != null ? excludeMenuIds : new ArrayList<>();
+
             Map<String, Object> menuData = recommendationMapper.findMenusByTimeOfDay(
-                    storeId, hourOfDay, excludeMenuIds);
+                    storeId, hourOfDay, safeExcludeMenuIds);
 
             if (menuData == null || menuData.isEmpty()) {
+                System.out.println("시간대 기반 메뉴 추천 결과 없음");
                 return null;
             }
 
             Integer menuId = ((Number) menuData.get("menu_id")).intValue();
+            System.out.println("추천된 메뉴 ID: " + menuId);
+
+            // 최근 주문된 order_menu_id 추출
+            Long latestOrderMenuId = null;
+            if (menuData.get("latest_order_menu_id") != null) {
+                latestOrderMenuId = ((Number) menuData.get("latest_order_menu_id")).longValue();
+                System.out.println("최근 주문 메뉴 ID: " + latestOrderMenuId);
+            } else {
+                System.out.println("최근 주문 메뉴 ID 없음");
+            }
+
             MenuDetailResponse detailResponse = menuService.getMenuDetail(menuId);
 
             if (detailResponse != null) {
+                System.out.println("메뉴 상세 정보 조회 성공: " + detailResponse.getMenuName());
+
                 detailResponse.setKeyword1((String) menuData.get("keyword1"));
                 detailResponse.setKeyword2((String) menuData.get("keyword2"));
                 detailResponse.setOrderCount(((Number) menuData.get("order_count")).intValue());
@@ -243,10 +409,33 @@ public class RecommendationService {
                 Map<String, Object> additionalInfo = new HashMap<>();
                 additionalInfo.put("시간대", getTimeOfDayDescription(hourOfDay));
                 detailResponse.setAdditionalInfo(additionalInfo);
+
+                // 주문된 실제 옵션 정보 설정
+                if (latestOrderMenuId != null) {
+                    System.out.println("주문 옵션 정보 조회 시작");
+                    List<Map<String, Object>> optionsData = recommendationMapper.findOptionsForOrderMenu(latestOrderMenuId);
+
+                    if (optionsData != null && !optionsData.isEmpty()) {
+                        System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
+
+                        // 새 메소드 호출로 변경
+                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
+
+                        if (!simplifiedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(simplifiedOptions);
+                        }
+                    }
+                }
+
+                System.out.println("시간대 기반 메뉴 추천 완료");
+            } else {
+                System.out.println("메뉴 상세 정보 조회 실패");
             }
 
             return detailResponse;
         } catch (Exception e) {
+            System.out.println("시간대 기반 메뉴 추천 오류: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -273,17 +462,33 @@ public class RecommendationService {
             String weather,
             List<Integer> excludeMenuIds) {
         try {
+            System.out.println("날씨 기반 메뉴 추천 시작 - 매장 ID: " + storeId + ", 날씨: " + weather);
+
             Map<String, Object> menuData = recommendationMapper.findMenusByWeather(
                     storeId, weather, excludeMenuIds);
 
             if (menuData == null || menuData.isEmpty()) {
+                System.out.println("날씨 기반 메뉴 추천 결과 없음");
                 return null;
             }
 
             Integer menuId = ((Number) menuData.get("menu_id")).intValue();
+            System.out.println("추천된 메뉴 ID: " + menuId);
+
+            // 최근 주문된 order_menu_id 추출
+            Long latestOrderMenuId = null;
+            if (menuData.get("latest_order_menu_id") != null) {
+                latestOrderMenuId = ((Number) menuData.get("latest_order_menu_id")).longValue();
+                System.out.println("최근 주문 메뉴 ID: " + latestOrderMenuId);
+            } else {
+                System.out.println("최근 주문 메뉴 ID 없음");
+            }
+
             MenuDetailResponse detailResponse = menuService.getMenuDetail(menuId);
 
             if (detailResponse != null) {
+                System.out.println("메뉴 상세 정보 조회 성공: " + detailResponse.getMenuName());
+
                 detailResponse.setKeyword1((String) menuData.get("keyword1"));
                 detailResponse.setKeyword2((String) menuData.get("keyword2"));
                 detailResponse.setOrderCount(((Number) menuData.get("order_count")).intValue());
@@ -292,10 +497,29 @@ public class RecommendationService {
                 Map<String, Object> additionalInfo = new HashMap<>();
                 additionalInfo.put("날씨", weather);
                 detailResponse.setAdditionalInfo(additionalInfo);
+
+                // 주문된 실제 옵션 정보 설정
+                if (latestOrderMenuId != null) {
+                    System.out.println("주문 옵션 정보 조회 시작");
+                    List<Map<String, Object>> optionsData = recommendationMapper.findOptionsForOrderMenu(latestOrderMenuId);
+
+                    if (optionsData != null && !optionsData.isEmpty()) {
+                        System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
+                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
+
+                        if (!simplifiedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(simplifiedOptions);
+                        }
+                    }
+                }
+
+                System.out.println("날씨 기반 메뉴 추천 완료");
             }
 
             return detailResponse;
         } catch (Exception e) {
+            System.out.println("날씨 기반 메뉴 추천 오류: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -307,17 +531,36 @@ public class RecommendationService {
             Integer dayOfWeek,
             List<Integer> excludeMenuIds) {
         try {
+            System.out.println("요일 기반 메뉴 추천 시작 - 매장 ID: " + storeId + ", 요일: " + getDayOfWeekName(dayOfWeek));
+
+            // 안전한 excludeMenuIds 생성
+            List<Integer> safeExcludeMenuIds = excludeMenuIds != null ? excludeMenuIds : new ArrayList<>();
+
             Map<String, Object> menuData = recommendationMapper.findMenusByDayOfWeek(
-                    storeId, dayOfWeek, excludeMenuIds);
+                    storeId, dayOfWeek, safeExcludeMenuIds);
 
             if (menuData == null || menuData.isEmpty()) {
+                System.out.println("요일 기반 메뉴 추천 결과 없음");
                 return null;
             }
 
             Integer menuId = ((Number) menuData.get("menu_id")).intValue();
+            System.out.println("추천된 메뉴 ID: " + menuId);
+
+            // 최근 주문된 order_menu_id 추출
+            Long latestOrderMenuId = null;
+            if (menuData.get("latest_order_menu_id") != null) {
+                latestOrderMenuId = ((Number) menuData.get("latest_order_menu_id")).longValue();
+                System.out.println("최근 주문 메뉴 ID: " + latestOrderMenuId);
+            } else {
+                System.out.println("최근 주문 메뉴 ID 없음");
+            }
+
             MenuDetailResponse detailResponse = menuService.getMenuDetail(menuId);
 
             if (detailResponse != null) {
+                System.out.println("메뉴 상세 정보 조회 성공: " + detailResponse.getMenuName());
+
                 detailResponse.setKeyword1((String) menuData.get("keyword1"));
                 detailResponse.setKeyword2((String) menuData.get("keyword2"));
                 detailResponse.setOrderCount(((Number) menuData.get("order_count")).intValue());
@@ -326,10 +569,33 @@ public class RecommendationService {
                 Map<String, Object> additionalInfo = new HashMap<>();
                 additionalInfo.put("요일", getDayOfWeekName(dayOfWeek));
                 detailResponse.setAdditionalInfo(additionalInfo);
+
+                // 주문된 실제 옵션 정보 설정
+                if (latestOrderMenuId != null) {
+                    System.out.println("주문 옵션 정보 조회 시작");
+                    List<Map<String, Object>> optionsData = recommendationMapper.findOptionsForOrderMenu(latestOrderMenuId);
+
+                    if (optionsData != null && !optionsData.isEmpty()) {
+                        System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
+                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
+
+                        if (!simplifiedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(simplifiedOptions);
+                        }
+                    } else {
+                        System.out.println("주문 옵션 정보 없음");
+                    }
+                }
+
+                System.out.println("요일 기반 메뉴 추천 완료");
+            } else {
+                System.out.println("메뉴 상세 정보 조회 실패");
             }
 
             return detailResponse;
         } catch (Exception e) {
+            System.out.println("요일 기반 메뉴 추천 오류: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -338,14 +604,22 @@ public class RecommendationService {
     // 요일 이름 반환 헬퍼 메소드
     private String getDayOfWeekName(Integer dayOfWeek) {
         switch (dayOfWeek) {
-            case Calendar.SUNDAY: return "일요일";
-            case Calendar.MONDAY: return "월요일";
-            case Calendar.TUESDAY: return "화요일";
-            case Calendar.WEDNESDAY: return "수요일";
-            case Calendar.THURSDAY: return "목요일";
-            case Calendar.FRIDAY: return "금요일";
-            case Calendar.SATURDAY: return "토요일";
-            default: return "";
+            case Calendar.SUNDAY:
+                return "일요일";
+            case Calendar.MONDAY:
+                return "월요일";
+            case Calendar.TUESDAY:
+                return "화요일";
+            case Calendar.WEDNESDAY:
+                return "수요일";
+            case Calendar.THURSDAY:
+                return "목요일";
+            case Calendar.FRIDAY:
+                return "금요일";
+            case Calendar.SATURDAY:
+                return "토요일";
+            default:
+                return "";
         }
     }
 
@@ -355,17 +629,36 @@ public class RecommendationService {
             Integer weekOfYear,
             List<Integer> excludeMenuIds) {
         try {
+            System.out.println("주차 기반 메뉴 추천 시작 - 매장 ID: " + storeId + ", 주차: " + weekOfYear);
+
+            // 안전한 excludeMenuIds 생성
+            List<Integer> safeExcludeMenuIds = excludeMenuIds != null ? excludeMenuIds : new ArrayList<>();
+
             Map<String, Object> menuData = recommendationMapper.findMenusByWeekOfYear(
-                    storeId, weekOfYear, excludeMenuIds);
+                    storeId, weekOfYear, safeExcludeMenuIds);
 
             if (menuData == null || menuData.isEmpty()) {
+                System.out.println("주차 기반 메뉴 추천 결과 없음");
                 return null;
             }
 
             Integer menuId = ((Number) menuData.get("menu_id")).intValue();
+            System.out.println("추천된 메뉴 ID: " + menuId);
+
+            // 최근 주문된 order_menu_id 추출
+            Long latestOrderMenuId = null;
+            if (menuData.get("latest_order_menu_id") != null) {
+                latestOrderMenuId = ((Number) menuData.get("latest_order_menu_id")).longValue();
+                System.out.println("최근 주문 메뉴 ID: " + latestOrderMenuId);
+            } else {
+                System.out.println("최근 주문 메뉴 ID 없음");
+            }
+
             MenuDetailResponse detailResponse = menuService.getMenuDetail(menuId);
 
             if (detailResponse != null) {
+                System.out.println("메뉴 상세 정보 조회 성공: " + detailResponse.getMenuName());
+
                 detailResponse.setKeyword1((String) menuData.get("keyword1"));
                 detailResponse.setKeyword2((String) menuData.get("keyword2"));
                 detailResponse.setOrderCount(((Number) menuData.get("order_count")).intValue());
@@ -374,10 +667,33 @@ public class RecommendationService {
                 Map<String, Object> additionalInfo = new HashMap<>();
                 additionalInfo.put("주차", weekOfYear + "주차");
                 detailResponse.setAdditionalInfo(additionalInfo);
+
+                // 주문된 실제 옵션 정보 설정
+                if (latestOrderMenuId != null) {
+                    System.out.println("주문 옵션 정보 조회 시작");
+                    List<Map<String, Object>> optionsData = recommendationMapper.findOptionsForOrderMenu(latestOrderMenuId);
+
+                    if (optionsData != null && !optionsData.isEmpty()) {
+                        System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
+                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
+
+                        if (!simplifiedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(simplifiedOptions);
+                        }
+                    } else {
+                        System.out.println("주문 옵션 정보 없음");
+                    }
+                }
+
+                System.out.println("주차 기반 메뉴 추천 완료");
+            } else {
+                System.out.println("메뉴 상세 정보 조회 실패");
             }
 
             return detailResponse;
         } catch (Exception e) {
+            System.out.println("주차 기반 메뉴 추천 오류: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -389,17 +705,36 @@ public class RecommendationService {
             Integer month,
             List<Integer> excludeMenuIds) {
         try {
+            System.out.println("월 기반 메뉴 추천 시작 - 매장 ID: " + storeId + ", 월: " + month);
+
+            // 안전한 excludeMenuIds 생성
+            List<Integer> safeExcludeMenuIds = excludeMenuIds != null ? excludeMenuIds : new ArrayList<>();
+
             Map<String, Object> menuData = recommendationMapper.findMenusByMonth(
-                    storeId, month, excludeMenuIds);
+                    storeId, month, safeExcludeMenuIds);
 
             if (menuData == null || menuData.isEmpty()) {
+                System.out.println("월 기반 메뉴 추천 결과 없음");
                 return null;
             }
 
             Integer menuId = ((Number) menuData.get("menu_id")).intValue();
+            System.out.println("추천된 메뉴 ID: " + menuId);
+
+            // 최근 주문된 order_menu_id 추출
+            Long latestOrderMenuId = null;
+            if (menuData.get("latest_order_menu_id") != null) {
+                latestOrderMenuId = ((Number) menuData.get("latest_order_menu_id")).longValue();
+                System.out.println("최근 주문 메뉴 ID: " + latestOrderMenuId);
+            } else {
+                System.out.println("최근 주문 메뉴 ID 없음");
+            }
+
             MenuDetailResponse detailResponse = menuService.getMenuDetail(menuId);
 
             if (detailResponse != null) {
+                System.out.println("메뉴 상세 정보 조회 성공: " + detailResponse.getMenuName());
+
                 detailResponse.setKeyword1((String) menuData.get("keyword1"));
                 detailResponse.setKeyword2((String) menuData.get("keyword2"));
                 detailResponse.setOrderCount(((Number) menuData.get("order_count")).intValue());
@@ -408,10 +743,33 @@ public class RecommendationService {
                 Map<String, Object> additionalInfo = new HashMap<>();
                 additionalInfo.put("월", month + "월");
                 detailResponse.setAdditionalInfo(additionalInfo);
+
+                // 주문된 실제 옵션 정보 설정
+                if (latestOrderMenuId != null) {
+                    System.out.println("주문 옵션 정보 조회 시작");
+                    List<Map<String, Object>> optionsData = recommendationMapper.findOptionsForOrderMenu(latestOrderMenuId);
+
+                    if (optionsData != null && !optionsData.isEmpty()) {
+                        System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
+                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
+
+                        if (!simplifiedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(simplifiedOptions);
+                        }
+                    } else {
+                        System.out.println("주문 옵션 정보 없음");
+                    }
+                }
+
+                System.out.println("월 기반 메뉴 추천 완료");
+            } else {
+                System.out.println("메뉴 상세 정보 조회 실패");
             }
 
             return detailResponse;
         } catch (Exception e) {
+            System.out.println("월 기반 메뉴 추천 오류: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -422,17 +780,36 @@ public class RecommendationService {
             Integer storeId,
             List<Integer> excludeMenuIds) {
         try {
+            System.out.println("스테디셀러 메뉴 추천 시작 - 매장 ID: " + storeId);
+
+            // 안전한 excludeMenuIds 생성
+            List<Integer> safeExcludeMenuIds = excludeMenuIds != null ? excludeMenuIds : new ArrayList<>();
+
             Map<String, Object> menuData = recommendationMapper.findSteadySellerMenu(
-                    storeId, excludeMenuIds);
+                    storeId, safeExcludeMenuIds);
 
             if (menuData == null || menuData.isEmpty()) {
+                System.out.println("스테디셀러 메뉴 추천 결과 없음");
                 return null;
             }
 
             Integer menuId = ((Number) menuData.get("menu_id")).intValue();
+            System.out.println("추천된 메뉴 ID: " + menuId);
+
+            // 최근 주문된 order_menu_id 추출
+            Long latestOrderMenuId = null;
+            if (menuData.get("latest_order_menu_id") != null) {
+                latestOrderMenuId = ((Number) menuData.get("latest_order_menu_id")).longValue();
+                System.out.println("최근 주문 메뉴 ID: " + latestOrderMenuId);
+            } else {
+                System.out.println("최근 주문 메뉴 ID 없음");
+            }
+
             MenuDetailResponse detailResponse = menuService.getMenuDetail(menuId);
 
             if (detailResponse != null) {
+                System.out.println("메뉴 상세 정보 조회 성공: " + detailResponse.getMenuName());
+
                 detailResponse.setKeyword1((String) menuData.get("keyword1"));
                 detailResponse.setKeyword2((String) menuData.get("keyword2"));
                 detailResponse.setOrderCount(((Number) menuData.get("order_count")).intValue());
@@ -441,10 +818,33 @@ public class RecommendationService {
                 Map<String, Object> additionalInfo = new HashMap<>();
                 additionalInfo.put("인기도", "스테디셀러");
                 detailResponse.setAdditionalInfo(additionalInfo);
+
+                // 주문된 실제 옵션 정보 설정
+                if (latestOrderMenuId != null) {
+                    System.out.println("주문 옵션 정보 조회 시작");
+                    List<Map<String, Object>> optionsData = recommendationMapper.findOptionsForOrderMenu(latestOrderMenuId);
+
+                    if (optionsData != null && !optionsData.isEmpty()) {
+                        System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
+                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
+
+                        if (!simplifiedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(simplifiedOptions);
+                        }
+                    } else {
+                        System.out.println("주문 옵션 정보 없음");
+                    }
+                }
+
+                System.out.println("스테디셀러 메뉴 추천 완료");
+            } else {
+                System.out.println("메뉴 상세 정보 조회 실패");
             }
 
             return detailResponse;
         } catch (Exception e) {
+            System.out.println("스테디셀러 메뉴 추천 오류: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -456,17 +856,36 @@ public class RecommendationService {
             String userId,
             List<Integer> excludeMenuIds) {
         try {
+            System.out.println("회원 최다 주문 메뉴 추천 시작 - 매장 ID: " + storeId + ", 사용자 ID: " + userId);
+
+            // 안전한 excludeMenuIds 생성
+            List<Integer> safeExcludeMenuIds = excludeMenuIds != null ? excludeMenuIds : new ArrayList<>();
+
             Map<String, Object> menuData = recommendationMapper.findMostOrderedMenuByUser(
-                    storeId, userId, excludeMenuIds);
+                    storeId, userId, safeExcludeMenuIds);
 
             if (menuData == null || menuData.isEmpty()) {
+                System.out.println("회원 최다 주문 메뉴 추천 결과 없음");
                 return null;
             }
 
             Integer menuId = ((Number) menuData.get("menu_id")).intValue();
+            System.out.println("추천된 메뉴 ID: " + menuId);
+
+            // 최근 주문된 order_menu_id 추출
+            Long latestOrderMenuId = null;
+            if (menuData.get("latest_order_menu_id") != null) {
+                latestOrderMenuId = ((Number) menuData.get("latest_order_menu_id")).longValue();
+                System.out.println("최근 주문 메뉴 ID: " + latestOrderMenuId);
+            } else {
+                System.out.println("최근 주문 메뉴 ID 없음");
+            }
+
             MenuDetailResponse detailResponse = menuService.getMenuDetail(menuId);
 
             if (detailResponse != null) {
+                System.out.println("메뉴 상세 정보 조회 성공: " + detailResponse.getMenuName());
+
                 detailResponse.setKeyword1((String) menuData.get("keyword1"));
                 detailResponse.setKeyword2((String) menuData.get("keyword2"));
                 detailResponse.setOrderCount(((Number) menuData.get("order_count")).intValue());
@@ -475,10 +894,33 @@ public class RecommendationService {
                 Map<String, Object> additionalInfo = new HashMap<>();
                 additionalInfo.put("주문 빈도", "최다 주문");
                 detailResponse.setAdditionalInfo(additionalInfo);
+
+                // 주문된 실제 옵션 정보 설정
+                if (latestOrderMenuId != null) {
+                    System.out.println("주문 옵션 정보 조회 시작");
+                    List<Map<String, Object>> optionsData = recommendationMapper.findOptionsForOrderMenu(latestOrderMenuId);
+
+                    if (optionsData != null && !optionsData.isEmpty()) {
+                        System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
+                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
+
+                        if (!simplifiedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(simplifiedOptions);
+                        }
+                    } else {
+                        System.out.println("주문 옵션 정보 없음");
+                    }
+                }
+
+                System.out.println("회원 최다 주문 메뉴 추천 완료");
+            } else {
+                System.out.println("메뉴 상세 정보 조회 실패");
             }
 
             return detailResponse;
         } catch (Exception e) {
+            System.out.println("회원 최다 주문 메뉴 추천 오류: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -490,19 +932,32 @@ public class RecommendationService {
             String userId,
             List<Integer> excludeMenuIds) {
         try {
-            System.out.println("최근 주문 메뉴 조회 시작: storeId=" + storeId + ", userId=" + userId);
+            System.out.println("회원 최근 주문 메뉴 조회 시작 - 매장 ID: " + storeId + ", 사용자 ID: " + userId);
+
+            // 안전한 excludeMenuIds 생성
+            List<Integer> safeExcludeMenuIds = excludeMenuIds != null ? excludeMenuIds : new ArrayList<>();
 
             Map<String, Object> menuData = recommendationMapper.findLatestOrderedMenuByUser(
-                    storeId, userId, excludeMenuIds);
+                    storeId, userId, safeExcludeMenuIds);
 
             System.out.println("조회 결과: " + (menuData != null && !menuData.isEmpty() ? "있음" : "없음"));
 
             if (menuData == null || menuData.isEmpty()) {
+                System.out.println("회원 최근 주문 메뉴 조회 결과 없음");
                 return null;
             }
 
             Integer menuId = ((Number) menuData.get("menu_id")).intValue();
-            System.out.println("최근 주문 메뉴 ID: " + menuId);
+            System.out.println("추천된 메뉴 ID: " + menuId);
+
+            // 최근 주문된 order_menu_id 추출
+            Long latestOrderMenuId = null;
+            if (menuData.get("latest_order_menu_id") != null) {
+                latestOrderMenuId = ((Number) menuData.get("latest_order_menu_id")).longValue();
+                System.out.println("최근 주문 메뉴 ID: " + latestOrderMenuId);
+            } else {
+                System.out.println("최근 주문 메뉴 ID 없음");
+            }
 
             MenuDetailResponse detailResponse = menuService.getMenuDetail(menuId);
             System.out.println("메뉴 상세 정보: " + (detailResponse != null ? detailResponse.getMenuName() : "없음"));
@@ -511,7 +966,7 @@ public class RecommendationService {
                 detailResponse.setKeyword1((String) menuData.get("keyword1"));
                 detailResponse.setKeyword2((String) menuData.get("keyword2"));
 
-                // 주문 날짜 정보 추출 (LocalDateTime 타입 처리)
+                // 주문 날짜 정보 추출
                 String formattedDate;
                 Object orderDateObj = menuData.get("order_date");
 
@@ -537,21 +992,206 @@ public class RecommendationService {
                 Map<String, Object> additionalInfo = new HashMap<>();
                 additionalInfo.put("최근 주문일", formattedDate);
                 detailResponse.setAdditionalInfo(additionalInfo);
+
+                // 주문된 실제 옵션 정보 설정
+                if (latestOrderMenuId != null) {
+                    System.out.println("주문 옵션 정보 조회 시작");
+                    List<Map<String, Object>> optionsData = recommendationMapper.findOptionsForOrderMenu(latestOrderMenuId);
+
+                    if (optionsData != null && !optionsData.isEmpty()) {
+                        System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
+                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
+
+                        if (!simplifiedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(simplifiedOptions);
+                        } else {
+                            System.out.println("처리된 옵션 카테고리가 없음");
+                        }
+                    } else {
+                        System.out.println("주문 옵션 정보 없음");
+                    }
+                }
+
+                System.out.println("회원 최근 주문 메뉴 추천 완료");
             }
 
             return detailResponse;
         } catch (Exception e) {
+            System.out.println("회원 최근 주문 메뉴 추천 오류: " + e.getMessage());
             e.printStackTrace();
-            System.out.println("최근 주문 메뉴 조회 오류: " + e.getMessage());
             return null;
         }
     }
 
+    // 마지막 메소드인 getRecommendedMenus에 로그 추가
+    public List<MenuDetailResponse> getRecommendedMenus(
+            Integer storeId,
+            String userId,
+            String gender,
+            String ageStr,
+            String weather,
+            Integer maxResults) {
+
+        try {
+            System.out.println("=== 통합 추천 메뉴 조회 시작 ===");
+            System.out.println("매장 ID: " + storeId + ", 사용자 ID: " + userId +
+                    ", 성별: " + gender + ", 나이: " + ageStr +
+                    ", 날씨: " + weather + ", 최대 결과 수: " + maxResults);
+
+            if (maxResults == null || maxResults <= 0) {
+                maxResults = 3; // 기본값
+                System.out.println("유효하지 않은 최대 결과 수 - 기본값 3으로 설정");
+            }
+
+            List<MenuDetailResponse> results = new ArrayList<>();
+            List<Integer> excludeMenuIds = new ArrayList<>();
+
+            // 1. 사용자 기반 추천 - 최근 주문
+            if (userId != null && !userId.isEmpty()) {
+                System.out.println("회원 최근 주문 메뉴 추천 시작");
+                MenuDetailResponse latestMenu = getLatestOrderedMenuByUser(storeId, userId, excludeMenuIds);
+                if (latestMenu != null) {
+                    System.out.println("회원 최근 주문 메뉴 추천 성공: " + latestMenu.getMenuName());
+                    results.add(latestMenu);
+                    excludeMenuIds.add(latestMenu.getMenuId());
+                } else {
+                    System.out.println("회원 최근 주문 메뉴 없음");
+                }
+            }
+
+            // 2. 사용자 기반 추천 - 가장 많이 주문
+            if (userId != null && !userId.isEmpty() && results.size() < maxResults) {
+                System.out.println("회원 최다 주문 메뉴 추천 시작");
+                MenuDetailResponse mostOrderedMenu = getMostOrderedMenuByUser(storeId, userId, excludeMenuIds);
+                if (mostOrderedMenu != null) {
+                    System.out.println("회원 최다 주문 메뉴 추천 성공: " + mostOrderedMenu.getMenuName());
+                    results.add(mostOrderedMenu);
+                    excludeMenuIds.add(mostOrderedMenu.getMenuId());
+                } else {
+                    System.out.println("회원 최다 주문 메뉴 없음");
+                }
+            }
+
+            // 3. 성별/나이 기반 추천
+            if (gender != null && ageStr != null && results.size() < maxResults) {
+                System.out.println("성별/나이 기반 메뉴 추천 시작");
+                MenuDetailResponse genderAgeMenu = getMenuByGenderAndAge(storeId, gender, ageStr, excludeMenuIds);
+                if (genderAgeMenu != null) {
+                    System.out.println("성별/나이 기반 메뉴 추천 성공: " + genderAgeMenu.getMenuName());
+                    results.add(genderAgeMenu);
+                    excludeMenuIds.add(genderAgeMenu.getMenuId());
+                } else {
+                    System.out.println("성별/나이 기반 메뉴 추천 없음");
+                }
+            }
+
+            // 4. 날씨 기반 추천
+            if (weather != null && !weather.isEmpty() && results.size() < maxResults) {
+                System.out.println("날씨 기반 메뉴 추천 시작");
+                MenuDetailResponse weatherMenu = getMenuByWeather(storeId, weather, excludeMenuIds);
+                if (weatherMenu != null) {
+                    System.out.println("날씨 기반 메뉴 추천 성공: " + weatherMenu.getMenuName());
+                    results.add(weatherMenu);
+                    excludeMenuIds.add(weatherMenu.getMenuId());
+                } else {
+                    System.out.println("날씨 기반 메뉴 추천 없음");
+                }
+            }
+
+            // 5. 시간대 기반 추천
+            if (results.size() < maxResults) {
+                System.out.println("시간대 기반 메뉴 추천 시작");
+                Calendar cal = Calendar.getInstance();
+                int hourOfDay = cal.get(Calendar.HOUR_OF_DAY);
+                System.out.println("현재 시간: " + hourOfDay + "시");
+
+                MenuDetailResponse timeMenu = getMenuByTimeOfDay(storeId, hourOfDay, excludeMenuIds);
+                if (timeMenu != null) {
+                    System.out.println("시간대 기반 메뉴 추천 성공: " + timeMenu.getMenuName());
+                    results.add(timeMenu);
+                    excludeMenuIds.add(timeMenu.getMenuId());
+                } else {
+                    System.out.println("시간대 기반 메뉴 추천 없음");
+                }
+            }
+
+            // 6. 요일 기반 추천
+            if (results.size() < maxResults) {
+                System.out.println("요일 기반 메뉴 추천 시작");
+                Calendar cal = Calendar.getInstance();
+                int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+                System.out.println("현재 요일: " + getDayOfWeekName(dayOfWeek));
+
+                MenuDetailResponse dayMenu = getMenuByDayOfWeek(storeId, dayOfWeek, excludeMenuIds);
+                if (dayMenu != null) {
+                    System.out.println("요일 기반 메뉴 추천 성공: " + dayMenu.getMenuName());
+                    results.add(dayMenu);
+                    excludeMenuIds.add(dayMenu.getMenuId());
+                } else {
+                    System.out.println("요일 기반 메뉴 추천 없음");
+                }
+            }
+
+            // 7. 스테디셀러 추천
+            if (results.size() < maxResults) {
+                System.out.println("스테디셀러 메뉴 추천 시작");
+                MenuDetailResponse steadyMenu = getSteadySellerMenu(storeId, excludeMenuIds);
+                if (steadyMenu != null) {
+                    System.out.println("스테디셀러 메뉴 추천 성공: " + steadyMenu.getMenuName());
+                    results.add(steadyMenu);
+                    excludeMenuIds.add(steadyMenu.getMenuId());
+                } else {
+                    System.out.println("스테디셀러 메뉴 추천 없음");
+                }
+            }
+
+            // 8. 인기 메뉴 추가 (필요시)
+            if (results.size() < maxResults) {
+                System.out.println("인기 메뉴 추가 시작");
+                List<MenuResponse> popularMenus = getMostPopularMenus(storeId, excludeMenuIds);
+                if (popularMenus != null && !popularMenus.isEmpty()) {
+                    System.out.println("인기 메뉴 조회 성공: " + popularMenus.size() + "개");
+                    for (MenuResponse menu : popularMenus) {
+                        if (results.size() >= maxResults) {
+                            System.out.println("최대 결과 수 도달");
+                            break;
+                        }
+
+                        MenuDetailResponse detailResponse = menuService.getMenuDetail(menu.getMenuId());
+                        if (detailResponse != null) {
+                            System.out.println("인기 메뉴 상세 정보 추가: " + detailResponse.getMenuName());
+                            Map<String, Object> additionalInfo = new HashMap<>();
+                            additionalInfo.put("인기도", "인기 메뉴");
+                            detailResponse.setAdditionalInfo(additionalInfo);
+
+                            results.add(detailResponse);
+                            excludeMenuIds.add(detailResponse.getMenuId());
+                        }
+                    }
+                } else {
+                    System.out.println("인기 메뉴 없음");
+                }
+            }
+
+            System.out.println("=== 통합 추천 메뉴 조회 완료 - 총 " + results.size() + "개 메뉴 ===");
+            return results;
+
+        } catch (Exception e) {
+            System.out.println("통합 추천 메뉴 조회 오류: " + e.getMessage());
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
     /**
-     * 성별과 나이를 기반으로 추천 메뉴를 조회 (기존 메소드 유지)
+     * 성별과 나이를 기반으로 추천 메뉴를 조회
      */
     public List<MenuResponse> getMenusByGenderAndAge(Integer storeId, String gender, String ageGroup) {
         try {
+            System.out.println("성별/나이 기반 메뉴 목록 조회 시작 - 매장 ID: " + storeId +
+                    ", 성별: " + gender + ", 나이: " + ageGroup);
+
             // ageGroup이 "20대", "30대" 등의 형식일 경우 숫자만 추출
             Integer age = null;
             if (ageGroup != null) {
@@ -571,16 +1211,23 @@ public class RecommendationService {
                 age = 20;
             }
 
+            System.out.println("변환된 나이대: " + age);
+
             // 해당 성별/연령대에서 가장 많이 주문한 메뉴 조회
             List<Menu> menus = recommendationMapper.findPopularMenusByGenderAndAge(storeId, gender, age, 4);
+            System.out.println("성별/나이 기반 메뉴 조회 결과 수: " + (menus != null ? menus.size() : 0));
 
             // 결과가 없으면 일반 인기 메뉴 제공
             if (menus == null || menus.isEmpty()) {
+                System.out.println("성별/나이 기반 메뉴 없음, 일반 인기 메뉴로 대체");
                 menus = recommendationMapper.findMostPopularMenus(storeId, 4);
             }
 
-            return convertToMenuResponses(menus);
+            List<MenuResponse> result = convertToMenuResponses(menus);
+            System.out.println("성별/나이 기반 메뉴 조회 완료: " + result.size() + "개");
+            return result;
         } catch (Exception e) {
+            System.out.println("성별/나이 기반 메뉴 조회 오류: " + e.getMessage());
             e.printStackTrace();
             return Collections.emptyList();
         }
