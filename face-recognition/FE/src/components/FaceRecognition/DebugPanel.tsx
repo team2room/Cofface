@@ -1,20 +1,20 @@
 // DebugPanel.tsx
-import React from 'react';
-import { 
-  DebugPanelContainer, 
-  DebugCanvasContainer, 
-  DebugCanvas, 
-  DebugValue 
-} from './styles';
-import { FaceDetectionState, RotationState } from './types';
+import React from 'react'
+import {
+  DebugPanelContainer,
+  DebugCanvasContainer,
+  DebugCanvas,
+  DebugValue,
+} from './styles'
+import { FaceDetectionState, RotationState } from './types'
 
 interface DebugPanelProps {
-  detectionState: FaceDetectionState;
-  faceDetected: boolean;
-  faceWithinBounds: boolean;
-  stateStable: boolean;
-  rotation: RotationState;
-  debugCanvasRef: React.RefObject<HTMLCanvasElement>;
+  detectionState: FaceDetectionState
+  faceDetected: boolean
+  faceWithinBounds: boolean
+  stateStable: boolean
+  rotation: RotationState
+  debugCanvasRef: React.RefObject<HTMLCanvasElement>
 }
 
 const DebugPanel: React.FC<DebugPanelProps> = ({
@@ -88,9 +88,7 @@ const DebugPanel: React.FC<DebugPanelProps> = ({
         <span>{rotation.yaw}°</span>
       </DebugValue>
 
-      <div
-        style={{ marginTop: '15px', fontSize: '13px', color: '#aaa' }}
-      >
+      <div style={{ marginTop: '15px', fontSize: '13px', color: '#aaa' }}>
         <div>정면: 모든 값이 ±15° 이내</div>
         <div>좌측: Yaw +25~45°, Roll ±15° 이내</div>
         <div>우측: Yaw -25~-45°, Roll ±15° 이내</div>
@@ -98,7 +96,7 @@ const DebugPanel: React.FC<DebugPanelProps> = ({
         <div>아래쪽: Pitch +25~45°, Roll ±15° 이내</div>
       </div>
     </DebugPanelContainer>
-  );
-};
+  )
+}
 
-export default DebugPanel;
+export default DebugPanel
