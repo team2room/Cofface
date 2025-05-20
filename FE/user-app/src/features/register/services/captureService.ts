@@ -1,12 +1,10 @@
 import axios from 'axios'
 import { CapturedImage } from '@/interfaces/FaceRegisterInterfaces'
-
-// API URL 설정
-const API_BASE_URL = 'https://face.orderme.store'
+import { FACE_URL } from '@/config'
 
 // API 인스턴스 생성
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: FACE_URL,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
