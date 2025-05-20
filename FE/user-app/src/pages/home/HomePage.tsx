@@ -22,7 +22,6 @@ import {
   initNotificationListeners,
   registerDeviceToken,
 } from '@/services/notificationService'
-import { registerServiceWorker } from '@/utils/firebaseUtils'
 
 const Container = tw.div`
   w-full
