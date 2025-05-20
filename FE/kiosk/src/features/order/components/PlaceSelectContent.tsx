@@ -23,6 +23,7 @@ export default function PlaceSelectContent() {
     } else if (originStep === 'main') {
       // 위에 다른 컴포넌트를 띄우게, 혹은 새로운 페이지로 이동 - 슬라이드 결제
       // setStep('main')
+      // isMember면 자동 결제, 아니면 payPage로 이동 / 회원 카드 등록 여부 확인
     }
   }
 
