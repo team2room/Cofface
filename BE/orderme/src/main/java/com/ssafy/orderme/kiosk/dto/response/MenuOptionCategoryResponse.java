@@ -6,15 +6,45 @@ import java.util.List;
  * 메뉴 옵션 카테고리별 응답 DTO
  */
 public class MenuOptionCategoryResponse {
+    private Integer categoryId;            // categoryId 필드
+    private String categoryName;        // categoryName 필드
     private String optionCategory;         // 옵션 카테고리 이름
     private Boolean isRequired;            // 필수 여부
     private List<String> optionNames;      // 옵션 이름 목록
     private List<Integer> additionalPrices;// 추가 가격 목록
-    private List<Integer> optionIds;        // 옵션 ID 목록 - Long에서 Integer로 변경
+    private List<Integer> optionIds;        // 옵션 ID 목록
     private List<Boolean> isDefault;       // 기본 옵션 여부 목록
     private Integer maxSelections;         // 최대 선택 가능 수
+    private List<MenuOptionResponse> options; // options 필드
 
-    // 모든 getter와 setter 메서드 추가
+    // categoryId getter/setter 수정
+    public Integer getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Integer categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    // categoryName getter/setter
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
+    }
+
+    // options getter/setter
+    public List<MenuOptionResponse> getOptions() {
+        return options;
+    }
+
+    public void setOptions(List<MenuOptionResponse> options) {
+        this.options = options;
+    }
+
+    // 기존 getter/setter 유지
     public String getOptionCategory() {
         return optionCategory;
     }
@@ -47,7 +77,7 @@ public class MenuOptionCategoryResponse {
         this.additionalPrices = additionalPrices;
     }
 
-    public List<Integer> getOptionIds() {  // 반환 타입 변경: List<Long> -> List<Integer>
+    public List<Integer> getOptionIds() {
         return optionIds;
     }
 

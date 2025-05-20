@@ -130,7 +130,18 @@
         (COUNT(DISTINCT o.order_id) / (SELECT COUNT(DISTINCT o2.order_id)
         FROM orders o2
         WHERE o2.gender = #{gender}
-        AND FLOOR(o2.age/10)*10 = #{ageGroup})) * 100 as percentage
+        AND FLOOR(o2.age/10)*10 = #{ageGroup})) * 100 as percentage,
+        -- 주문된 메뉴 ID 및 해당 주문의 order_menu_id 추가
+        (
+        SELECT om_sub.order_menu_id
+        FROM orders o_sub
+        JOIN ordermenu om_sub ON o_sub.order_id = om_sub.order_id
+        WHERE o_sub.gender = #{gender}
+        AND FLOOR(o_sub.age/10)*10 = #{ageGroup}
+        AND om_sub.menu_id = m.menu_id
+        ORDER BY o_sub.order_date DESC
+        LIMIT 1
+        ) as latest_order_menu_id
         FROM
         menus m
         JOIN
@@ -211,7 +222,17 @@
         (SELECT COUNT(DISTINCT o2.order_id)
         FROM orders o2
         WHERE o2.kiosk_id = #{storeId}
-        AND HOUR(o2.order_date) = #{hourOfDay})) as percentage
+        AND HOUR(o2.order_date) = #{hourOfDay})) as percentage,
+        (
+        SELECT om_sub.order_menu_id
+        FROM orders o_sub
+        JOIN ordermenu om_sub ON o_sub.order_id = om_sub.order_id
+        WHERE o_sub.kiosk_id = #{storeId}
+        AND HOUR(o_sub.order_date) = #{hourOfDay}
+        AND om_sub.menu_id = m.menu_id
+        ORDER BY o_sub.order_date DESC
+        LIMIT 1
+        ) as latest_order_menu_id
         FROM
         menus m
         JOIN
@@ -258,7 +279,17 @@
         (SELECT COUNT(DISTINCT o2.order_id)
         FROM orders o2
         WHERE o2.kiosk_id = #{storeId}
-        AND o2.weather = #{weather})) as percentage
+        AND o2.weather = #{weather})) as percentage,
+        (
+        SELECT om_sub.order_menu_id
+        FROM orders o_sub
+        JOIN ordermenu om_sub ON o_sub.order_id = om_sub.order_id
+        WHERE o_sub.kiosk_id = #{storeId}
+        AND o_sub.weather = #{weather}
+        AND om_sub.menu_id = m.menu_id
+        ORDER BY o_sub.order_date DESC
+        LIMIT 1
+        ) as latest_order_menu_id
         FROM
         menus m
         JOIN
@@ -305,7 +336,17 @@
         (SELECT COUNT(DISTINCT o2.order_id)
         FROM orders o2
         WHERE o2.kiosk_id = #{storeId}
-        AND DAYOFWEEK(o2.order_date) = #{dayOfWeek})) as percentage
+        AND DAYOFWEEK(o2.order_date) = #{dayOfWeek})) as percentage,
+        (
+        SELECT om_sub.order_menu_id
+        FROM orders o_sub
+        JOIN ordermenu om_sub ON o_sub.order_id = om_sub.order_id
+        WHERE o_sub.kiosk_id = #{storeId}
+        AND DAYOFWEEK(o_sub.order_date) = #{dayOfWeek}
+        AND om_sub.menu_id = m.menu_id
+        ORDER BY o_sub.order_date DESC
+        LIMIT 1
+        ) as latest_order_menu_id
         FROM
         menus m
         JOIN
@@ -352,7 +393,17 @@
         (SELECT COUNT(DISTINCT o2.order_id)
         FROM orders o2
         WHERE o2.kiosk_id = #{storeId}
-        AND WEEK(o2.order_date) = #{weekOfYear})) as percentage
+        AND WEEK(o2.order_date) = #{weekOfYear})) as percentage,
+        (
+        SELECT om_sub.order_menu_id
+        FROM orders o_sub
+        JOIN ordermenu om_sub ON o_sub.order_id = om_sub.order_id
+        WHERE o_sub.kiosk_id = #{storeId}
+        AND WEEK(o_sub.order_date) = #{weekOfYear}
+        AND om_sub.menu_id = m.menu_id
+        ORDER BY o_sub.order_date DESC
+        LIMIT 1
+        ) as latest_order_menu_id
         FROM
         menus m
         JOIN
@@ -399,7 +450,17 @@
         (SELECT COUNT(DISTINCT o2.order_id)
         FROM orders o2
         WHERE o2.kiosk_id = #{storeId}
-        AND MONTH(o2.order_date) = #{month})) as percentage
+        AND MONTH(o2.order_date) = #{month})) as percentage,
+        (
+        SELECT om_sub.order_menu_id
+        FROM orders o_sub
+        JOIN ordermenu om_sub ON o_sub.order_id = om_sub.order_id
+        WHERE o_sub.kiosk_id = #{storeId}
+        AND MONTH(o_sub.order_date) = #{month}
+        AND om_sub.menu_id = m.menu_id
+        ORDER BY o_sub.order_date DESC
+        LIMIT 1
+        ) as latest_order_menu_id
         FROM
         menus m
         JOIN
@@ -445,7 +506,16 @@
         (COUNT(DISTINCT o.order_id) * 100.0 /
         (SELECT COUNT(DISTINCT o2.order_id)
         FROM orders o2
-        WHERE o2.kiosk_id = #{storeId})) as percentage
+        WHERE o2.kiosk_id = #{storeId})) as percentage,
+        (
+        SELECT om_sub.order_menu_id
+        FROM orders o_sub
+        JOIN ordermenu om_sub ON o_sub.order_id = om_sub.order_id
+        WHERE o_sub.kiosk_id = #{storeId}
+        AND om_sub.menu_id = m.menu_id
+        ORDER BY o_sub.order_date DESC
+        LIMIT 1
+        ) as latest_order_menu_id
         FROM
         menus m
         JOIN
@@ -490,7 +560,17 @@
         (COUNT(DISTINCT o.order_id) * 100.0 /
         (SELECT COUNT(DISTINCT o2.order_id)
         FROM orders o2
-        WHERE o2.user_id = #{userId})) as percentage
+        WHERE o2.user_id = #{userId})) as percentage,
+        (
+        SELECT om_sub.order_menu_id
+        FROM orders o_sub
+        JOIN ordermenu om_sub ON o_sub.order_id = om_sub.order_id
+        WHERE o_sub.user_id = #{userId}
+        AND o_sub.kiosk_id = #{storeId}
+        AND om_sub.menu_id = m.menu_id
+        ORDER BY o_sub.order_date DESC
+        LIMIT 1
+        ) as latest_order_menu_id
         FROM
         menus m
         JOIN
@@ -532,7 +612,17 @@
         m.keyword1,
         m.keyword2,
         COUNT(DISTINCT o.order_id) as order_count,
-        o.order_date
+        o.order_date,
+        (
+        SELECT om_sub.order_menu_id
+        FROM orders o_sub
+        JOIN ordermenu om_sub ON o_sub.order_id = om_sub.order_id
+        WHERE o_sub.user_id = #{userId}
+        AND o_sub.kiosk_id = #{storeId}
+        AND om_sub.menu_id = m.menu_id
+        ORDER BY o_sub.order_date DESC
+        LIMIT 1
+        ) as latest_order_menu_id
         FROM
         menus m
         JOIN
@@ -558,6 +648,25 @@
         ORDER BY
         o.order_date DESC
         LIMIT 1
+    </select>
+
+    <select id="findOptionsForOrderMenu" resultType="map">
+        SELECT
+            oo.order_option_id,
+            oo.option_item_id,
+            oi.option_name,
+            oi.additional_price,
+            oc.category_id as option_category_id,
+            oc.category_name as option_category_name,
+            oc.is_required
+        FROM
+            orderoption oo
+                JOIN optionitems oi ON oo.option_item_id = oi.item_id
+                JOIN optioncategories oc ON oi.category_id = oc.category_id
+        WHERE
+            oo.order_menu_id = #{orderMenuId}
+        ORDER BY
+            oc.category_id, oi.item_id
     </select>
 
     <!-- 날씨 기반 메뉴 선호도 업데이트 -->

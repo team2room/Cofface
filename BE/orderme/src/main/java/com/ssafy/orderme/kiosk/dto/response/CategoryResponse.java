@@ -4,16 +4,16 @@ package com.ssafy.orderme.kiosk.dto.response;
  * 카테고리 응답 DTO
  */
 public class CategoryResponse {
-    private Long categoryId;       // 카테고리 ID
+    private Integer categoryId;       // 카테고리 ID (Long에서 Integer로 변경)
     private String categoryName;   // 카테고리 이름
     private Integer displayOrder;  // 표시 순서
     private Boolean isActive;      // 활성화 여부
 
-    public Long getCategoryId() {
+    public Integer getCategoryId() {   // 반환 타입 변경: Long -> Integer
         return categoryId;
     }
 
-    public void setCategoryId(Long categoryId) {
+    public void setCategoryId(Integer categoryId) {   // 매개변수 타입 변경: Long -> Integer
         this.categoryId = categoryId;
     }
 

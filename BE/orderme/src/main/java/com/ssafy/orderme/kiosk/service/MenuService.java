@@ -59,16 +59,16 @@ public class MenuService {
 
         // 메뉴에 연결된 옵션 카테고리 목록 조회
         List<OptionCategory> optionCategories = menuMapper.findOptionCategoriesByMenuId(menuId);
-        List<MenuOptionCategoryResponse> optionCategoryResponses = new ArrayList<>();
+        List<Map<String, Object>> optionCategoryMaps = new ArrayList<>();
 
         // 각 옵션 카테고리에 대해 옵션 아이템 조회 및 응답 생성
         for (OptionCategory category : optionCategories) {
             List<OptionItem> items = menuMapper.findOptionItemsByCategoryId(category.getCategoryId());
 
-            MenuOptionCategoryResponse categoryResponse = new MenuOptionCategoryResponse();
-            categoryResponse.setOptionCategory(category.getCategoryName());
-            categoryResponse.setIsRequired(category.getIsRequired());
-            categoryResponse.setMaxSelections(1); // 기본값
+            Map<String, Object> categoryMap = new HashMap<>();
+            categoryMap.put("optionCategory", category.getCategoryName());
+            categoryMap.put("isRequired", category.getIsRequired());
+            categoryMap.put("maxSelections", 1); // 기본값
 
             // 옵션 아이템 정보 매핑
             List<String> optionNames = new ArrayList<>();
@@ -83,25 +83,25 @@ public class MenuService {
                 isDefault.add(item.getIsDefault());
             }
 
-            categoryResponse.setOptionNames(optionNames);
-            categoryResponse.setAdditionalPrices(additionalPrices);
-            categoryResponse.setOptionIds(optionIds);
-            categoryResponse.setIsDefault(isDefault);
+            categoryMap.put("optionNames", optionNames);
+            categoryMap.put("additionalPrices", additionalPrices);
+            categoryMap.put("optionIds", optionIds);
+            categoryMap.put("isDefault", isDefault);
 
-            optionCategoryResponses.add(categoryResponse);
+            optionCategoryMaps.add(categoryMap);
         }
 
         // 메뉴 상세 응답 생성
         MenuDetailResponse response = new MenuDetailResponse();
-        response.setMenuId(menu.getMenuId().longValue());
+        response.setMenuId(menu.getMenuId().intValue());
         response.setMenuName(menu.getMenuName());
         response.setPrice(menu.getPrice());
-        response.setCategoryId(menu.getCategoryId().longValue());
+        response.setCategoryId(menu.getCategoryId().intValue());
         response.setCategoryName(menu.getCategory() != null ? menu.getCategory().getCategoryName() : null);
         response.setIsSoldOut(menu.getIsSoldOut());
         response.setImageUrl(menu.getImageUrl());
         response.setDescription(menu.getDescription());
-        response.setOptions(optionCategoryResponses);
+        response.setOptions(optionCategoryMaps);
 
         return response;
     }

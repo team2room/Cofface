@@ -50,7 +50,7 @@ public class CategoryService {
      */
     private CategoryResponse convertToCategoryResponse(Category category) {
         CategoryResponse response = new CategoryResponse();
-        response.setCategoryId(category.getCategoryId());
+        response.setCategoryId(category.getCategoryId().intValue());
         response.setCategoryName(category.getCategoryName());
         response.setDisplayOrder(category.getDisplayOrder());
         response.setIsActive(category.getIsActive());

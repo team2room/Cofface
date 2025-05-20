@@ -4,7 +4,7 @@ package com.ssafy.orderme.kiosk.dto.response;
  * 메뉴 옵션 응답 DTO
  */
 public class MenuOptionResponse {
-    private Long optionId;           // 옵션 ID
+    private Integer optionId;           // 옵션 ID (Long에서 Integer로 변경)
     private String optionCategory;   // 옵션 카테고리
     private String optionName;       // 옵션 이름
     private Integer additionalPrice; // 추가 가격
@@ -14,11 +14,11 @@ public class MenuOptionResponse {
     private Integer maxSelections;   // 최대 선택 가능 수
     private Boolean isSoldOut;       // 품절 여부
 
-    public Long getOptionId() {
+    public Integer getOptionId() {     // 반환 타입 변경: Long -> Integer
         return optionId;
     }
 
-    public void setOptionId(Long optionId) {
+    public void setOptionId(Integer optionId) {   // 매개변수 타입 변경: Long -> Integer
         this.optionId = optionId;
     }
 
