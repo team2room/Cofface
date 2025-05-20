@@ -82,7 +82,7 @@ export default defineConfig({
             type: 'image/png',
           },
           {
-            src: 'icons/favicon-128.png',
+            src: 'icons/favicon-128x128.png',
             sizes: '128x128',
             type: 'image/png',
           },
@@ -97,8 +97,8 @@ export default defineConfig({
             type: 'image/png',
           },
           {
-            src: 'icons/mstile-144x144.png',
-            sizes: '144x144',
+            src: 'icons/mstile-114x114.png',
+            sizes: '114x114',
             type: 'image/png',
           },
           {
@@ -107,8 +107,8 @@ export default defineConfig({
             type: 'image/png',
           },
           {
-            src: 'icons/mstile-310x310.png',
-            sizes: '310x310',
+            src: 'icons/mstile-310x150.png',
+            sizes: '310x150',
             type: 'image/png',
           },
         ],
