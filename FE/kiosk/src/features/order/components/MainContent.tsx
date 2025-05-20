@@ -49,7 +49,7 @@ function OptionButton({
 }
 
 const iconMap: Record<string, Record<string, string>> = {
-  '따뜻하게/차갑게': {
+  'HOT/ICED': {
     차갑게: '/icons/icon-cold-on.png',
     뜨겁게: '/icons/icon-hot-on.png',
   },
@@ -73,7 +73,7 @@ const iconMap: Record<string, Record<string, string>> = {
 }
 
 const labelMap: Record<string, string> = {
-  '따뜻하게/차갑게': '온도',
+  'HOT/ICED': '온도',
   사이즈: '사이즈',
   얼음: '얼음 양',
   '샷 추가': '샷 추가',
@@ -81,6 +81,7 @@ const labelMap: Record<string, string> = {
 
 export default function MainContent() {
   const { setStep } = useStepStore()
+  //TODO - 진행바 만들 때 참고하기
   const { data, loading, error } = useRecommend(1)
   const [currentIndex, setCurrentIndex] = useState(0)
 
