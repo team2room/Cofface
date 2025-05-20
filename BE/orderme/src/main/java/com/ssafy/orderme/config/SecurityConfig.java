@@ -31,6 +31,7 @@ public class SecurityConfig {
         this.userMapper = userMapper;
     }
 
+    // 시큐리티 필터 설정
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtTokenProvider jwtTokenProvider) throws Exception {
         http
