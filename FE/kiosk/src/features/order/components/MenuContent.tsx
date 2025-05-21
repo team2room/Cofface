@@ -45,11 +45,13 @@ export default function MenuContent() {
       )}
 
       {/* 추천 메뉴 <-> 전체 메뉴 전환 버튼 */}
-      <MenuButton onClick={() => setShowAllMenu(!showAllMenu)}>
-        <Text variant="body2" weight="bold" color="main">
-          {showAllMenu ? '추천메뉴 보기' : '전체메뉴 보기'}
-        </Text>
-      </MenuButton>
+      <div className="flex justify-center">
+        <MenuButton onClick={() => setShowAllMenu(!showAllMenu)}>
+          <Text variant="body2" weight="bold" color="main">
+            {showAllMenu ? '추천메뉴 보기' : '전체메뉴 보기'}
+          </Text>
+        </MenuButton>
+      </div>
 
       {/* 주문 내역 */}
       <OrderSection />
