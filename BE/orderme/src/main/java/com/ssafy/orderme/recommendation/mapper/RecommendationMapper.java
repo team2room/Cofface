@@ -140,4 +140,6 @@ public interface RecommendationMapper {
     // 13. 특정 주문 메뉴의 옵션 정보 조회 (새로 추가)
     List<Map<String, Object>> findOptionsForOrderMenu(
             @Param("orderMenuId") Long orderMenuId);
+
+    List<Map<String, Object>> findAllOptionsForMenu(@Param("menuId") Integer menuId);
 }
