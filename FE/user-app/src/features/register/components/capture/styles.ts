@@ -45,13 +45,13 @@ export const VideoContainer = tw.div`
 `
 
 export const Video = tw.video`
-  absolute top-1/2 left-1/2 min-w-full min-h-full w-auto h-auto
+  absolute top-1/2 left-1/2 w-full h-full object-cover object-center
   transform -translate-x-1/2 -translate-y-1/2 -scale-x-100
 `
 
 export const Canvas = tw.canvas`
   absolute top-0 left-0 w-full h-full
-  transform -scale-x-100
+  transform -scale-x-100 object-cover
 `
 
 export const GuideLine = tw.div`
