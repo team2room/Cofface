@@ -8,6 +8,7 @@ import ProgressContent from './pay/ProgressContent'
 import { useEffect, useState } from 'react'
 import { useDirectOrderStore } from '@/stores/directOrderStore'
 import { changeDisplayType } from '@/lib/changeDisplay'
+import { calculateAge } from '@/utils/calculateAge'
 
 const Content = tw.div`flex flex-col items-center justify-center flex-1 gap-12 px-7`
 const ImageButton = tw.button`
@@ -22,7 +23,7 @@ export default function PlaceSelectContent() {
   const [showProgress, setShowProgress] = useState(false)
   const { originStep, setStep } = useStepStore()
   const payStore = usePayStore()
-  const { isMember, loginMethod, hasAutoPayment, guestInfo, weather } =
+  const { isMember, loginMethod, hasAutoPayment, guestInfo, weather, user } =
     useUserStore()
   const directOrder = useDirectOrderStore((state) => state.directOrder)
 
@@ -45,12 +46,19 @@ export default function PlaceSelectContent() {
           ]
         : []
 
+      const age = user?.birthDate
+        ? calculateAge(user.birthDate)
+        : (guestInfo?.age ?? 0)
+      const gender = user?.gender
+        ? user.gender.toLowerCase()
+        : (guestInfo?.gender ?? '여성')
+
       payStore.setInitialPayData({
         kioskId: 1,
         totalAmount: totalPrice,
         menuOrders: menuOrder,
-        age: guestInfo?.age ?? 0,
-        gender: guestInfo?.gender ?? '여성',
+        age,
+        gender,
         weather: weather?.dominant ?? '맑음',
       })
     }

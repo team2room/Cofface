@@ -103,10 +103,6 @@ export function OptionList({
         const defaultIndex = isDefault.findIndex((v) => v === true)
         const defaultOptionName = optionNames[defaultIndex]
 
-        console.log(
-          `옵션 렌더링: ${optionCategory} - ${defaultOptionName}`,
-          defaultIndex,
-        )
         const iconPath =
           iconMap[optionCategory]?.[defaultOptionName] || '/icons/default.png'
 

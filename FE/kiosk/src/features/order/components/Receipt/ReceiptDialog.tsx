@@ -11,6 +11,7 @@ import ReceiptItemList from './ReceiptItemList'
 import { useOrderStore } from '@/stores/orderStore'
 import { usePayStore } from '@/stores/payStore'
 import { useUserStore } from '@/stores/loginStore'
+import { calculateAge } from '@/utils/calculateAge'
 
 const Content = tw.div`h-[1150px] bg-lightLight p-4 mt-4 mb-12 flex flex-col justify-between`
 const HeaderRow = tw.div`flex justify-between p-2 border-y-2 border-dark`
@@ -31,7 +32,7 @@ export default function ReceiptModal({
   onOpenChange,
   onNext,
 }: ReceiptModalProps) {
-  const { guestInfo, weather } = useUserStore()
+  const { guestInfo, weather, user } = useUserStore()
   const orders = useOrderStore((state) => state.orders)
   const payStore = usePayStore()
 
@@ -49,6 +50,13 @@ export default function ReceiptModal({
       quantity: 1,
     })),
   }))
+
+  const age = user?.birthDate
+    ? calculateAge(user.birthDate)
+    : (guestInfo?.age ?? 0)
+  const gender = user?.gender
+    ? user.gender.toLowerCase()
+    : (guestInfo?.gender ?? '여성')
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -133,8 +141,8 @@ export default function ReceiptModal({
                 kioskId: 1,
                 totalAmount: totalPrice,
                 menuOrders,
-                age: guestInfo?.age ?? 0,
-                gender: guestInfo?.gender ?? '여성',
+                age,
+                gender,
                 weather: weather?.dominant ?? '맑음',
               })
               onOpenChange(false)
