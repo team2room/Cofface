@@ -10,10 +10,15 @@ import { ProgressBar } from './Main/ProgressBar'
 import { OptionList } from './Main/OptionList'
 import { MenuInfo } from './Main/MenuInfo'
 import { SlideButton } from './Main/SlideButtion'
+import { useDirectOrderStore } from '@/stores/directOrderStore'
+import { convertMenuToOrderItem } from '@/utils/convertMenuToOrder'
+import { useRecommendationStore } from '@/stores/recommendStore'
 
 export default function MainContent() {
   const { step, setStep } = useStepStore()
   const { data, loading, error } = useRecommend(1)
+  const { setRecommendedMenus } = useRecommendationStore()
+  const { setDirectOrder } = useDirectOrderStore.getState()
 
   // 제스처 감지 활성화 상태
   const [gestureEnabled, setGestureEnabled] = useState(false)
@@ -34,6 +39,14 @@ export default function MainContent() {
     }
   }, [])
 
+  // 데이터가 로드되면 추천 메뉴 스토어에 설정
+  useEffect(() => {
+    if (data?.data?.recommendedMenus) {
+      console.log('추천 메뉴', data.data.recommendedMenus)
+      setRecommendedMenus(data.data.recommendedMenus)
+    }
+  }, [data, setRecommendedMenus])
+
   const recommendedMenus = data?.data?.recommendedMenus || []
   const {
     currentIndex,
@@ -51,6 +64,8 @@ export default function MainContent() {
   const currentMenu = currentMenuGroup?.menus?.[0]
 
   const handleOrder = () => {
+    const orderItem = convertMenuToOrderItem(currentMenu)
+    setDirectOrder(orderItem)
     setStep('place', 'main')
   }
 

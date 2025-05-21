@@ -1,5 +1,6 @@
+import { useStepStore } from '@/stores/stepStore'
 import { keyframes } from '@emotion/react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 // 애니메이션 키프레임 정의
 export const slideOutLeft = keyframes`
@@ -99,11 +100,17 @@ export function useSlideAnimation() {
 }
 
 export function useMenuNavigation(totalMenus: number) {
+  const { setStep } = useStepStore()
   const [currentIndex, setCurrentIndex] = useState(0)
   const { isAnimating, getAnimationType, startAnimation } = useSlideAnimation()
+  const currentIndexRef = useRef(0)
+
+  useEffect(() => {
+    currentIndexRef.current = currentIndex
+  }, [currentIndex])
 
   const handlePrev = () => {
-    if (currentIndex > 0) {
+    if (currentIndexRef.current > 0) {
       startAnimation('right', () => {
         setCurrentIndex((prevIndex) => prevIndex - 1)
       })
@@ -111,10 +118,12 @@ export function useMenuNavigation(totalMenus: number) {
   }
 
   const handleNext = () => {
-    if (currentIndex < totalMenus - 1) {
+    if (currentIndexRef.current < totalMenus - 1) {
       startAnimation('left', () => {
         setCurrentIndex((prevIndex) => prevIndex + 1)
       })
+    } else {
+      setStep('menu')
     }
   }
 

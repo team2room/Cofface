@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
+import { useAutoPay } from '../useAutoPay'
+import { useNavigate } from 'react-router-dom'
 
 interface UseCardPaymentReturn {
   cardRef: React.RefObject<HTMLDivElement>
@@ -12,6 +14,7 @@ interface UseCardPaymentReturn {
 }
 
 export const useProgressPay = (): UseCardPaymentReturn => {
+  const navigate = useNavigate()
   const [isDragging, setIsDragging] = useState<boolean>(false)
   const [cardPosition, setCardPosition] = useState<number>(0) // 0 = bottom, 100 = top (fully inserted)
   const [startDragY, setStartDragY] = useState<number>(0)
@@ -20,6 +23,9 @@ export const useProgressPay = (): UseCardPaymentReturn => {
   const [cardZIndex, setCardZIndex] = useState<number>(0) // 카드의 z-index를 동적으로 제어합니다
   const [showGuide, setShowGuide] = useState<boolean>(true) // 가이드 화살표 표시 여부
   const cardRef = useRef<HTMLDivElement>(null)
+  const { error, startPayment } = useAutoPay()
+  const [isPaymentInProgress, setIsPaymentInProgress] = useState(false)
+  const hasTriggeredPaymentRef = useRef(false)
 
   // 결제 완료 후 처리 - 카드는 꽂힌 상태로 유지
   useEffect(() => {
@@ -78,7 +84,7 @@ export const useProgressPay = (): UseCardPaymentReturn => {
   }
 
   // 드래그 중 처리
-  const handleDragMove = (clientY: number): void => {
+  const handleDragMove = async (clientY: number): Promise<void> => {
     if (!isDragging) return
 
     // 얼마나 위로 드래그했는지 계산 (아래로 = 양수, 위로 = 음수)
@@ -92,8 +98,13 @@ export const useProgressPay = (): UseCardPaymentReturn => {
     setCardPosition(newPosition)
 
     // 충분히 삽입되었는지 확인 (70% 이상)
-    if (newPosition > 70) {
-      completePayment()
+    if (
+      newPosition > 70 &&
+      !hasTriggeredPaymentRef.current &&
+      !isPaymentInProgress
+    ) {
+      triggerPaymentFlow()
+      // completePayment()
     }
   }
 
@@ -155,7 +166,51 @@ export const useProgressPay = (): UseCardPaymentReturn => {
       window.removeEventListener('mouseup', handleDragEnd)
       window.removeEventListener('touchmove', handleTouchMove as EventListener)
       window.removeEventListener('touchend', handleDragEnd)
+
+      navigate('/loading?type=complete')
     }
+  }
+
+  const triggerPaymentFlow = async (): Promise<void> => {
+    if (
+      isPaymentComplete ||
+      isPaymentInProgress ||
+      hasTriggeredPaymentRef.current
+    )
+      return
+
+    hasTriggeredPaymentRef.current = true
+    setIsPaymentInProgress(true)
+
+    try {
+      await startPayment()
+      if (!error) {
+        completePayment()
+      } else {
+        console.error('Payment failed:', error)
+        resetCardPosition()
+      }
+    } catch (e) {
+      console.error('Unexpected payment error:', e)
+      resetCardPosition()
+    } finally {
+      setIsPaymentInProgress(false)
+    }
+  }
+
+  // 카드 위치 초기화
+  const resetCardPosition = (): void => {
+    setCardPosition(0)
+    setIsDragging(false)
+    hasTriggeredPaymentRef.current = false
+
+    setTimeout(() => {
+      setCardZIndex(0)
+    }, 300)
+
+    setTimeout(() => {
+      setShowGuide(true)
+    }, 500)
   }
 
   // 전역 이벤트 리스너 설정
