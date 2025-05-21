@@ -13,6 +13,7 @@ import { SlideButton } from './Main/SlideButtion'
 import { useDirectOrderStore } from '@/stores/directOrderStore'
 import { convertMenuToOrderItem } from '@/utils/convertMenuToOrder'
 import { useRecommendationStore } from '@/stores/recommendStore'
+import CustomDialog from '@/components/CustomDialog'
 
 export default function MainContent() {
   const { step, setStep } = useStepStore()
@@ -54,6 +55,8 @@ export default function MainContent() {
     getAnimationType,
     handlePrev,
     handleNext,
+    showModal,
+    setShowModal,
   } = useMenuNavigation(recommendedMenus.length)
 
   if (loading) return <> 로딩 중... </>
@@ -135,6 +138,17 @@ export default function MainContent() {
           />
         </div>
       </div>
+
+      <CustomDialog
+        open={showModal}
+        onOpenChange={setShowModal}
+        title="📃모든 추천 확인 완료📃"
+        description="COFFACE의 전체 메뉴를 확인시겠습니까?"
+        cancelText="취소"
+        confirmText="이동하기"
+        onCancel={() => setShowModal(false)}
+        onConfirm={() => setStep('menu')}
+      />
     </div>
   )
 }

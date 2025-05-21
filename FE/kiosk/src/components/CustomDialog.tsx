@@ -44,9 +44,21 @@ export default function CustomDialog({
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="rounded-xl p-12 pb-16 text-center">
-        {title && <AlertDialogTitle>{title}</AlertDialogTitle>}
+        {title && (
+          <>
+            <AlertDialogTitle></AlertDialogTitle>
+            <Text
+              variant="title4"
+              weight="extrabold"
+              className="text-center"
+              color="lightBlack"
+            >
+              {title}
+            </Text>
+          </>
+        )}
         {description && (
-          <AlertDialogDescription className="mt-28 mb-28 whitespace-pre-line leading-10">
+          <AlertDialogDescription className="mt-28 mb-28 whitespace-pre-line leading-[100px]">
             <Text variant="title3" weight="extrabold" color="lightBlack">
               {description}
             </Text>

@@ -1,4 +1,3 @@
-import { useStepStore } from '@/stores/stepStore'
 import { keyframes } from '@emotion/react'
 import { useEffect, useRef, useState } from 'react'
 
@@ -100,10 +99,10 @@ export function useSlideAnimation() {
 }
 
 export function useMenuNavigation(totalMenus: number) {
-  const { setStep } = useStepStore()
   const [currentIndex, setCurrentIndex] = useState(0)
   const { isAnimating, getAnimationType, startAnimation } = useSlideAnimation()
   const currentIndexRef = useRef(0)
+  const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
     currentIndexRef.current = currentIndex
@@ -123,7 +122,7 @@ export function useMenuNavigation(totalMenus: number) {
         setCurrentIndex((prevIndex) => prevIndex + 1)
       })
     } else {
-      setStep('menu')
+      setShowModal(true)
     }
   }
 
@@ -133,5 +132,7 @@ export function useMenuNavigation(totalMenus: number) {
     getAnimationType,
     handlePrev,
     handleNext,
+    showModal,
+    setShowModal,
   }
 }
