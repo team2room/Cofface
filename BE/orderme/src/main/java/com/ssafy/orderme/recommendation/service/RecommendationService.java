@@ -207,21 +207,39 @@ public class RecommendationService {
     }
 
     // 주문 옵션 데이터를 원하는 형식으로 변환하는 메소드
-    private List<Map<String, Object>> processOptionsDataSimplified(List<Map<String, Object>> optionsData) {
-        if (optionsData == null || optionsData.isEmpty()) {
-            System.out.println("옵션 데이터가 없어 처리 불가");
-            return new ArrayList<>();
-        }
-
-        System.out.println("옵션 데이터 처리 시작 - " + optionsData.size() + "개 옵션");
-
+    // RecommendationService.java에서 processOptionsDataSimplified 메서드 수정
+    private List<Map<String, Object>> processOptionsDataSimplified(List<Map<String, Object>> orderedOptions, Integer menuId) {
         try {
-            // 옵션 카테고리별로 그룹화
+            System.out.println("옵션 데이터 처리 시작 - 메뉴 ID: " + menuId);
+
+            // 1. 선택된 옵션 정보 추출 (주문된 옵션들)
+            Map<Integer, Boolean> selectedOptionMap = new HashMap<>();
+            if (orderedOptions != null) {
+                for (Map<String, Object> option : orderedOptions) {
+                    Integer optionItemId = ((Number) option.get("option_item_id")).intValue();
+                    selectedOptionMap.put(optionItemId, true);
+                    System.out.println("선택된 옵션 ID: " + optionItemId);
+                }
+            }
+
+            // 2. 메뉴에 사용 가능한 모든 옵션 카테고리 조회
+            List<Map<String, Object>> allOptionsForMenu = recommendationMapper.findAllOptionsForMenu(menuId);
+            System.out.println("메뉴의 전체 옵션 수: " + (allOptionsForMenu != null ? allOptionsForMenu.size() : 0));
+
+            if (allOptionsForMenu == null || allOptionsForMenu.isEmpty()) {
+                System.out.println("메뉴에 사용 가능한 옵션이 없습니다.");
+                return new ArrayList<>();
+            }
+
+            // 3. 옵션 카테고리별로 그룹화
             Map<String, Map<String, Object>> optionCategoryMap = new HashMap<>();
 
-            for (Map<String, Object> option : optionsData) {
-                String categoryName = (String) option.get("option_category_name");
+            for (Map<String, Object> option : allOptionsForMenu) {
+                String categoryName = (String) option.get("category_name");
                 Boolean isRequired = (Boolean) option.get("is_required");
+                Integer optionItemId = ((Number) option.get("item_id")).intValue();
+                String optionName = (String) option.get("option_name");
+                Integer additionalPrice = ((Number) option.get("additional_price")).intValue();
 
                 // 카테고리가 존재하는지 확인
                 if (!optionCategoryMap.containsKey(categoryName)) {
@@ -241,14 +259,16 @@ public class RecommendationService {
 
                 // 옵션 정보 추가
                 Map<String, Object> categoryData = optionCategoryMap.get(categoryName);
-                ((List<String>)categoryData.get("optionNames")).add((String) option.get("option_name"));
-                ((List<Integer>)categoryData.get("additionalPrices")).add(((Number) option.get("additional_price")).intValue());
-                ((List<Integer>)categoryData.get("optionIds")).add(((Number) option.get("option_item_id")).intValue());
-                ((List<Boolean>)categoryData.get("isDefault")).add(true); // 주문된 옵션이므로 선택된 것으로 표시
+                ((List<String>)categoryData.get("optionNames")).add(optionName);
+                ((List<Integer>)categoryData.get("additionalPrices")).add(additionalPrice);
+                ((List<Integer>)categoryData.get("optionIds")).add(optionItemId);
 
-                System.out.println("옵션 추가: " + option.get("option_name") + " (" +
-                        "카테고리: " + categoryName + ", " +
-                        "가격: " + ((Number) option.get("additional_price")).intValue() + ")");
+                // 선택 여부 결정: 주문 데이터에 있으면 true, 없으면 false
+                boolean isSelected = selectedOptionMap.containsKey(optionItemId);
+                ((List<Boolean>)categoryData.get("isDefault")).add(isSelected);
+
+                System.out.println("옵션 추가: " + optionName + " (카테고리: " + categoryName +
+                        ", 가격: " + additionalPrice + ", 선택됨: " + isSelected + ")");
             }
 
             // Map에서 List로 변환
@@ -337,17 +357,29 @@ public class RecommendationService {
                     if (optionsData != null && !optionsData.isEmpty()) {
                         System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
 
-                        // 주문된 옵션으로 옵션 정보 대체
-                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
+                        // menuId를 추가 매개변수로 전달
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(optionsData, menuId);
 
-                        if (!simplifiedOptions.isEmpty()) {
-                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
-                            detailResponse.setOptions(simplifiedOptions);
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
                         } else {
                             System.out.println("처리된 옵션 카테고리가 없음");
                         }
                     } else {
-                        System.out.println("주문 옵션 정보 없음");
+                        // 주문 옵션이 없는 경우에도 메뉴의 모든 옵션 표시
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
+                        }
+                    }
+                } else {
+                    // 최근 주문이 없는 경우에도 메뉴의 모든 옵션 표시
+                    List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                    if (!processedOptions.isEmpty()) {
+                        System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                        detailResponse.setOptions(processedOptions);
                     }
                 }
 
@@ -418,13 +450,27 @@ public class RecommendationService {
                     if (optionsData != null && !optionsData.isEmpty()) {
                         System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
 
-                        // 새 메소드 호출로 변경
-                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
+                        // menuId를 추가 매개변수로 전달
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(optionsData, menuId);
 
-                        if (!simplifiedOptions.isEmpty()) {
-                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
-                            detailResponse.setOptions(simplifiedOptions);
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
                         }
+                    } else {
+                        // 주문 옵션이 없는 경우에도 메뉴의 모든 옵션 표시
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
+                        }
+                    }
+                } else {
+                    // 최근 주문이 없는 경우에도 메뉴의 모든 옵션 표시
+                    List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                    if (!processedOptions.isEmpty()) {
+                        System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                        detailResponse.setOptions(processedOptions);
                     }
                 }
 
@@ -505,12 +551,28 @@ public class RecommendationService {
 
                     if (optionsData != null && !optionsData.isEmpty()) {
                         System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
-                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
 
-                        if (!simplifiedOptions.isEmpty()) {
-                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
-                            detailResponse.setOptions(simplifiedOptions);
+                        // menuId를 추가 매개변수로 전달
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(optionsData, menuId);
+
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
                         }
+                    } else {
+                        // 주문 옵션이 없는 경우에도 메뉴의 모든 옵션 표시
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
+                        }
+                    }
+                } else {
+                    // 최근 주문이 없는 경우에도 메뉴의 모든 옵션 표시
+                    List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                    if (!processedOptions.isEmpty()) {
+                        System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                        detailResponse.setOptions(processedOptions);
                     }
                 }
 
@@ -577,14 +639,28 @@ public class RecommendationService {
 
                     if (optionsData != null && !optionsData.isEmpty()) {
                         System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
-                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
 
-                        if (!simplifiedOptions.isEmpty()) {
-                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
-                            detailResponse.setOptions(simplifiedOptions);
+                        // menuId를 추가 매개변수로 전달
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(optionsData, menuId);
+
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
                         }
                     } else {
-                        System.out.println("주문 옵션 정보 없음");
+                        // 주문 옵션이 없는 경우에도 메뉴의 모든 옵션 표시
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
+                        }
+                    }
+                } else {
+                    // 최근 주문이 없는 경우에도 메뉴의 모든 옵션 표시
+                    List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                    if (!processedOptions.isEmpty()) {
+                        System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                        detailResponse.setOptions(processedOptions);
                     }
                 }
 
@@ -675,14 +751,28 @@ public class RecommendationService {
 
                     if (optionsData != null && !optionsData.isEmpty()) {
                         System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
-                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
 
-                        if (!simplifiedOptions.isEmpty()) {
-                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
-                            detailResponse.setOptions(simplifiedOptions);
+                        // menuId를 추가 매개변수로 전달
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(optionsData, menuId);
+
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
                         }
                     } else {
-                        System.out.println("주문 옵션 정보 없음");
+                        // 주문 옵션이 없는 경우에도 메뉴의 모든 옵션 표시
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
+                        }
+                    }
+                } else {
+                    // 최근 주문이 없는 경우에도 메뉴의 모든 옵션 표시
+                    List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                    if (!processedOptions.isEmpty()) {
+                        System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                        detailResponse.setOptions(processedOptions);
                     }
                 }
 
@@ -751,14 +841,28 @@ public class RecommendationService {
 
                     if (optionsData != null && !optionsData.isEmpty()) {
                         System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
-                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
 
-                        if (!simplifiedOptions.isEmpty()) {
-                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
-                            detailResponse.setOptions(simplifiedOptions);
+                        // menuId를 추가 매개변수로 전달
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(optionsData, menuId);
+
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
                         }
                     } else {
-                        System.out.println("주문 옵션 정보 없음");
+                        // 주문 옵션이 없는 경우에도 메뉴의 모든 옵션 표시
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
+                        }
+                    }
+                } else {
+                    // 최근 주문이 없는 경우에도 메뉴의 모든 옵션 표시
+                    List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                    if (!processedOptions.isEmpty()) {
+                        System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                        detailResponse.setOptions(processedOptions);
                     }
                 }
 
@@ -826,14 +930,28 @@ public class RecommendationService {
 
                     if (optionsData != null && !optionsData.isEmpty()) {
                         System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
-                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
 
-                        if (!simplifiedOptions.isEmpty()) {
-                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
-                            detailResponse.setOptions(simplifiedOptions);
+                        // menuId를 추가 매개변수로 전달
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(optionsData, menuId);
+
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
                         }
                     } else {
-                        System.out.println("주문 옵션 정보 없음");
+                        // 주문 옵션이 없는 경우에도 메뉴의 모든 옵션 표시
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
+                        }
+                    }
+                } else {
+                    // 최근 주문이 없는 경우에도 메뉴의 모든 옵션 표시
+                    List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                    if (!processedOptions.isEmpty()) {
+                        System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                        detailResponse.setOptions(processedOptions);
                     }
                 }
 
@@ -902,14 +1020,28 @@ public class RecommendationService {
 
                     if (optionsData != null && !optionsData.isEmpty()) {
                         System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
-                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
 
-                        if (!simplifiedOptions.isEmpty()) {
-                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
-                            detailResponse.setOptions(simplifiedOptions);
+                        // menuId를 추가 매개변수로 전달
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(optionsData, menuId);
+
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
                         }
                     } else {
-                        System.out.println("주문 옵션 정보 없음");
+                        // 주문 옵션이 없는 경우에도 메뉴의 모든 옵션 표시
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
+                        }
+                    }
+                } else {
+                    // 최근 주문이 없는 경우에도 메뉴의 모든 옵션 표시
+                    List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                    if (!processedOptions.isEmpty()) {
+                        System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                        detailResponse.setOptions(processedOptions);
                     }
                 }
 
@@ -1000,16 +1132,28 @@ public class RecommendationService {
 
                     if (optionsData != null && !optionsData.isEmpty()) {
                         System.out.println("주문 옵션 정보 조회 성공 - " + optionsData.size() + "개 옵션");
-                        List<Map<String, Object>> simplifiedOptions = processOptionsDataSimplified(optionsData);
 
-                        if (!simplifiedOptions.isEmpty()) {
-                            System.out.println("옵션 카테고리 처리 완료 - " + simplifiedOptions.size() + "개 카테고리");
-                            detailResponse.setOptions(simplifiedOptions);
-                        } else {
-                            System.out.println("처리된 옵션 카테고리가 없음");
+                        // menuId를 추가 매개변수로 전달
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(optionsData, menuId);
+
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
                         }
                     } else {
-                        System.out.println("주문 옵션 정보 없음");
+                        // 주문 옵션이 없는 경우에도 메뉴의 모든 옵션 표시
+                        List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                        if (!processedOptions.isEmpty()) {
+                            System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                            detailResponse.setOptions(processedOptions);
+                        }
+                    }
+                } else {
+                    // 최근 주문이 없는 경우에도 메뉴의 모든 옵션 표시
+                    List<Map<String, Object>> processedOptions = processOptionsDataSimplified(null, menuId);
+                    if (!processedOptions.isEmpty()) {
+                        System.out.println("기본 옵션 카테고리 처리 완료 - " + processedOptions.size() + "개 카테고리");
+                        detailResponse.setOptions(processedOptions);
                     }
                 }
 

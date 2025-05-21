@@ -669,6 +669,33 @@
             oc.category_id, oi.item_id
     </select>
 
+    <!-- RecommendationMapper.xml에 추가 -->
+    <select id="findAllOptionsForMenu" resultType="map">
+        SELECT
+            oc.category_id,
+            oc.category_name,
+            oc.is_required,
+            oi.item_id,
+            oi.option_name,
+            oi.additional_price,
+            oi.is_default,
+            oi.display_order
+        FROM
+            menus m
+                JOIN
+            menuoptioncategories moc ON m.menu_id = moc.menu_id
+                JOIN
+            optioncategories oc ON moc.category_id = oc.category_id
+                JOIN
+            optionitems oi ON oc.category_id = oi.category_id
+        WHERE
+            m.menu_id = #{menuId}
+          AND m.is_deleted = false
+          AND oi.is_deleted = false
+        ORDER BY
+            oc.category_id, oi.display_order
+    </select>
+
     <!-- 날씨 기반 메뉴 선호도 업데이트 -->
     <insert id="updateWeatherPreference">
         INSERT INTO weatherpreference (store_id, menu_id, weather_condition, order_count, updated_at)
