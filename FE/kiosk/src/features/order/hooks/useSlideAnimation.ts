@@ -1,5 +1,5 @@
 import { keyframes } from '@emotion/react'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 // 애니메이션 키프레임 정의
 export const slideOutLeft = keyframes`
@@ -98,25 +98,42 @@ export function useSlideAnimation() {
   }
 }
 
-export function useMenuNavigation(totalMenus: number) {
+export function useMenuNavigation(
+  totalMenus: number,
+  onSlideComplete?: () => void,
+) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const { isAnimating, getAnimationType, startAnimation } = useSlideAnimation()
 
-  const handlePrev = () => {
-    if (currentIndex > 0) {
+  // 이전 인덱스 저장
+  const [prevIndex, setPrevIndex] = useState(0)
+
+  // 슬라이드 변경 감지
+  useEffect(() => {
+    if (prevIndex !== currentIndex && !isAnimating) {
+      setPrevIndex(currentIndex)
+      // 슬라이드가 완료되면 콜백 실행
+      if (onSlideComplete) {
+        onSlideComplete()
+      }
+    }
+  }, [currentIndex, isAnimating, prevIndex, onSlideComplete])
+
+  const handlePrev = useCallback(() => {
+    if (currentIndex > 0 && !isAnimating) {
       startAnimation('right', () => {
         setCurrentIndex((prevIndex) => prevIndex - 1)
       })
     }
-  }
+  }, [currentIndex, isAnimating, startAnimation])
 
-  const handleNext = () => {
-    if (currentIndex < totalMenus - 1) {
+  const handleNext = useCallback(() => {
+    if (currentIndex < totalMenus - 1 && !isAnimating) {
       startAnimation('left', () => {
         setCurrentIndex((prevIndex) => prevIndex + 1)
       })
     }
-  }
+  }, [currentIndex, totalMenus, isAnimating, startAnimation])
 
   return {
     currentIndex,

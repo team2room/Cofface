@@ -9,30 +9,28 @@ const OptionBtn = tw.div`bg-white rounded-full shadow-md w-[175px] h-[175px] fle
 interface OptionButtonProps {
   icon: React.ReactNode
   label: string
+  onClick?: () => void
 }
 
-export function OptionButton({ icon, label }: OptionButtonProps) {
+export function OptionButton({ icon, label, onClick }: OptionButtonProps) {
   return (
-    <OptionBtn>
-      {typeof icon === 'string' ? (
-        <img src={icon} alt={label} className="w-[80px]" />
-      ) : (
-        icon
-      )}
-      <Text variant="body2" weight="semibold" fontFamily="Suite">
-        {label}
-      </Text>
+    <OptionBtn onClick={onClick} className="group">
+      <div className="flex flex-col items-center">
+        {typeof icon === 'string' ? (
+          <img
+            src={icon}
+            alt={label}
+            className="w-[80px] mb-2 group-hover:scale-105 transition-all"
+          />
+        ) : (
+          icon
+        )}
+        <Text variant="body2" weight="semibold" fontFamily="Suite">
+          {label}
+        </Text>
+      </div>
     </OptionBtn>
   )
-}
-
-interface OptionProps {
-  options: Array<{
-    optionCategory: string
-    optionNames: string[]
-    isDefault: boolean[]
-  }>
-  animationType: AnimationType
 }
 
 export const iconMap: Record<string, Record<string, string>> = {
@@ -66,7 +64,35 @@ export const labelMap: Record<string, string> = {
   '샷 추가': '샷 추가',
 }
 
-export function OptionList({ options, animationType }: OptionProps) {
+interface OptionProps {
+  menuId: number
+  options: Array<{
+    optionCategory: string
+    optionNames: string[]
+    isDefault: boolean[]
+  }>
+  animationType: AnimationType
+  onOptionSelect?: (category: string, index: number) => void
+}
+
+export function OptionList({
+  options,
+  animationType,
+  onOptionSelect,
+}: OptionProps) {
+  const handleOptionClick = (category: string) => {
+    if (!onOptionSelect) return
+
+    const option = options.find((opt) => opt.optionCategory === category)
+    if (!option) return
+
+    const currentIndex = option.isDefault.findIndex((v) => v === true)
+
+    const nextIndex = (currentIndex + 1) % option.optionNames.length
+
+    onOptionSelect(category, nextIndex)
+  }
+
   return (
     <AnimatedContainer
       className="space-y-4 mt-12"
@@ -77,12 +103,23 @@ export function OptionList({ options, animationType }: OptionProps) {
         const defaultIndex = isDefault.findIndex((v) => v === true)
         const defaultOptionName = optionNames[defaultIndex]
 
-        // 아이콘 매핑
-        const icon =
-          iconMap[optionCategory]?.[defaultOptionName] ?? '/icons/default.png'
-        const label = labelMap[optionCategory] ?? optionCategory
+        console.log(
+          `옵션 렌더링: ${optionCategory} - ${defaultOptionName}`,
+          defaultIndex,
+        )
+        const iconPath =
+          iconMap[optionCategory]?.[defaultOptionName] || '/icons/default.png'
 
-        return <OptionButton key={label} icon={icon} label={label} />
+        const label = labelMap[optionCategory] || optionCategory
+
+        return (
+          <OptionButton
+            key={`${optionCategory}-${defaultOptionName}-${defaultIndex}`}
+            icon={iconPath}
+            label={label}
+            onClick={() => handleOptionClick(optionCategory)}
+          />
+        )
       })}
     </AnimatedContainer>
   )
