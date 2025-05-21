@@ -5,7 +5,8 @@ import { useStepStore } from '@/stores/stepStore'
 import { useUserStore } from '@/stores/loginStore'
 import { useNavigate } from 'react-router-dom'
 import ProgressContent from './pay/ProgressContent'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useDirectOrderStore } from '@/stores/directOrderStore'
 
 const Content = tw.div`flex flex-col items-center justify-center flex-1 gap-12 px-7`
 const ImageButton = tw.button`
@@ -17,11 +18,42 @@ const EmojiImage = tw.img`w-[328px] h-[328px]`
 
 export default function PlaceSelectContent() {
   const navigate = useNavigate()
-  const { originStep, setStep } = useStepStore()
-  const isMember = useUserStore((state) => state.isMember)
-  const hasAutoPayment = useUserStore((state) => state.hasAutoPayment)
-  const payStore = usePayStore()
   const [showProgress, setShowProgress] = useState(false)
+  const { originStep, setStep } = useStepStore()
+  const payStore = usePayStore()
+  const { isMember, loginMethod, hasAutoPayment, guestInfo, weather } =
+    useUserStore()
+  const directOrder = useDirectOrderStore((state) => state.directOrder)
+
+  useEffect(() => {
+    if (originStep === 'main') {
+      const totalPrice = directOrder
+        ? directOrder.totalPrice * directOrder.quantity
+        : 0
+
+      const menuOrder = directOrder
+        ? [
+            {
+              menuId: directOrder.menuId,
+              quantity: directOrder.quantity,
+              options: directOrder.options.map((opt) => ({
+                optionItemId: opt.optionId,
+                quantity: 1,
+              })),
+            },
+          ]
+        : []
+
+      payStore.setInitialPayData({
+        kioskId: 1,
+        totalAmount: totalPrice,
+        menuOrders: menuOrder,
+        age: guestInfo?.age ?? 0,
+        gender: guestInfo?.gender ?? '여성',
+        weather: weather?.dominant ?? '맑음',
+      })
+    }
+  }, [])
 
   const handleSelect = (isTakeout: boolean) => {
     payStore.setIsTakeout(isTakeout)
@@ -32,7 +64,7 @@ export default function PlaceSelectContent() {
     if (originStep === 'menu') {
       setStep('pay')
     } else if (originStep === 'main') {
-      if (isMember && hasAutoPayment) {
+      if (isMember && hasAutoPayment && loginMethod === 'face') {
         // 슬라이드 자동 결제
         setShowProgress(true)
       } else {

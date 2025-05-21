@@ -1,8 +1,10 @@
 import NewStartScreen from '@/features/userLogin/components/NewStartScreen'
+import { useDirectOrderStore } from '@/stores/directOrderStore'
 import { useUserStore } from '@/stores/loginStore'
 // import StartScreen from '@/features/userLogin/components/StartScreen'
 import { useOrderStore } from '@/stores/orderStore'
 import { usePayStore } from '@/stores/payStore'
+import { useRecommendationStore } from '@/stores/recommendStore'
 import { useStepStore } from '@/stores/stepStore'
 import { useEffect } from 'react'
 import tw from 'twin.macro'
@@ -16,12 +18,20 @@ export default function UserLoginPage() {
   const reset = useUserStore((state) => state.reset)
   const resetPayData = usePayStore((state) => state.resetPayData)
   const resetStep = useStepStore((state) => state.resetStep)
+  const resetRecommendedMenus = useRecommendationStore(
+    (state) => state.resetRecommendedMenus,
+  )
+  const resetDirectOrder = useDirectOrderStore(
+    (state) => state.resetDirectOrder,
+  )
 
   useEffect(() => {
     clearOrders()
     reset()
     resetPayData()
     resetStep()
+    resetRecommendedMenus()
+    resetDirectOrder()
   }, [])
 
   return (
