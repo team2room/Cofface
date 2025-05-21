@@ -348,12 +348,14 @@ export function useFaceDetection() {
         300,
         40,
       )
+      canvasCtx.save()
+      canvasCtx.scale(-1, 1)
       canvasCtx.fillStyle = 'red'
       canvasCtx.font = '18px "Suit", sans-serif'
       canvasCtx.textAlign = 'center'
       canvasCtx.fillText(
         '얼굴이 감지되지 않았습니다',
-        canvasElement.width / 2,
+        -canvasElement.width / 2, // 좌표도 반전되므로 음수로 변경
         canvasElement.height / 2 + 7,
       )
     }
