@@ -364,8 +364,27 @@ export function CameraView({
   return (
     <FaceCircle>
       <VideoContainer>
-        <Video ref={videoRef} autoPlay playsInline muted />
-        <Canvas ref={canvasRef} width={640} height={480} />
+        <Video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+          }}
+        />
+        <Canvas
+          ref={canvasRef}
+          width={640}
+          height={480}
+          style={{
+            width: '100%',
+            height: '100%',
+          }}
+        />
 
         {/* Init 상태가 아닐 때만 타원형 얼굴 가이드 표시 */}
         {detectionState !== FaceDetectionState.INIT && (
