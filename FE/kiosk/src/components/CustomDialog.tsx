@@ -58,7 +58,7 @@ export default function CustomDialog({
           </>
         )}
         {description && (
-          <AlertDialogDescription className="mt-28 mb-28 whitespace-pre-line leading-[100px]">
+          <AlertDialogDescription className="mt-28 mb-28 whitespace-pre-line leading-10">
             <Text variant="title3" weight="extrabold" color="lightBlack">
               {description}
             </Text>
