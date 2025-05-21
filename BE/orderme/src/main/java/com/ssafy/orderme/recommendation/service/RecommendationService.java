@@ -206,8 +206,6 @@ public class RecommendationService {
         return detailedMenus;
     }
 
-    // 주문 옵션 데이터를 원하는 형식으로 변환하는 메소드
-    // RecommendationService.java에서 processOptionsDataSimplified 메서드 수정
     private List<Map<String, Object>> processOptionsDataSimplified(List<Map<String, Object>> orderedOptions, Integer menuId) {
         try {
             System.out.println("옵션 데이터 처리 시작 - 메뉴 ID: " + menuId);
@@ -226,49 +224,82 @@ public class RecommendationService {
             List<Map<String, Object>> allOptionsForMenu = recommendationMapper.findAllOptionsForMenu(menuId);
             System.out.println("메뉴의 전체 옵션 수: " + (allOptionsForMenu != null ? allOptionsForMenu.size() : 0));
 
-            if (allOptionsForMenu == null || allOptionsForMenu.isEmpty()) {
-                System.out.println("메뉴에 사용 가능한 옵션이 없습니다.");
-                return new ArrayList<>();
-            }
-
-            // 3. 옵션 카테고리별로 그룹화
+            // 3. 기본 옵션 카테고리 설정 (모든 메뉴에 대해 동일하게 제공할 카테고리)
             Map<String, Map<String, Object>> optionCategoryMap = new HashMap<>();
 
-            for (Map<String, Object> option : allOptionsForMenu) {
-                String categoryName = (String) option.get("category_name");
-                Boolean isRequired = (Boolean) option.get("is_required");
-                Integer optionItemId = ((Number) option.get("item_id")).intValue();
-                String optionName = (String) option.get("option_name");
-                Integer additionalPrice = ((Number) option.get("additional_price")).intValue();
+            // HOT/ICED 카테고리
+            Map<String, Object> hotIcedCategory = new HashMap<>();
+            hotIcedCategory.put("optionCategory", "HOT/ICED");
+            hotIcedCategory.put("isRequired", true);
+            hotIcedCategory.put("optionNames", Arrays.asList("차갑게", "뜨겁게"));
+            hotIcedCategory.put("additionalPrices", Arrays.asList(0, 0));
+            hotIcedCategory.put("optionIds", Arrays.asList(1, 2));
+            hotIcedCategory.put("isDefault", Arrays.asList(false, false)); // 기본값은 false, 나중에 선택된 옵션으로 업데이트
+            hotIcedCategory.put("maxSelections", 1);
+            optionCategoryMap.put("HOT/ICED", hotIcedCategory);
 
-                // 카테고리가 존재하는지 확인
-                if (!optionCategoryMap.containsKey(categoryName)) {
-                    System.out.println("새 옵션 카테고리 추가: " + categoryName);
+            // 사이즈 카테고리
+            Map<String, Object> sizeCategory = new HashMap<>();
+            sizeCategory.put("optionCategory", "사이즈");
+            sizeCategory.put("isRequired", true);
+            sizeCategory.put("optionNames", Arrays.asList("작은", "중간", "큰"));
+            sizeCategory.put("additionalPrices", Arrays.asList(0, 500, 1000));
+            sizeCategory.put("optionIds", Arrays.asList(3, 4, 5));
+            sizeCategory.put("isDefault", Arrays.asList(false, false, false)); // 기본값은 false, 나중에 선택된 옵션으로 업데이트
+            sizeCategory.put("maxSelections", 1);
+            optionCategoryMap.put("사이즈", sizeCategory);
 
-                    Map<String, Object> optionCategory = new HashMap<>();
-                    optionCategory.put("optionCategory", categoryName);
-                    optionCategory.put("isRequired", isRequired);
-                    optionCategory.put("optionNames", new ArrayList<String>());
-                    optionCategory.put("additionalPrices", new ArrayList<Integer>());
-                    optionCategory.put("optionIds", new ArrayList<Integer>());
-                    optionCategory.put("isDefault", new ArrayList<Boolean>());
-                    optionCategory.put("maxSelections", 1); // 기본값 설정
+            // 얼음 카테고리
+            Map<String, Object> iceCategory = new HashMap<>();
+            iceCategory.put("optionCategory", "얼음");
+            iceCategory.put("isRequired", false);
+            iceCategory.put("optionNames", Arrays.asList("적게", "보통", "많이"));
+            iceCategory.put("additionalPrices", Arrays.asList(0, 0, 0));
+            iceCategory.put("optionIds", Arrays.asList(6, 7, 8));
+            iceCategory.put("isDefault", Arrays.asList(false, false, false)); // 기본값은 false, 나중에 선택된 옵션으로 업데이트
+            iceCategory.put("maxSelections", 1);
+            optionCategoryMap.put("얼음", iceCategory);
 
-                    optionCategoryMap.put(categoryName, optionCategory);
+            // 샷 추가 카테고리
+            Map<String, Object> shotCategory = new HashMap<>();
+            shotCategory.put("optionCategory", "샷 추가");
+            shotCategory.put("isRequired", false);
+            shotCategory.put("optionNames", Arrays.asList("없음", "1샷", "2샷", "3샷"));
+            shotCategory.put("additionalPrices", Arrays.asList(0, 0, 0, 0));
+            shotCategory.put("optionIds", Arrays.asList(9, 10, 11, 12));
+            shotCategory.put("isDefault", Arrays.asList(false, false, false, false)); // 기본값은 false, 나중에 선택된 옵션으로 업데이트
+            shotCategory.put("maxSelections", 1);
+            optionCategoryMap.put("샷 추가", shotCategory);
+
+            // 4. 주문 데이터에서 선택된 옵션 정보로 isDefault 값 업데이트
+            for (Map.Entry<Integer, Boolean> entry : selectedOptionMap.entrySet()) {
+                Integer selectedOptionId = entry.getKey();
+
+                // 카테고리 찾기
+                for (Map<String, Object> categoryData : optionCategoryMap.values()) {
+                    List<Integer> optionIds = (List<Integer>) categoryData.get("optionIds");
+                    int index = optionIds.indexOf(selectedOptionId);
+
+                    if (index >= 0) {
+                        List<Boolean> isDefault = (List<Boolean>) categoryData.get("isDefault");
+                        for (int i = 0; i < isDefault.size(); i++) {
+                            isDefault.set(i, i == index); // 선택된 인덱스만 true로 설정
+                        }
+                        System.out.println("옵션 선택 상태 업데이트: 옵션 ID " + selectedOptionId + "가 선택됨");
+                        break;
+                    }
                 }
+            }
 
-                // 옵션 정보 추가
-                Map<String, Object> categoryData = optionCategoryMap.get(categoryName);
-                ((List<String>)categoryData.get("optionNames")).add(optionName);
-                ((List<Integer>)categoryData.get("additionalPrices")).add(additionalPrice);
-                ((List<Integer>)categoryData.get("optionIds")).add(optionItemId);
+            // 5. 메뉴에 특정 옵션이 없는 경우, 해당 카테고리에서 첫 번째 옵션을 기본값으로 설정
+            for (Map<String, Object> categoryData : optionCategoryMap.values()) {
+                List<Boolean> isDefault = (List<Boolean>) categoryData.get("isDefault");
+                boolean hasSelected = isDefault.contains(true);
 
-                // 선택 여부 결정: 주문 데이터에 있으면 true, 없으면 false
-                boolean isSelected = selectedOptionMap.containsKey(optionItemId);
-                ((List<Boolean>)categoryData.get("isDefault")).add(isSelected);
-
-                System.out.println("옵션 추가: " + optionName + " (카테고리: " + categoryName +
-                        ", 가격: " + additionalPrice + ", 선택됨: " + isSelected + ")");
+                if (!hasSelected && isDefault.size() > 0) {
+                    isDefault.set(0, true); // 첫 번째 옵션을 기본값으로 설정
+                    System.out.println("기본 옵션 설정: 카테고리 " + categoryData.get("optionCategory") + "에서 첫 번째 옵션을 기본값으로 설정");
+                }
             }
 
             // Map에서 List로 변환
