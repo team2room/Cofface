@@ -8,6 +8,7 @@ import { useLogin } from '../hooks/useLogin'
 import { newFaceRecogRequest } from '../services/faceRecogService'
 import { maskName } from '@/utils/maskUserName'
 import { useLogout } from '../hooks/useLogout'
+import { changeCamera } from '@/lib/changeCamera'
 
 const ImageWrapper = tw.div`w-full my-8 flex justify-center items-center`
 const FullImg = tw.img`absolute top-0 left-0 w-full h-full object-contain`
@@ -35,6 +36,22 @@ export default function NewStartScreen() {
   const phoneNumber = useLoginStore((state) => state.phoneNumber)
   const resetPhoneNumber = useLoginStore((state) => state.resetPhoneNumber)
   const user = useUserStore((state) => state.user)
+
+  useEffect(() => {
+    const updateCameraMode = async () => {
+      try {
+        if (modalState === 'waiting') {
+          await changeCamera(true)
+        } else {
+          await changeCamera(false)
+        }
+      } catch (error) {
+        console.error('카메라 모드 변경 실패:', error)
+      }
+    }
+
+    updateCameraMode()
+  }, [modalState])
 
   let modalContent
 
