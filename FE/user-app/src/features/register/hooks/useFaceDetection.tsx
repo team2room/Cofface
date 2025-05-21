@@ -568,13 +568,42 @@ export function useFaceDetection() {
     }
 
     try {
-      // 캔버스 크기 설정
-      if (canvasRef.current) {
-        canvasRef.current.width = 640
-        canvasRef.current.height = 480
+      // 카메라 제약조건 설정 - 모바일 대응
+      const constraints = {
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user',
+        },
       }
 
-      // MediaPipe 카메라 설정
+      // 모바일 환경에서는 다른 설정 적용
+      if (/Mobi|Android/i.test(navigator.userAgent)) {
+        constraints.video = {
+          width: { ideal: window.innerWidth },
+          height: { ideal: window.innerHeight },
+          facingMode: 'user',
+        }
+      }
+
+      // 직접 스트림 가져오기
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+
+        // 비디오 로드 후 캔버스 크기 설정
+        videoRef.current.onloadedmetadata = () => {
+          if (canvasRef.current && videoRef.current) {
+            // 비디오 비율 유지하면서 캔버스 설정
+            const videoRatio =
+              videoRef.current.videoWidth / videoRef.current.videoHeight
+            canvasRef.current.width = 640
+            canvasRef.current.height = Math.round(640 / videoRatio)
+          }
+        }
+      }
+
+      // MediaPipe 카메라 설정 - 모바일/웹 일관성 유지
       cameraRef.current = new cam.Camera(videoRef.current, {
         onFrame: async () => {
           if (faceMeshRef.current && videoRef.current) {
@@ -594,7 +623,7 @@ export function useFaceDetection() {
 
       // 상태 즉시 변경
       setDetectionState(FaceDetectionState.FRONT_FACE)
-      setStateStable(true) // 안정화 상태 즉시 설정
+      setStateStable(true)
       lastStateTime.current = Date.now()
 
       return Promise.resolve()
