@@ -41,6 +41,7 @@ export interface CameraViewProps {
   timerProgress: number
   videoRef: React.RefObject<HTMLVideoElement>
   canvasRef: React.RefObject<HTMLCanvasElement>
+  currentRotation: RotationState // 이 프로퍼티 추가
 }
 
 export interface CapturedImagesProps {
