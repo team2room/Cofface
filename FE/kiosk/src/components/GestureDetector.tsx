@@ -22,8 +22,8 @@ export default function GestureDetector({
 
     // 웹소켓 URL 생성
     const hostname = window.location.hostname || 'localhost'
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${wsProtocol}//${hostname}:8080/ws/gesture`
+    // const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const wsUrl = `ws://${hostname}:8080/ws/gesture`
 
     console.log(`제스처 감지 연결 시작: ${wsUrl}`)
 
