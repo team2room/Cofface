@@ -992,9 +992,9 @@ class RealSenseFaceLiveness:
         
         # 화면 전환 강제 요청
         self.pending_display_change = {
-            'path': self.pay_gif,
+            'path': self.loading_png,
             'is_gif': True,
-            'display_type': 'pay'
+            'display_type': 'loading'
         }
         
         pyglet.clock.schedule_once(lambda dt: self.process_pending_display_change(), 0.1)
