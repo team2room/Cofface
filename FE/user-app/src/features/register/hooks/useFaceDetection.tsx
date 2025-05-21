@@ -99,6 +99,36 @@ export function useFaceDetection() {
     setBorderStatusMessage(getBorderStatusMessage(borderColor))
   }, [borderColor])
 
+  useEffect(() => {
+    // 카메라가 시작되고 비디오가 로드된 후 스타일 재조정
+    if (videoRef.current && detectionState > FaceDetectionState.INIT) {
+      const adjustVideoSize = () => {
+        if (videoRef.current) {
+          // 비디오와 컨테이너가 항상 1:1 비율을 유지하도록 함
+          videoRef.current.style.width = '100%'
+          videoRef.current.style.height = '100%'
+          videoRef.current.style.objectFit = 'cover'
+        }
+      }
+
+      // 비디오 로드될 때 한 번 더 조정
+      videoRef.current.addEventListener('loadedmetadata', adjustVideoSize)
+
+      // 초기화 직후에도 한번 실행
+      adjustVideoSize()
+
+      // 청소 함수
+      return () => {
+        if (videoRef.current) {
+          videoRef.current.removeEventListener(
+            'loadedmetadata',
+            adjustVideoSize,
+          )
+        }
+      }
+    }
+  }, [detectionState])
+
   // MediaPipe FaceMesh 모델 로드
   useEffect(() => {
     const loadMediaPipeModels = async (): Promise<void> => {
@@ -562,48 +592,27 @@ export function useFaceDetection() {
   }
 
   // 비디오 시작
+  // useFaceDetection.tsx의 startVideo 함수 수정
   const startVideo = async (): Promise<void> => {
     if (!modelsLoaded || !faceMeshRef.current || !videoRef.current) {
       return Promise.reject('모델 또는 비디오 준비 안됨')
     }
 
     try {
-      // 카메라 제약조건 설정 - 모바일 대응
-      const constraints = {
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: 'user',
-        },
+      // 캔버스 크기 설정 - 일관성 있게 정사각형 비율로 설정
+      if (canvasRef.current) {
+        canvasRef.current.width = 640
+        canvasRef.current.height = 640 // 정사각형으로 변경
       }
 
-      // 모바일 환경에서는 다른 설정 적용
-      if (/Mobi|Android/i.test(navigator.userAgent)) {
-        constraints.video = {
-          width: { ideal: window.innerWidth },
-          height: { ideal: window.innerHeight },
-          facingMode: 'user',
-        }
-      }
-
-      // 직접 스트림 가져오기
-      const stream = await navigator.mediaDevices.getUserMedia(constraints)
+      // 카메라 설정 전에 비디오 요소 스타일 강제 설정
       if (videoRef.current) {
-        videoRef.current.srcObject = stream
-
-        // 비디오 로드 후 캔버스 크기 설정
-        videoRef.current.onloadedmetadata = () => {
-          if (canvasRef.current && videoRef.current) {
-            // 비디오 비율 유지하면서 캔버스 설정
-            const videoRatio =
-              videoRef.current.videoWidth / videoRef.current.videoHeight
-            canvasRef.current.width = 640
-            canvasRef.current.height = Math.round(640 / videoRatio)
-          }
-        }
+        videoRef.current.style.width = '100%'
+        videoRef.current.style.height = '100%'
+        videoRef.current.style.objectFit = 'cover'
       }
 
-      // MediaPipe 카메라 설정 - 모바일/웹 일관성 유지
+      // MediaPipe 카메라 설정
       cameraRef.current = new cam.Camera(videoRef.current, {
         onFrame: async () => {
           if (faceMeshRef.current && videoRef.current) {
@@ -611,7 +620,7 @@ export function useFaceDetection() {
           }
         },
         width: 640,
-        height: 480,
+        height: 640, // 정사각형으로 변경
         facingMode: 'user',
       })
 
@@ -630,9 +639,7 @@ export function useFaceDetection() {
     } catch (error) {
       console.error('카메라 접근 오류:', error)
       setLoadingError(
-        `카메라 접근 오류: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        `카메라 접근 오류: ${error instanceof Error ? error.message : String(error)}`,
       )
       return Promise.reject(error)
     }

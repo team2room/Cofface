@@ -16,10 +16,13 @@ export const Message = tw.div`
   text-center mb-2
 `
 
-// 카메라 뷰 스타일
+// FaceCircle 스타일 수정
 export const FaceCircle = styled.div`
-  ${tw`relative w-[280px] h-[280px] mb-6 rounded-full overflow-hidden mt-6`}
+  ${tw`relative mb-6 rounded-full overflow-hidden mt-6`}
+  width: 280px;
+  height: 280px;
   border: 4px solid #333;
+  aspect-ratio: 1 / 1;
 `
 
 // 얼굴 가이드 타원형 - SVG 사용
@@ -40,18 +43,25 @@ export const FaceGuideCircle = styled.div<FaceCircleProps>`
   }
 `
 
-export const VideoContainer = tw.div`
-  relative w-full h-full
+// styles.ts의 VideoContainer 수정
+export const VideoContainer = styled.div`
+  ${tw`relative w-full h-full`}
+  aspect-ratio: 1 / 1; // 비율 고정
+  overflow: hidden;
 `
 
-export const Video = tw.video`
-  absolute top-1/2 left-1/2 w-full h-full object-cover object-center
-  transform -translate-x-1/2 -translate-y-1/2 -scale-x-100
+// Video 스타일 수정
+export const Video = styled.video`
+  ${tw`absolute top-1/2 left-1/2 w-full h-full object-cover object-center`}
+  transform: translate(-50%, -50%) scaleX(-1);
+  min-width: 100%;
+  min-height: 100%;
 `
 
-export const Canvas = tw.canvas`
-  absolute top-0 left-0 w-full h-full
-  transform -scale-x-100 object-cover
+// Canvas 스타일 수정
+export const Canvas = styled.canvas`
+  ${tw`absolute top-0 left-0 w-full h-full`}
+  transform: scaleX(-1);
 `
 
 export const GuideLine = tw.div`
