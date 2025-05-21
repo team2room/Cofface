@@ -40,9 +40,7 @@ export default function NewStartScreen() {
   useEffect(() => {
     const updateCameraMode = async () => {
       try {
-        if (modalState === 'waiting') {
-          await changeCamera(true)
-        } else {
+        if (modalState !== 'waiting') {
           await changeCamera(false)
         }
       } catch (error) {
