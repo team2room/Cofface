@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAutoPay } from '../useAutoPay'
 import { useNavigate } from 'react-router-dom'
+import { changeDisplayType } from '@/lib/changeDisplay'
 
 interface UseCardPaymentReturn {
   cardRef: React.RefObject<HTMLDivElement>
@@ -167,6 +168,9 @@ export const useProgressPay = (): UseCardPaymentReturn => {
       window.removeEventListener('touchmove', handleTouchMove as EventListener)
       window.removeEventListener('touchend', handleDragEnd)
 
+      changeDisplayType('loading')
+        .then((data) => console.log('성공:', data))
+        .catch((error) => console.error('실패:', error))
       navigate('/loading?type=complete')
     }
   }

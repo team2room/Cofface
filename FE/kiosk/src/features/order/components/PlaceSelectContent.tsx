@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import ProgressContent from './pay/ProgressContent'
 import { useEffect, useState } from 'react'
 import { useDirectOrderStore } from '@/stores/directOrderStore'
+import { changeDisplayType } from '@/lib/changeDisplay'
 
 const Content = tw.div`flex flex-col items-center justify-center flex-1 gap-12 px-7`
 const ImageButton = tw.button`
@@ -66,6 +67,9 @@ export default function PlaceSelectContent() {
     } else if (originStep === 'main') {
       if (isMember && hasAutoPayment && loginMethod === 'face') {
         // 슬라이드 자동 결제
+        changeDisplayType('pay')
+          .then((data) => console.log('성공:', data))
+          .catch((error) => console.error('실패:', error))
         setShowProgress(true)
       } else {
         // toss 결제
