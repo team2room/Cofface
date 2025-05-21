@@ -5,7 +5,7 @@ import { keyframes } from '@emotion/react'
 import styled from '@emotion/styled'
 import { PiHandTap } from 'react-icons/pi'
 
-const ImageWrapper = tw.div`absolute w-full h-full flex bg-darkModal py-32`
+const ImageWrapper = tw.div`absolute w-full h-full flex bg-darkModal py-32 z-50`
 const Content = tw.div`flex flex-col items-center flex-1 gap-[450px] z-10 relative`
 const TerminalContainer = tw.div`relative w-[400px] flex flex-col items-center justify-center`
 const CardContainer = tw.div`absolute bottom-0 transform translate-y-[480px] cursor-grab active:cursor-grabbing`

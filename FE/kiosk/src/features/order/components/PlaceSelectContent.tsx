@@ -13,7 +13,7 @@ import { calculateAge } from '@/utils/calculateAge'
 const Content = tw.div`flex flex-col items-center justify-center flex-1 gap-12 px-7`
 const ImageButton = tw.button`
   w-[716px] h-[446px] rounded-[20px] bg-white shadow-[1px_3px_15px_5px_rgba(0,0,0,0.25)]
-  flex flex-col items-center justify-center gap-3 
+  flex flex-col items-center justify-center gap-3 z-0
   hover:scale-105 transition-transform duration-200
 `
 const EmojiImage = tw.img`w-[328px] h-[328px]`
@@ -75,10 +75,10 @@ export default function PlaceSelectContent() {
     } else if (originStep === 'main') {
       if (isMember && hasAutoPayment && loginMethod === 'face') {
         // 슬라이드 자동 결제
+        setShowProgress(true)
         changeDisplayType('pay')
           .then((data) => console.log('성공:', data))
           .catch((error) => console.error('실패:', error))
-        setShowProgress(true)
       } else {
         // toss 결제
         navigate('/pay')
