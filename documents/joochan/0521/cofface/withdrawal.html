@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="assets/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COFFACE 회원 탈퇴 방침</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-50">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-md">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16 items-center">
+          <a href="/index.html" class="text-2xl font-bold text-rose-600">COFFACE</a>
+          <!-- Language Selector -->
+          <div class="relative">
+            <select id="langSelect"
+                    class="border rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    onchange="changeLanguage(this.value)">
+              <option value="ko">KO</option>
+              <option value="en">EN</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="bg-gray-50 border-t border-gray-200 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-sm text-gray-500 text-center">
+          <div class="flex justify-center space-x-6">
+            <a href="/index.html" class="hover:underline text-rose-600" data-i18n="terms_title">서비스 이용약관</a>
+            <a href="/privacy.html" class="hover:underline text-rose-600" data-i18n="privacy_title">개인정보처리방침</a>
+            <a href="/withdrawal.html" class="hover:underline text-rose-600 font-bold" data-i18n="index_title">회원 탈퇴 방침</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <!-- Title -->
+      <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center" data-i18n="withdrawal_title">회원 탈퇴 안내</h2>
+      
+      <!-- Withdrawal Guide Content -->
+      <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+        <section class="mb-8">
+          <h3 class="text-xl font-bold text-gray-800 mb-6" data-i18n="withdrawal_subtitle">회원 탈퇴 절차</h3>
+          
+          <p class="text-gray-700 mb-6" data-i18n="withdrawal_intro">
+            COFFACE 서비스 회원 탈퇴는 아래의 간단한 절차를 통해 진행할 수 있습니다. 
+            탈퇴 시 등록된 모든 개인정보는 관련 법령에 따라 즉시 파기되며, 복구가 불가능합니다.
+          </p>
+          
+          <div class="pl-4 mt-8">
+            <ol class="list-decimal space-y-6 pl-6 marker:text-rose-500 marker:font-bold">
+              <li class="text-lg text-gray-700" data-i18n="step1">어플에 로그인이 되어있지 않으면 로그인합니다.</li>
+              <li class="text-lg text-gray-700" data-i18n="step2">마이페이지에 들어갑니다.</li>
+              <li class="text-lg text-gray-700" data-i18n="step3">회원탈퇴 버튼을 누릅니다.</li>
+              <li class="text-lg text-gray-700" data-i18n="step4">확인을 누르면 탈퇴가 완료됩니다.</li>
+            </ol>
+          </div>
+        </section>
+
+        <section class="mb-8 border-t border-gray-200 pt-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-4" data-i18n="withdrawal_notice_title">탈퇴 시 유의사항</h3>
+          
+          <ul class="list-disc pl-6 space-y-3 text-gray-700">
+            <li data-i18n="withdrawal_notice_1">회원 탈퇴 시 계정과 관련된 모든 정보는 즉시 삭제되며 복구가 불가능합니다.</li>
+            <li data-i18n="withdrawal_notice_2">얼굴 벡터 정보, 결제 정보 등 모든 개인정보는 관련 법령에 따라 완전히 파기됩니다.</li>
+            <li data-i18n="withdrawal_notice_3">탈퇴 후 재가입 시에는 신규 회원으로 가입 절차를 진행해야 합니다.</li>
+            <li data-i18n="withdrawal_notice_4">서비스 이용 내역은 통계 목적으로 익명화하여 보관될 수 있습니다.</li>
+          </ul>
+        </section>
+
+        <section class="mb-8 border-t border-gray-200 pt-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-4" data-i18n="withdrawal_question_title">회원 탈퇴 관련 문의</h3>
+          
+          <p class="text-gray-700 mb-4" data-i18n="withdrawal_question_content">
+            회원 탈퇴 과정에서 어려움이나 문의사항이 있으시면 아래 연락처로 문의해 주시기 바랍니다.
+          </p>
+          
+          <ul class="list-disc pl-6 text-gray-700 mb-4">
+            <li data-i18n="withdrawal_contact">이메일: team2eroom@gmail.com</li>
+            <li data-i18n="withdrawal_phone">고객센터: 1588-0000 (평일 09:00-18:00)</li>
+          </ul>
+          
+          <p class="text-sm text-gray-500 italic mt-4" data-i18n="withdrawal_final_note">
+            ※ 회원 탈퇴 후에도 서비스 개선을 위한 소중한 의견 남겨주시면 감사하겠습니다.
+          </p>
+        </section>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 py-8 mt-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <p class="text-center text-gray-500 text-sm">
+          &copy; 2025 COFFACE. All rights reserved.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      // 언어 자동 감지 및 설정
+      const userLang = navigator.language.startsWith('en') ? 'en' : 'ko';
+      document.getElementById('langSelect').value = userLang;
+      changeLanguage(userLang);
+
+      // 언어 변경 함수
+      function changeLanguage(lang) {
+        const i18nElements = document.querySelectorAll('[data-i18n]');
+        const translations = {
+          'terms_title': {
+            'ko': "서비스 이용약관",
+            'en': "Terms of Service"
+          },
+          'privacy_title': {
+            'ko': "개인정보처리방침",
+            'en': "Privacy Policy"
+          },
+          'index_title': { 
+            'ko': "회원 탈퇴 방침",
+            'en': "Membership Withdrawal" 
+          },
+          'withdrawal_title': {
+            'ko': '회원 탈퇴 안내',
+            'en': 'Account Deletion Guide'
+          },
+          'withdrawal_subtitle': {
+            'ko': '회원 탈퇴 절차',
+            'en': 'Account Deletion Process'
+          },
+          'withdrawal_intro': {
+            'ko': 'COFFACE 서비스 회원 탈퇴는 아래의 간단한 절차를 통해 진행할 수 있습니다. 탈퇴 시 등록된 모든 개인정보는 관련 법령에 따라 즉시 파기되며, 복구가 불가능합니다.',
+            'en': 'You can delete your COFFACE account through the simple process below. Upon deletion, all registered personal information will be immediately destroyed in accordance with relevant laws and cannot be recovered.'
+          },
+          'step1': {
+            'ko': '어플에 로그인이 되어있지 않으면 로그인합니다.',
+            'en': 'Log in if you are not already signed in to the app.'
+          },
+          'step2': {
+            'ko': '마이페이지에 들어갑니다.',
+            'en': 'Navigate to the My Page section.'
+          },
+          'step3': {
+            'ko': '회원탈퇴 버튼을 누릅니다.',
+            'en': 'Click the \'Delete Account\' button.'
+          },
+          'step4': {
+            'ko': '확인을 누르면 탈퇴가 완료됩니다.',
+            'en': 'Confirm the action to complete account deletion.'
+          },
+          'withdrawal_notice_title': {
+            'ko': '탈퇴 시 유의사항',
+            'en': 'Important Notes on Account Deletion'
+          },
+          'withdrawal_notice_1': {
+            'ko': '회원 탈퇴 시 계정과 관련된 모든 정보는 즉시 삭제되며 복구가 불가능합니다.',
+            'en': 'All information related to your account will be immediately deleted and cannot be recovered after account deletion.'
+          },
+          'withdrawal_notice_2': {
+            'ko': '얼굴 벡터 정보, 결제 정보 등 모든 개인정보는 관련 법령에 따라 완전히 파기됩니다.',
+            'en': 'All personal information including facial vector data and payment information will be completely destroyed in accordance with relevant laws.'
+          },
+          'withdrawal_notice_3': {
+            'ko': '탈퇴 후 재가입 시에는 신규 회원으로 가입 절차를 진행해야 합니다.',
+            'en': 'If you wish to rejoin after deletion, you will need to complete the registration process as a new member.'
+          },
+          'withdrawal_notice_4': {
+            'ko': '서비스 이용 내역은 통계 목적으로 익명화하여 보관될 수 있습니다.',
+            'en': 'Service usage history may be retained in anonymized form for statistical purposes.'
+          },
+          'withdrawal_question_title': {
+            'ko': '회원 탈퇴 관련 문의',
+            'en': 'Inquiries About Account Deletion'
+          },
+          'withdrawal_question_content': {
+            'ko': '회원 탈퇴 과정에서 어려움이나 문의사항이 있으시면 아래 연락처로 문의해 주시기 바랍니다.',
+            'en': 'If you have any difficulties or questions during the account deletion process, please contact us using the information below.'
+          },
+          'withdrawal_contact': {
+            'ko': '이메일: team2eroom@gmail.com',
+            'en': 'Email: team2eroom@gmail.com'
+          },
+          'withdrawal_phone': {
+            'ko': '고객센터: 1588-0000 (평일 09:00-18:00)',
+            'en': 'Customer Support: 1588-0000 (Weekdays 09:00-18:00)'
+          },
+          'withdrawal_final_note': {
+            'ko': '※ 회원 탈퇴 후에도 서비스 개선을 위한 소중한 의견 남겨주시면 감사하겠습니다.',
+            'en': '※ We would appreciate your valuable feedback for service improvement even after account deletion.'
+          }
+        };
+
+        i18nElements.forEach(el => {
+          const key = el.getAttribute('data-i18n');
+          if (translations[key] && translations[key][lang]) {
+            el.innerHTML = translations[key][lang];
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
