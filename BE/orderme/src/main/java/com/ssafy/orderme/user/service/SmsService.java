@@ -82,7 +82,7 @@ public class SmsService {
         Message message = new Message();
         message.setFrom(senderNumber);
         message.setTo(phoneNumber);
-        message.setText("[ORDER.ME] 인증번호 ["+code+"]를 입력해주세요.");
+        message.setText("[COFFACE] 인증번호 ["+code+"]를 입력해주세요.");
 
         try{
             SingleMessageSentResponse response = messageService.sendOne(new SingleMessageSendingRequest(message));
