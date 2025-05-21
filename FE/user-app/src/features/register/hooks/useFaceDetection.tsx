@@ -143,7 +143,7 @@ export function useFaceDetection() {
         // 설정
         faceMesh.setOptions({
           maxNumFaces: 1,
-          refineLandmarks: true,
+          refineLandmarks: false,
           minDetectionConfidence: 0.5,
           minTrackingConfidence: 0.5,
         })
@@ -628,8 +628,8 @@ export function useFaceDetection() {
     try {
       // 캔버스 크기 설정 - 일관성 있게 정사각형 비율로 설정
       if (canvasRef.current) {
-        canvasRef.current.width = 640
-        canvasRef.current.height = 640 // 정사각형으로 변경
+        canvasRef.current.width = 480
+        canvasRef.current.height = 480 // 정사각형으로 변경
       }
 
       // 카메라 설정 전에 비디오 요소 스타일 강제 설정
@@ -646,8 +646,8 @@ export function useFaceDetection() {
             await faceMeshRef.current.send({ image: videoRef.current })
           }
         },
-        width: 640,
-        height: 640, // 정사각형으로 변경
+        width: 480,
+        height: 480, // 정사각형으로 변경
         facingMode: 'user',
       })
 
