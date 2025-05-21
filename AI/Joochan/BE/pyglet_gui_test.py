@@ -901,6 +901,7 @@ class RealSenseFaceLiveness:
         # 카메라를 끄는 경우 진행 중인, 인식 프로세스도 중단
         if not enabled and self.processing_api_request:
             print("카메라 비활성화로 인한 인식 프로세스 중단")
+            self.countdown_timer.stop()
             self.processing_api_request = False
             # 결과 이벤트 설정으로 대기 중인 요청도 완료 처리
             self.api_result = {
@@ -915,6 +916,10 @@ class RealSenseFaceLiveness:
             print("카메라 비활성화로 인한 제스처 감지 중단")
             self.detecting_gesture = False
             self.current_gesture_session = None
+        
+        if not enabled and hasattr(self, 'countdown_timer') and self.countdown_timer.is_active:
+            print("카메라 비활성화로 인한 카운트다운 중단")
+            self.countdown_timer.stop()
         
         self.camera_mode = enabled
         print(f"카메라 모드: {'활성화' if enabled else '비활성화'}")
