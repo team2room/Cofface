@@ -14,7 +14,8 @@ import { useDirectOrderStore } from '@/stores/directOrderStore'
 import { convertMenuToOrderItem } from '@/utils/convertMenuToOrder'
 import { useRecommendationStore } from '@/stores/recommendStore'
 import CustomDialog from '@/components/CustomDialog'
-import { generateReason } from '@/utils/generateReason'
+import { ReasonText } from '@/components/ReasonText'
+import { generateReasonParts } from '@/utils/generateReasonPart'
 
 export default function MainContent() {
   const { step, setStep } = useStepStore()
@@ -205,6 +206,8 @@ export default function MainContent() {
     setOptionChangeCount((prev) => prev + 1)
   }
 
+  const reasons = generateReasonParts(currentMenuGroup)
+
   return (
     <div>
       {/* 제스처 감지 컴포넌트 */}
@@ -223,7 +226,9 @@ export default function MainContent() {
       {/* 추천 텍스트 */}
       <div className="my-16 px-10 whitespace-pre-line">
         <Text variant="title1" weight="bold" fontFamily="Suite">
-          {generateReason(currentMenuGroup)}
+          {reasons.map((parts, i) => (
+            <ReasonText key={i} parts={parts} reasonIndex={i} />
+          ))}
         </Text>
       </div>
 
@@ -262,11 +267,7 @@ export default function MainContent() {
         >
           <FiChevronLeft size={80} />
         </SlideButton>
-        <SlideButton
-          onClick={handleNext}
-          disabled={currentIndex === recommendedMenus.length - 1 || isAnimating}
-          direction="right"
-        >
+        <SlideButton onClick={handleNext} disabled={false} direction="right">
           <FiChevronRight size={80} />
         </SlideButton>
 
