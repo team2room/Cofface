@@ -39,6 +39,7 @@ export function FaceRegisterCapturePage() {
     loadingError,
     videoRef,
     canvasRef,
+    currentRotation,
     handleStartCamera,
     handleRestartCapture,
     handleComplete,
@@ -71,6 +72,7 @@ export function FaceRegisterCapturePage() {
               timerProgress={timerProgress}
               videoRef={videoRef}
               canvasRef={canvasRef}
+              currentRotation={currentRotation}
             />
           )}
 

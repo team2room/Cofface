@@ -483,23 +483,48 @@ export function useFaceDetection() {
 
   // 얼굴 캡처
   const captureFace = (): void => {
-    if (!lastFrameRef.current) return
+    if (!lastFrameRef.current || !videoRef.current) return
 
-    // 캡처용 캔버스 생성
+    // 캡처용 캔버스 생성 및 크기 설정
     if (!hiddenCanvasRef.current) {
       hiddenCanvasRef.current = document.createElement('canvas')
-      hiddenCanvasRef.current.width = 640
-      hiddenCanvasRef.current.height = 480
     }
+
+    // 중요: 비디오와 동일한 비율로 캔버스 설정
+    const videoWidth = videoRef.current.videoWidth
+    const videoHeight = videoRef.current.videoHeight
+
+    // 1:1 비율 유지하면서 화면에 맞게 조정
+    const size = Math.max(videoWidth, videoHeight)
+    hiddenCanvasRef.current.width = size
+    hiddenCanvasRef.current.height = size
 
     const canvas = hiddenCanvasRef.current
     const ctx = canvas.getContext('2d')
 
     if (!ctx) return
 
-    // 이미지 데이터를 캔버스에 그리기
+    // 캔버스 초기화
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    // 이미지를 캔버스 중앙에 배치
     const imgData = lastFrameRef.current
-    ctx.putImageData(imgData, 0, 0)
+
+    // 직접 캔버스에 비디오 프레임을 그리는 방식으로 변경
+    if (videoRef.current) {
+      // 비디오를 캔버스 전체에 그림
+      ctx.drawImage(videoRef.current, 0, 0, size, size)
+
+      // 좌우 반전 (selfie 모드 반영)
+      ctx.save()
+      ctx.translate(canvas.width, 0)
+      ctx.scale(-1, 1)
+      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height)
+      ctx.restore()
+    } else {
+      // 기존 방식 유지 (fallback)
+      ctx.putImageData(imgData, 0, 0)
+    }
 
     // 현재 상태에 따른 방향 결정
     let direction: string
@@ -526,7 +551,7 @@ export function useFaceDetection() {
     // 캡처된 이미지 저장
     const capturedImage: CapturedImage = {
       state: currentStateRef.current,
-      imageData: canvas.toDataURL('image/jpeg'),
+      imageData: canvas.toDataURL('image/jpeg', 0.9), // 품질 설정 추가
       direction: direction,
     }
 
@@ -727,6 +752,7 @@ export function useFaceDetection() {
     loadingError,
     isRegistering,
     registrationError,
+    currentRotation: _rotation,
 
     // refs
     videoRef,
