@@ -14,6 +14,7 @@ import { useDirectOrderStore } from '@/stores/directOrderStore'
 import { convertMenuToOrderItem } from '@/utils/convertMenuToOrder'
 import { useRecommendationStore } from '@/stores/recommendStore'
 import CustomDialog from '@/components/CustomDialog'
+import { generateReason } from '@/utils/generateReason'
 
 export default function MainContent() {
   const { step, setStep } = useStepStore()
@@ -220,11 +221,9 @@ export default function MainContent() {
       />
 
       {/* 추천 텍스트 */}
-      <div className="my-16 px-10">
+      <div className="my-16 px-10 whitespace-pre-line">
         <Text variant="title1" weight="bold" fontFamily="Suite">
-          오늘 날씨가 너무 춥지 않나요?
-          <br />
-          따뜻한 카페라떼 추천해요
+          {generateReason(currentMenuGroup)}
         </Text>
       </div>
 
