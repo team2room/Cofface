@@ -11,7 +11,6 @@ import { useClientKey } from '@/features/order/hooks/pay/useClientKey'
 import tw from 'twin.macro'
 // import { useLogout } from '@/features/userLogin/hooks/useLogout'
 import { useNavigate } from 'react-router-dom'
-import { BASE_URL } from '@/config'
 
 const ImageWrapper = tw.div`w-full my-8 flex justify-center items-center`
 const FullImg = tw.img`absolute top-0 left-0 w-full h-full object-cover`
@@ -52,8 +51,9 @@ export default function PayPage() {
   const handlePayment = async () => {
     setLoading(true)
     const paymentWidget = paymentWidgetRef.current
-    const isLocalhost = window.location.hostname === 'localhost'
-    const baseUrl = isLocalhost ? 'http://localhost:5173' : BASE_URL
+    const baseUrl = window.location.origin
+
+    console.log(baseUrl)
 
     try {
       const prepareResult = await preparePay()
