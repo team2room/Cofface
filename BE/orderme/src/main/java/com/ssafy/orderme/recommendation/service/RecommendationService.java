@@ -377,7 +377,7 @@ public class RecommendationService {
                 // 추가 정보 설정 - 나이, 성별
                 Map<String, Object> additionalInfo = new HashMap<>();
                 additionalInfo.put("나이", ageGroup + "대");
-                additionalInfo.put("성별", gender.equals("MALE") ? "남성" : "여성");
+                additionalInfo.put("성별", gender.equalsIgnoreCase("MALE") ? "남성" : "여성");
                 detailResponse.setAdditionalInfo(additionalInfo);
 
                 // 주문된 실제 옵션 정보 설정
