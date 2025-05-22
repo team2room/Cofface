@@ -31,7 +31,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    console.log('API Error:', err)
     return Promise.reject(err)
   },
 )

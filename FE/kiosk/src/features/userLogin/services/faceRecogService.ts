@@ -6,7 +6,6 @@ export const newFaceRecogRequest =
     try {
       const response = await axios.post('http://localhost:8080/recognize')
       const { phone_number, success, genderage } = response.data
-      console.log('얼굴 인식 응답:', response.data)
       return { phone_number, success, genderage }
     } catch (error: any) {
       console.error('얼굴 인식 에러:', error)
@@ -19,7 +18,6 @@ export const faceRecogRequest = async (): Promise<{
 }> => {
   try {
     const response = await axios.post('http://localhost:8080/recognize')
-    console.log('회원 얼굴 인식 성공')
     return response.data
   } catch (error: any) {
     console.error('얼굴 인식 에러')

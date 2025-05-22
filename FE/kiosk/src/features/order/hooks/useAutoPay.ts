@@ -24,7 +24,6 @@ export const useAutoPay = () => {
   const startPayment = async () => {
     setLoading(true)
     try {
-      console.log('try 진입', payData)
       const res = await postAutoPay(payData)
       setResult(res)
     } catch (err: any) {

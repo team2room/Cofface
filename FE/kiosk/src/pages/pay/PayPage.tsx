@@ -11,6 +11,7 @@ import { useClientKey } from '@/features/order/hooks/pay/useClientKey'
 import tw from 'twin.macro'
 // import { useLogout } from '@/features/userLogin/hooks/useLogout'
 import { useNavigate } from 'react-router-dom'
+import { BASE_URL } from '@/config'
 
 const ImageWrapper = tw.div`w-full my-8 flex justify-center items-center`
 const FullImg = tw.img`absolute top-0 left-0 w-full h-full object-cover`
@@ -51,6 +52,8 @@ export default function PayPage() {
   const handlePayment = async () => {
     setLoading(true)
     const paymentWidget = paymentWidgetRef.current
+    const isLocalhost = window.location.hostname === 'localhost'
+    const baseUrl = isLocalhost ? 'http://localhost:5173' : BASE_URL
 
     try {
       const prepareResult = await preparePay()
@@ -64,8 +67,8 @@ export default function PayPage() {
         orderName: `커피 주문 (${store?.menuOrders?.reduce((acc, cur) => acc + cur.quantity, 0)}건)`,
         customerName: userName || '고객',
         customerEmail: 'customer123@gmail.com',
-        successUrl: `http://localhost:5173/pay/success`,
-        failUrl: `http://localhost:5173/pay/fail`,
+        successUrl: `${baseUrl}/pay/success`,
+        failUrl: `${baseUrl}/pay/fail`,
       })
     } catch (err) {
       console.error('결제 처리 오류:', err)

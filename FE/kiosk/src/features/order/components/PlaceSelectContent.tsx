@@ -67,18 +67,15 @@ export default function PlaceSelectContent() {
   const handleSelect = (isTakeout: boolean) => {
     payStore.setIsTakeout(isTakeout)
 
-    console.log('hasAutoPayment', hasAutoPayment)
-    console.log('isMember', isMember)
-
     if (originStep === 'menu') {
       setStep('pay')
     } else if (originStep === 'main') {
       if (isMember && hasAutoPayment && loginMethod === 'face') {
         // 슬라이드 자동 결제
-        setShowProgress(true)
         changeDisplayType('pay')
           .then((data) => console.log('성공:', data))
           .catch((error) => console.error('실패:', error))
+        setShowProgress(true)
       } else {
         // toss 결제
         navigate('/pay')

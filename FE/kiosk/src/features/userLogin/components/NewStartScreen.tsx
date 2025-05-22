@@ -143,7 +143,6 @@ export default function NewStartScreen() {
       }
     } catch (err) {
       console.error('얼굴 로그인 실패:', err)
-      // console.log('결과', success)
       if (modalStateRef.current !== 'phone') {
         setModalState('error')
       }

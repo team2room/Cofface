@@ -72,15 +72,6 @@ export default function MainContent() {
   // 데이터가 로드되면 추천 메뉴 스토어에 설정
   useEffect(() => {
     if (data?.data?.recommendedMenus) {
-      console.log('추천 메뉴', data.data.recommendedMenus)
-      setRecommendedMenus(data.data.recommendedMenus)
-    }
-  }, [data, setRecommendedMenus])
-
-  // 데이터가 로드되면 추천 메뉴 스토어에 설정
-  useEffect(() => {
-    if (data?.data?.recommendedMenus) {
-      console.log('추천 메뉴', data.data.recommendedMenus)
       setRecommendedMenus(data.data.recommendedMenus)
     }
   }, [data, setRecommendedMenus])
@@ -195,7 +186,6 @@ export default function MainContent() {
 
     // 현재 메뉴의 옵션 레이어 활성화
     if (!activeOptionLayers[currentMenu.menuId]) {
-      console.log('옵션 레이어 활성화', currentMenu.menuId)
       setActiveOptionLayers((prev) => ({
         ...prev,
         [currentMenu.menuId]: true,

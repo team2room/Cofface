@@ -33,7 +33,6 @@ export const useRecommend = (storeId: number) => {
           ...guestParams,
         })
 
-        console.log('데이터', res)
         setData(res)
       } catch (err) {
         console.log(err)

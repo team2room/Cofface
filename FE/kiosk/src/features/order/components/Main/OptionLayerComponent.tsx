@@ -23,8 +23,6 @@ interface OptionLayerProps {
 }
 
 export function OptionLayer({ options }: OptionLayerProps) {
-  console.log('레이어링 옵션:', options)
-
   // 각 옵션 카테고리별 선택된 옵션 찾기
   const selectedOptions = options
     .filter((option) => layeringCategories.includes(option.optionCategory))

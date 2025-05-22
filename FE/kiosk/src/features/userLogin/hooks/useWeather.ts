@@ -6,7 +6,6 @@ export const useWeather = async () => {
     const weather = await fetchWeather()
     useUserStore.getState().setWeather(weather)
   } catch (err) {
-    console.log('날씨 정보 조회 실패')
-    console.log(err)
+    console.log('날씨 정보 조회 실패', err)
   }
 }
