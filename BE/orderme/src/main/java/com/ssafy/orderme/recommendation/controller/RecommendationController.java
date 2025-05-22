@@ -120,7 +120,7 @@ public class RecommendationController {
         MenuDetailResponse genderAgeMenu = recommendationService.getMenuByGenderAndAge(
                 storeId, userGender, userAge, updatedExcludeIds);
         if (genderAgeMenu != null) {
-            String genderText = userGender.equals("MALE") ? "남성" : "여성";
+            String genderText = userGender.equalsIgnoreCase("MALE") ? "남성" : "여성";
             System.out.println("성별/나이 기반 추천 메뉴 검색 결과: " + genderAgeMenu.getMenuName() + ", 메뉴 ID: " + genderAgeMenu.getMenuId());
 
             // 옵션 정보 확인
