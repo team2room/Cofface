@@ -12,7 +12,6 @@ import { useExtendSession } from '@/features/userLogin/hooks/useExtendSession'
 import { useUserStore } from '@/stores/loginStore'
 import MainContent from '@/features/order/components/MainContent'
 import { useStepStore } from '@/stores/stepStore'
-import { changeDisplayType } from '@/lib/changeDisplay'
 
 const Container = tw.div`flex flex-col min-h-screen bg-white my-4`
 
@@ -46,9 +45,6 @@ export default function OrderPage() {
   }
 
   useEffect(() => {
-    changeDisplayType('motion')
-      .then((data) => console.log('성공:', data))
-      .catch((error) => console.error('실패:', error))
     resetStep()
     startTimer()
     return () => {

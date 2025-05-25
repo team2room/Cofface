@@ -7,6 +7,7 @@ import CustomButton from '@/components/CustomButton'
 import { useLogout } from '@/features/userLogin/hooks/useLogout'
 import { useUserStore } from '@/stores/loginStore'
 import { useWeather } from '@/features/userLogin/hooks/useWeather'
+import { changeDisplayType } from '@/lib/changeDisplay'
 
 const ImageWrapper = tw.div`
   w-full my-8 flex justify-center items-center
@@ -81,6 +82,9 @@ export default function LoadingPage() {
 
     if (type === 'recommend') {
       const timer = setTimeout(() => {
+        changeDisplayType('motion')
+          .then((data) => console.log('성공:', data))
+          .catch((error) => console.error('실패:', error))
         navigate('/order')
       }, 1000)
 
