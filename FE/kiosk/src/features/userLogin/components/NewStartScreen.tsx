@@ -19,7 +19,13 @@ export default function NewStartScreen() {
   const { phoneNumLogin, faceLogin } = useLogin()
   const { logout } = useLogout()
 
-  type ModalState = 'waiting' | 'success' | 'failure' | 'phone' | 'error'
+  type ModalState =
+    | 'waiting'
+    | 'success'
+    | 'failure'
+    | 'phone'
+    | 'error'
+    | 'live'
   const [modalState, setModalState] = useState<ModalState>('waiting')
   const [showModal, setShowModal] = useState(false)
 
@@ -62,18 +68,17 @@ export default function NewStartScreen() {
       cancelText: '취소',
       confirmText: '확인',
     }
-  } else if (modalState === 'error') {
+  } else if (modalState === 'error' || modalState === 'live') {
     modalContent = {
       title: (
         <Text variant="title4" weight="extrabold" color="gray">
           FaceSign ----------------------- COFFACE
         </Text>
       ),
-      description: (
-        <Text variant="title4" weight="extrabold">
-          서버 에러 발생
-        </Text>
-      ),
+      description: {
+        error: '서버 에러 발생',
+        live: '사진이나 영상은 인식할 수 없습니다',
+      }[modalState],
       icon: '/fail.gif',
       cancelText: '취소',
       confirmText: '전화번호 로그인',
@@ -143,10 +148,14 @@ export default function NewStartScreen() {
           await faceLogin(phone_number)
           setModalState('success')
         } else {
-          setModalState('failure')
-          useUserStore
-            .getState()
-            .setGuestInfo({ age: genderage.age, gender: genderage.gender })
+          if (genderage.is_live === false) {
+            console.error('얼굴 인식 실패: 생체 정보가 일치하지 않음')
+          } else {
+            setModalState('failure')
+            useUserStore
+              .getState()
+              .setGuestInfo({ age: genderage.age, gender: genderage.gender })
+          }
         }
       }
     } catch (err) {

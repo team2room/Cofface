@@ -2,6 +2,7 @@ export interface FaceRecognitionResponse {
   phone_number: string
   success: boolean
   genderage: {
+    is_live: boolean
     age: number
     gender: string
   }
