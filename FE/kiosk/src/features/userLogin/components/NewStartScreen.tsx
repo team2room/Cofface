@@ -9,6 +9,7 @@ import { newFaceRecogRequest } from '../services/faceRecogService'
 import { maskName } from '@/utils/maskUserName'
 import { useLogout } from '../hooks/useLogout'
 import { changeCamera } from '@/lib/changeCamera'
+import { changeDisplayType } from '@/lib/changeDisplay'
 
 const ImageWrapper = tw.div`w-full my-8 flex justify-center items-center`
 const FullImg = tw.img`absolute top-0 left-0 w-full h-full object-contain`
@@ -17,6 +18,14 @@ export default function NewStartScreen() {
   const navigate = useNavigate()
   const { phoneNumLogin, faceLogin } = useLogin()
   const { logout } = useLogout()
+
+  type ModalState = 'waiting' | 'success' | 'failure' | 'phone' | 'error'
+  const [modalState, setModalState] = useState<ModalState>('waiting')
+  const [showModal, setShowModal] = useState(false)
+
+  const phoneNumber = useLoginStore((state) => state.phoneNumber)
+  const resetPhoneNumber = useLoginStore((state) => state.resetPhoneNumber)
+  const user = useUserStore((state) => state.user)
 
   // 시작 화면 터치 중복 방지
   // const calledRef = useRef(false)
@@ -29,30 +38,15 @@ export default function NewStartScreen() {
     // }
   }
 
-  type ModalState = 'waiting' | 'success' | 'failure' | 'phone' | 'error'
-  const [modalState, setModalState] = useState<ModalState>('waiting')
-  const [showModal, setShowModal] = useState(false)
-
-  const phoneNumber = useLoginStore((state) => state.phoneNumber)
-  const resetPhoneNumber = useLoginStore((state) => state.resetPhoneNumber)
-  const user = useUserStore((state) => state.user)
-
   useEffect(() => {
-    const updateCameraMode = async () => {
-      try {
-        if (modalState !== 'waiting') {
-          await changeCamera(false)
-        }
-      } catch (error) {
-        console.error('카메라 모드 변경 실패:', error)
-      }
+    if (!showModal) {
+      changeDisplayType('default')
+        .then((data) => console.log('성공:', data))
+        .catch((error) => console.error('실패:', error))
     }
-
-    updateCameraMode()
-  }, [modalState])
+  }, [showModal])
 
   let modalContent
-
   if (modalState === 'phone') {
     modalContent = {
       title: (
@@ -114,6 +108,20 @@ export default function NewStartScreen() {
   const modalStateRef = useRef(modalState)
   useEffect(() => {
     modalStateRef.current = modalState
+  }, [modalState])
+
+  useEffect(() => {
+    const updateCameraMode = async () => {
+      try {
+        if (modalState !== 'waiting') {
+          await changeCamera(false)
+        }
+      } catch (error) {
+        console.error('카메라 모드 변경 실패:', error)
+      }
+    }
+
+    updateCameraMode()
   }, [modalState])
 
   const handlePhoneLogin = async () => {
