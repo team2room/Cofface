@@ -57,7 +57,7 @@ export default function NewStartScreen() {
     modalContent = {
       title: (
         <Text variant="title4" weight="extrabold" color="gray">
-          PhoneSign --------------------- COFFACE
+          PhoneSign ------------------- COFFACE
         </Text>
       ),
       description: (
@@ -72,14 +72,17 @@ export default function NewStartScreen() {
     modalContent = {
       title: (
         <Text variant="title4" weight="extrabold" color="gray">
-          FaceSign ----------------------- COFFACE
+          FaceSign --------------------- COFFACE
         </Text>
       ),
       description: {
         error: '서버 에러 발생',
-        live: '사진이나 영상은 인식할 수 없습니다',
+        live: '사진이나 영상은\n인식할 수 없습니다',
       }[modalState],
-      icon: '/fail.gif',
+      icon: {
+        error: '/fail.gif',
+        live: '/liveness.gif',
+      }[modalState],
       cancelText: '취소',
       confirmText: '전화번호 로그인',
     }
@@ -87,7 +90,7 @@ export default function NewStartScreen() {
     modalContent = {
       title: (
         <Text variant="title4" weight="extrabold" color="gray">
-          FaceSign ----------------------- COFFACE
+          FaceSign --------------------- COFFACE
         </Text>
       ),
       description: {
