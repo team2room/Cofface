@@ -8,6 +8,7 @@ import { useLogout } from '@/features/userLogin/hooks/useLogout'
 import { useUserStore } from '@/stores/loginStore'
 import { useWeather } from '@/features/userLogin/hooks/useWeather'
 import { changeDisplayType } from '@/lib/changeDisplay'
+import { usePayResultStore } from '@/stores/payStore'
 
 const ImageWrapper = tw.div`
   w-full my-8 flex justify-center items-center
@@ -22,6 +23,7 @@ export default function LoadingPage() {
   const navigate = useNavigate()
   const { logout } = useLogout()
   const { isMember } = useUserStore()
+  const orderId = usePayResultStore((s) => s.orderId)
 
   const handleHome = async () => {
     if (isMember) {
@@ -142,7 +144,7 @@ export default function LoadingPage() {
         <>
           <img src="/loading.gif" className="mb-6" />
           <Text variant="title2" weight="bold" color="black" fontFamily="Suite">
-            주문번호 : A-32
+            주문번호 : {orderId}
           </Text>
           <Text
             variant="title1"

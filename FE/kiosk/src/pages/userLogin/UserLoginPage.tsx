@@ -3,7 +3,7 @@ import { changeDisplayType } from '@/lib/changeDisplay'
 import { useDirectOrderStore } from '@/stores/directOrderStore'
 import { useUserStore } from '@/stores/loginStore'
 import { useOrderStore } from '@/stores/orderStore'
-import { usePayStore } from '@/stores/payStore'
+import { usePayResultStore, usePayStore } from '@/stores/payStore'
 import { useRecommendationStore } from '@/stores/recommendStore'
 import { useStepStore } from '@/stores/stepStore'
 import { useEffect } from 'react'
@@ -24,6 +24,7 @@ export default function UserLoginPage() {
   const resetDirectOrder = useDirectOrderStore(
     (state) => state.resetDirectOrder,
   )
+  const resetOrderId = usePayResultStore((s) => s.resetOrderId)
 
   useEffect(() => {
     changeDisplayType('default')
@@ -35,6 +36,7 @@ export default function UserLoginPage() {
     resetStep()
     resetRecommendedMenus()
     resetDirectOrder()
+    resetOrderId()
   }, [])
 
   return (

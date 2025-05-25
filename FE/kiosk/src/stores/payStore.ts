@@ -52,3 +52,15 @@ export const usePayStore = create<PayStoreState>((set) => ({
       menuOrders: [],
     }),
 }))
+
+interface PayResultState {
+  orderId: string
+  setOrderId: (step: string) => void
+  resetOrderId: () => void
+}
+
+export const usePayResultStore = create<PayResultState>((set) => ({
+  orderId: '',
+  setOrderId: (orderId) => set({ orderId }),
+  resetOrderId: () => set({ orderId: '' }),
+}))

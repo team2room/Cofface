@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { usePayStore } from '@/stores/payStore'
+import { usePayResultStore, usePayStore } from '@/stores/payStore'
 import { PayData, PreparePayResponse } from '@/interfaces/PayInterface'
 import { postPreparePay } from '../../services/pay/preparePayService'
 
@@ -7,6 +7,7 @@ export const usePreparePay = () => {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<PreparePayResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const setOrderId = usePayResultStore((s) => s.setOrderId)
 
   const store = usePayStore.getState()
   const payData: PayData = {
@@ -25,6 +26,7 @@ export const usePreparePay = () => {
     setLoading(true)
     try {
       const res = await postPreparePay(payData)
+      setOrderId(res.orderId)
       setResult(res)
       return res
     } catch (err: any) {
