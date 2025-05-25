@@ -1,7 +1,7 @@
 import NewStartScreen from '@/features/userLogin/components/NewStartScreen'
+import { changeDisplayType } from '@/lib/changeDisplay'
 import { useDirectOrderStore } from '@/stores/directOrderStore'
 import { useUserStore } from '@/stores/loginStore'
-// import StartScreen from '@/features/userLogin/components/StartScreen'
 import { useOrderStore } from '@/stores/orderStore'
 import { usePayStore } from '@/stores/payStore'
 import { useRecommendationStore } from '@/stores/recommendStore'
@@ -26,6 +26,9 @@ export default function UserLoginPage() {
   )
 
   useEffect(() => {
+    changeDisplayType('default')
+      .then((data) => console.log('성공:', data))
+      .catch((error) => console.error('실패:', error))
     clearOrders()
     reset()
     resetPayData()
@@ -36,7 +39,6 @@ export default function UserLoginPage() {
 
   return (
     <Container>
-      {/* <StartScreen /> */}
       <NewStartScreen />
     </Container>
   )
