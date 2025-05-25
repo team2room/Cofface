@@ -56,7 +56,7 @@ export function SuccessContent() {
     if (result) {
       const timeout = setTimeout(() => {
         handleGoBack()
-      }, 3000)
+      }, 1000)
 
       return () => clearTimeout(timeout)
     }
@@ -64,7 +64,7 @@ export function SuccessContent() {
     if (error) {
       const timeout = setTimeout(() => {
         navigate('/order')
-      }, 3000)
+      }, 1000)
 
       return () => clearTimeout(timeout)
     }

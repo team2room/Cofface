@@ -23,7 +23,7 @@ export function FailContent() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       handleGoBack()
-    }, 3000)
+    }, 1000)
 
     return () => clearTimeout(timeout)
   }, [])
