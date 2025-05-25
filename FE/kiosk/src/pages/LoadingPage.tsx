@@ -54,7 +54,7 @@ export default function LoadingPage() {
     if (type === 'progress' && result) {
       const timer = setTimeout(() => {
         navigate('/loading?type=complete')
-      }, 3000)
+      }, 1000)
 
       return () => clearTimeout(timer)
     }
@@ -64,7 +64,7 @@ export default function LoadingPage() {
     if (type === 'progress' && error) {
       const timer = setTimeout(() => {
         navigate('/order')
-      }, 3000)
+      }, 1000)
 
       return () => clearTimeout(timer)
     }
@@ -74,7 +74,7 @@ export default function LoadingPage() {
     if (type === 'complete') {
       const timer = setTimeout(() => {
         handleHome()
-      }, 3000)
+      }, 1000)
 
       return () => clearTimeout(timer)
     }
@@ -82,7 +82,7 @@ export default function LoadingPage() {
     if (type === 'recommend') {
       const timer = setTimeout(() => {
         navigate('/order')
-      }, 3000)
+      }, 1000)
 
       return () => clearTimeout(timer)
     }
