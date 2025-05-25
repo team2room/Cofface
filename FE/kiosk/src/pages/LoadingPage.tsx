@@ -81,10 +81,10 @@ export default function LoadingPage() {
     }
 
     if (type === 'recommend') {
+      changeDisplayType('motion')
+        .then((data) => console.log('성공:', data))
+        .catch((error) => console.error('실패:', error))
       const timer = setTimeout(() => {
-        changeDisplayType('motion')
-          .then((data) => console.log('성공:', data))
-          .catch((error) => console.error('실패:', error))
         navigate('/order')
       }, 1000)
 
