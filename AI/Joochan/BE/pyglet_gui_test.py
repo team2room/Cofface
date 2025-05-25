@@ -46,77 +46,77 @@ class GestureDetectionResult(BaseModel):
     session_id: str
     timestamp: datetime
 
-class CountdownTimer:
-    def __init__(self):
-        self.active = False
-        self.value = 0
-        self.start_time = 0
-        self.duration = 0
-        self.delay = 0
-        self.delay_start_time = 0
-        self.is_in_delay = False
+# class CountdownTimer:
+#     def __init__(self):
+#         self.active = False
+#         self.value = 0
+#         self.start_time = 0
+#         self.duration = 0
+#         self.delay = 0
+#         self.delay_start_time = 0
+#         self.is_in_delay = False
     
-    def start(self, duration=3, delay=0):
-        """타이머 시작"""
-        self.active = True
-        self.value = duration
-        self.duration = duration
-        self.delay = delay
-        self.delay_start_time = time.time()
-        self.is_in_delay = delay > 0
-        print(f"타이머 시작: {delay}초 후 {duration}초 카운트다운")
-        return self
+#     def start(self, duration=3, delay=0):
+#         """타이머 시작"""
+#         self.active = True
+#         self.value = duration
+#         self.duration = duration
+#         self.delay = delay
+#         self.delay_start_time = time.time()
+#         self.is_in_delay = delay > 0
+#         print(f"타이머 시작: {delay}초 후 {duration}초 카운트다운")
+#         return self
     
-    def stop(self):
-        """타이머 중지"""
-        self.active = False
-        self.value = 0
-        print("타이머 중지")
-        return self
+#     def stop(self):
+#         """타이머 중지"""
+#         self.active = False
+#         self.value = 0
+#         print("타이머 중지")
+#         return self
     
-    def update(self):
-        """타이머 업데이트 (매 프레임마다 호출)"""
-        if not self.active:
-            return self
+#     def update(self):
+#         """타이머 업데이트 (매 프레임마다 호출)"""
+#         if not self.active:
+#             return self
         
-        current_time = time.time()
+#         current_time = time.time()
         
-        # 지연 시간 처리
-        if self.is_in_delay:
-            elapsed_delay = current_time - self.delay_start_time
-            if elapsed_delay >= self.delay:
-                # 지연 시간 종료, 본 카운트다운 시작
-                self.is_in_delay = False
-                self.start_time = current_time
-                print(f"지연 시간 종료, 카운트다운 시작: {self.duration}초")
-            return self
+#         # 지연 시간 처리
+#         if self.is_in_delay:
+#             elapsed_delay = current_time - self.delay_start_time
+#             if elapsed_delay >= self.delay:
+#                 # 지연 시간 종료, 본 카운트다운 시작
+#                 self.is_in_delay = False
+#                 self.start_time = current_time
+#                 print(f"지연 시간 종료, 카운트다운 시작: {self.duration}초")
+#             return self
         
-        # 카운트다운 처리
-        elapsed = current_time - self.start_time
-        seconds_passed = int(elapsed)
-        new_value = self.duration - seconds_passed
+#         # 카운트다운 처리
+#         elapsed = current_time - self.start_time
+#         seconds_passed = int(elapsed)
+#         new_value = self.duration - seconds_passed
         
-        # 값이 변경된 경우에만 업데이트
-        if new_value != self.value:
-            self.value = new_value
-            print(f"카운트다운: {self.value}")
+#         # 값이 변경된 경우에만 업데이트
+#         if new_value != self.value:
+#             self.value = new_value
+#             print(f"카운트다운: {self.value}")
             
-            # 카운트다운 종료
-            if self.value <= 0:
-                self.active = False
-                print("카운트다운 완료")
+#             # 카운트다운 종료
+#             if self.value <= 0:
+#                 self.active = False
+#                 print("카운트다운 완료")
         
-        return self
+#         return self
         
-    @property
-    def is_active(self):
-        """타이머가 활성화되어 있는지 여부"""
-        return self.active
+#     @property
+#     def is_active(self):
+#         """타이머가 활성화되어 있는지 여부"""
+#         return self.active
     
-    @property
-    def current_value(self):
-        """현재 카운트다운 값"""
-        return max(0, self.value)
+#     @property
+#     def current_value(self):
+#         """현재 카운트다운 값"""
+#         return max(0, self.value)
 
 
 # 웹소켓 제스처 감지 관리자
@@ -187,7 +187,7 @@ def parse_args():
                         help='대상 화면 높이')
     parser.add_argument('--min_depth', type=float, default=0.36, 
                         help='감지할 최소 깊이 (미터)')
-    parser.add_argument('--max_depth', type=float, default=0.6, 
+    parser.add_argument('--max_depth', type=float, default=0.8, 
                         help='감지할 최대 깊이 (미터)')
     parser.add_argument('--api_port', type=int, default=8080, 
                         help='FastAPI 서버 포트')
@@ -484,7 +484,7 @@ class RealSenseFaceLiveness:
             self.window.set_location(window_x, window_y)
             
             # 전체화면 설정 (요청 시)
-            if args.fullscreen:
+            if args.fullscreen and (target_screen.width == 600 and target_screen.height == 1024):
                 self.window.set_fullscreen(True, screen=target_screen)
             
             print(f"창 생성 완료: {self.window.width}x{self.window.height} @ {self.window.get_location()}")
@@ -638,24 +638,24 @@ class RealSenseFaceLiveness:
             print(f"[Overlay] PNG 로드 실패: {e}")
         
         
-        self.countdown_timer = CountdownTimer()
+        # self.countdown_timer = CountdownTimer()
         
-        # 카운트다운 레이블 추가
-        self.countdown_label = pyglet.text.Label(
-            '',
-            font_name='Arial',
-            font_size=120,  # 큰 글씨
-            x=self.target_width // 2,
-            y=(self.target_height // 2)+100,
-            anchor_x='center',
-            anchor_y='center',
-            color=(255, 255, 255, 255),
-        )
+        # # 카운트다운 레이블 추가
+        # self.countdown_label = pyglet.text.Label(
+        #     '',
+        #     font_name='Arial',
+        #     font_size=120,  # 큰 글씨
+        #     x=self.target_width // 2,
+        #     y=(self.target_height // 2)+100,
+        #     anchor_x='center',
+        #     anchor_y='center',
+        #     color=(255, 255, 255, 255),
+        # )
         
-        # 카운트다운 상태 변수
-        self.countdown_active = False
-        self.countdown_value = 0
-        self.countdown_event = None
+        # # 카운트다운 상태 변수
+        # self.countdown_active = False
+        # self.countdown_value = 0
+        # self.countdown_event = None
         
         
         
@@ -667,8 +667,8 @@ class RealSenseFaceLiveness:
                 
                 self.process_pending_display_change()
                 
-                if hasattr(self, 'countdown_timer'):
-                    self.countdown_timer.update()
+                # if hasattr(self, 'countdown_timer'):
+                #     self.countdown_timer.update()
                 # 제스쳐 모드
                 if self.detecting_gesture:
                     if self.idle_gif and hasattr(self.idle_gif, 'frames') and self.idle_gif.frames:
@@ -786,9 +786,9 @@ class RealSenseFaceLiveness:
                         )
                         label.draw()
                 
-                if self.countdown_timer.is_active and not self.countdown_timer.is_in_delay:
-                    self.countdown_label.text = str(self.countdown_timer.current_value)
-                    self.countdown_label.draw()
+                # if self.countdown_timer.is_active and not self.countdown_timer.is_in_delay:
+                #     self.countdown_label.text = str(self.countdown_timer.current_value)
+                #     self.countdown_label.draw()
                 
                 # UI 텍스트가 활성화된 경우에만 FPS 및 상태 표시
                 if self.show_ui:
@@ -808,10 +808,10 @@ class RealSenseFaceLiveness:
             except Exception as e:
                 print(f"화면 그리기 오류 (무시됨): {e}")
     
-    def start_countdown(self, total_seconds=3, delay_before_start=1.0):
-        self.countdown_timer.stop()
-        self.countdown_timer.start(duration=total_seconds, delay=delay_before_start)
-        print(f"카운트다운 시작: {delay_before_start}초 지연 후 {total_seconds}초 카운트다운")
+    # def start_countdown(self, total_seconds=3, delay_before_start=1.0):
+    #     self.countdown_timer.stop()
+    #     self.countdown_timer.start(duration=total_seconds, delay=delay_before_start)
+    #     print(f"카운트다운 시작: {delay_before_start}초 지연 후 {total_seconds}초 카운트다운")
     
     
     def initialize_face_app(self):
@@ -901,7 +901,7 @@ class RealSenseFaceLiveness:
         # 카메라를 끄는 경우 진행 중인, 인식 프로세스도 중단
         if not enabled and self.processing_api_request:
             print("카메라 비활성화로 인한 인식 프로세스 중단")
-            self.countdown_timer.stop()
+            # self.countdown_timer.stop()
             self.processing_api_request = False
             # 결과 이벤트 설정으로 대기 중인 요청도 완료 처리
             self.api_result = {
@@ -917,9 +917,9 @@ class RealSenseFaceLiveness:
             self.detecting_gesture = False
             self.current_gesture_session = None
         
-        if not enabled and hasattr(self, 'countdown_timer') and self.countdown_timer.is_active:
-            print("카메라 비활성화로 인한 카운트다운 중단")
-            self.countdown_timer.stop()
+        # if not enabled and hasattr(self, 'countdown_timer') and self.countdown_timer.is_active:
+        #     print("카메라 비활성화로 인한 카운트다운 중단")
+        #     self.countdown_timer.stop()
         
         self.camera_mode = enabled
         print(f"카메라 모드: {'활성화' if enabled else '비활성화'}")
@@ -2066,19 +2066,19 @@ class FaceRecognitionServer:
             
             # 카메라 모드 활성화
             self.app_instance.set_camera_mode(True)
-            self.app_instance.start_countdown()
+            # self.app_instance.start_countdown()
             # 사용자가 얼굴 위치를 맞출 수 있도록 3초 대기
-            print("얼굴 위치 맞추기: 3초 대기 중...")
+            # print("얼굴 위치 맞추기: 3초 대기 중...")
             
             # 세분화된 대기로 중간에 카메라 상태 확인 가능하게 함
-            for i in range(40):  # 0.1초 간격으로 30번 = 3초
-                if not self.app_instance.camera_mode:
-                    # 중간에 카메라가 꺼진 경우
-                    return {
-                        "success": False,
-                        "message": "카메라가 비활성화되어 인식이 취소되었습니다."
-                    }
-                await asyncio.sleep(0.1)
+            # for i in range(10):  # 0.1초 간격으로 30번 = 3초
+            #     if not self.app_instance.camera_mode:
+            #         # 중간에 카메라가 꺼진 경우
+            #         return {
+            #             "success": False,
+            #             "message": "카메라가 비활성화되어 인식이 취소되었습니다."
+            #         }
+            #     await asyncio.sleep(0.1)
             
             # 대기 후 카메라가 여전히 켜져 있는지 확인
             if not self.app_instance.camera_mode:
@@ -2100,7 +2100,7 @@ class FaceRecognitionServer:
             
             # 프레임 수집 설정 업데이트
             self.app_instance.required_frames = 13  # 최대 13개 프레임
-            self.app_instance.max_wait_time = 1.5   # 1.5초 제한
+            self.app_instance.max_wait_time = 1.0   # 1.5초 제한
             
             # 프레임 수집 시작
             self.app_instance.start_frame_collection(frame_based=True)

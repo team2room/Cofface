@@ -20,7 +20,7 @@ pip install onnxruntime-gpu
 
 #### 2. Qdrant 설치
 
-wsl에서 불러오기 or EC2에서 불러오고 포트 열어서 테스트
+wsl에서 설치
 
 ```bash
 # Docker 사용하여 Qdrant 설치
@@ -28,3 +28,5 @@ docker run -d --name qdrant -p 6333:6333 -v $(pwd)/qdrant_storage:/qdrant/storag
 # python 클라이언트 설치
 pip install qdrant-client
 ```
+
+#### 3. CUDA & CuDNN 설치
