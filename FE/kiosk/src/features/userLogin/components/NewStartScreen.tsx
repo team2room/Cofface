@@ -149,7 +149,7 @@ export default function NewStartScreen() {
           setModalState('success')
         } else {
           if (genderage.is_live === false) {
-            console.error('얼굴 인식 실패: 생체 정보가 일치하지 않음')
+            setModalState('live')
           } else {
             setModalState('failure')
             useUserStore
