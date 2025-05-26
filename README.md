@@ -99,13 +99,13 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
 ## ⌨️ 주요 기능
 
 <details>
-<summary><strong>회원가입/로그인, 마이페이지</strong></summary>
+<summary><strong>APP</strong></summary>
 <table style="text-align: center;" width="100%">
   <tr>
-    <th style="text-align: center;" width="25%">소셜 로그인</th>
-    <th style="text-align: center;" width="25%">마이페이지 (피드)</th>
-    <th style="text-align: center;" width="25%">마이페이지 (견적)</th>
-    <th style="text-align: center;" width="25%">설정페이지</th>
+    <th style="text-align: center;" width="25%">회원가입/로그인</th>
+    <th style="text-align: center;" width="25%">홈페이지 비활성화</th>
+    <th style="text-align: center;" width="25%">홈페이지 활성화</th>
+    <th style="text-align: center;" width="25%">홈페이지 하단</th>
   </tr>
   <tr>
     <td style="text-align: center;" width="25%"><img height="400" alt="" src="" ></td>
@@ -114,98 +114,86 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
     <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
   </tr>
   <tr>
-    <td style="text-align: center;" width="25%">카카오 소셜 회원가입/로그인 기능을 제공합니다.</td>
-    <td style="text-align: center;" width="25%">마이페이지 중 피드 탭에서 작성한 파드들을 확인가능합니다. </br> 세로 스와이프를 통해 전후 피드로 이동할 수 있습니다.</td>
-    <td style="text-align: center;" width="25%">마이페이지 중 견적 탭에서 작성한 견적 게시물들을 확인가능합니다. </br> 게시물의 상태를 변경할 수 있으며 조립자에 대한 후기를 남길 수 있습니다.</td>
-    <td style="text-align: center;" width="25%">계좌 관리, 정보 수정 등 설정을 할 수 있습니다. </td>
-  </tr>
-</table>
-
-</details>
-
-<details>
-<summary><strong>홈 페이지 (피드)</strong></summary>
-<table style="text-align: center;" width="100%">
+    <td style="text-align: center;" width="25%">문자 인증 회원가입/로그인 기능을 제공합니다.</td>
+    <td style="text-align: center;" width="25%">정보가 등록되어있지 않은 사용자는 홈화면 기능이 비활성화 됩니다.</td>
+    <td style="text-align: center;" width="25%">얼굴/결제 정보가 등록된 사용자만 홈화면이 활성화되며</br>방문한 카페와 횟수를 확인할 수 있습니다.</td>
+    <td style="text-align: center;" width="25%">홈페이지 하단에는 얼굴 등록과 결제정보등록 버튼이 구성되어있습니다.</td>
+  </tr>  
   <tr>
-    <th style="text-align: center;" width="20%">피드 메인 페이지</th>
-    <th style="text-align: center;" width="20%">태그된 상품 리스트</th>
-    <th style="text-align: center;" width="20%">댓글 페이지</th>
-    <th style="text-align: center;" width="20%">상품 찜 페이지</th>
-    <th style="text-align: center;" width="20%">북마크 페이지</th>
+    <th style="text-align: center;" width="25%">메뉴선호조사</th>
+    <th style="text-align: center;" width="25%">옵션선택조사</th>    
+    <th style="text-align: center;" width="25%">설정</th>
+    <th style="text-align: center;" width="25%">카드설정 페이지</th>
   </tr>
   <tr>
-    <td style="text-align: center;" width="20%"><img height="400" alt="" src="" ></td>
-    <td style="text-align: center;" width="20%"><img height="400" alt="" src=""></td>
-    <td style="text-align: center;" width="20%"><img height="400" alt="" src=""></td>
-    <td style="text-align: center;" width="20%"><img height="400" alt="" src=""></td>
-    <td style="text-align: center;" width="20%"><img height="400" alt="" src=""></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="" ></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
   </tr>
   <tr>
-    <td style="text-align: center;" width="20%"></td>
-    <td style="text-align: center;" width="20%"></td>
-    <td style="text-align: center;" width="20%"></td>
-    <td style="text-align: center;" width="20%"></td>
-    <td style="text-align: center;" width="20%"></td>
+    <td style="text-align: center;" width="25%">처음 가입한 사용자의 경우 자신이 좋아하는 메뉴들를 선택하면 <br/> 추후 추천 알고리즘에 반영됩니다.</td>
+    <td style="text-align: center;" width="25%">자신이 자주 주문하는 옵션 선택을 선택하면 추후 추천 알고리즘에 반영됩니다.</td>
+    <td style="text-align: center;" width="25%">설정 페이지 입니다.</td>
+    <td style="text-align: center;" width="25%">자신이 등록한 결제 카드 정보를 간략하게 확인하고 수정할 수 있습니다.</td>
+  </tr>
+  <tr>
+    <th style="text-align: center;" width="25%">얼굴등록</th>
+    <th style="text-align: center;" width="25%">카드등록</th>
+  </tr>
+  <tr>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="" ></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
+  </tr>
+  <tr>
+    <td style="text-align: center;" width="25%">전면 카메라로 정면/좌/우/상/하 얼굴을 가이드라인에 맞게 캡쳐하여 등록할 수 있습니다.</td>
+    <td style="text-align: center;" width="25%">카드번호, 유효기간, CVC, 비밀번호 앞 2자리를 통해 카드 결제 정보를 등록할 수 있습니다.</td>
+  </tr> 
+</table>
+
+</details>
+
+<details>
+<summary><strong>키오스크</strong></summary>
+<table style="text-align: center;" width="100%">
+  <tr>
+    <th style="text-align: center;" width="25%">얼굴인식 페이지</th>
+    <th style="text-align: center;" width="25%">주문 페이지</th>
+    <th style="text-align: center;" width="25%">옵션 선택</th>
+    <th style="text-align: center;" width="25%">포장/방문 페이지</th>
+  </tr>
+  <tr>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="" ></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
+  </tr>
+  <tr>
+    <td style="text-align: center;" width="25%">처음 로그인 시 얼굴인식이 보조모니터를 통해 진행됩니다.</td>
+    <td style="text-align: center;" width="25%">다양한 카테고리 기반으로 추천된 메뉴들을 한 메뉴씩 확인할 수 있습니다.</td>
+    <td style="text-align: center;" width="25%">옵션의 얼음양, 샷추가, 온도, 사이즈를 선택할 수 있습니다.</td>
+    <td style="text-align: center;" width="25%">포장/방문의 여부를 선택할 수 있습니다.</td>
+  </tr>
+    <tr>
+    <th style="text-align: center;" width="25%">결제 페이지(자동)</th>
+    <th style="text-align: center;" width="25%">결제 페이지(일반)</th>
+    <th style="text-align: center;" width="25%">주문 완료 페이지</th>
+    <th style="text-align: center;" width="25%">비회원 안내 페이지</th>
+  </tr>
+  <tr>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="" ></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
+  </tr>
+  <tr>
+    <td style="text-align: center;" width="25%">카드를 드래그하여 리더기 쪽으로 올리면 자동 결제가 진행됩니다.</td>
+    <td style="text-align: center;" width="25%">비회원일 경우 다양한 페이로 결제를 진행할 수 있습니다.</td>
+    <td style="text-align: center;" width="25%">주문 완료 후 주문 번호와 완료 메세지가 뜨게 됩니다.</td>
+    <td style="text-align: center;" width="25%">비회원일 경우 앱 링크 QR코드가 제공되고, 사용자는 쉽게 앱을 설치해 이용할 수 있습니다.</td>
   </tr>
 </table>
 
-<table style="text-align: center;" width="100%">
-
-</table>
-</details>
-
-<details>
-<summary><strong>조립/견적 요청 게시판</strong></summary>
-<table style="text-align: center;" width="100%">
-
-</table>
-</details>
-
-<details>
-<summary><strong>상품/검색 페이지</strong></summary>
-<table style="text-align: center;" width="100%">
-
-</table>
-
-<table style="text-align: center;" width="100%">
-
-</table>
-</details>
-
-<details>
-<summary><strong>계좌 연결</strong></summary>
-<table style="text-align: center;" width="100%">
-
-</table>
-</details>
-
-<details>
-<summary><strong>채팅 페이지</strong></summary>
-<table style="text-align: center;" width="100%">
-
-</table>
-</details>
-
-<details>
-<summary><strong>거래 요청(조립자)</strong></summary>
-<table style="text-align: center;" width="100%">
-
-</table>
-</details>
-
-<details>
-<summary><strong>거래 수락(구매자)</strong></summary>
-<table style="text-align: center;" width="100%">
-
-</table>
-
-<table style="text-align: center;" width="100%">
-
-</table>
-</details>
-
-<details>
-<summary><strong>거래 완료(구매자)</strong></summary>
 <table style="text-align: center;" width="100%">
 
 </table>
@@ -213,11 +201,13 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
 
 ## 🎥 시연 영상
 
+### 📱 App
+
 <table style="text-align: center;" width="100%">
   <tr>
-    <th style="text-align: center;" width="33.33%">피드-홈 기능 영상</th>
-    <th style="text-align: center;" width="33.33%">피드-작성 기능 영상</th>
-    <th style="text-align: center;" width="33.33%">피드-태그상품 기능 영상</th>
+    <th style="text-align: center;" width="33.33%">회원가입/로그인</th>
+    <th style="text-align: center;" width="33.33%">선호조사</th>
+    <th style="text-align: center;" width="33.33%">홈페이지</th>
   </tr>
   <tr>
     <td style="text-align: center;" width="33.33%"><img src="" height="400"></td>
@@ -227,9 +217,9 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
 </table>
 <table style="text-align: center;" width="100%">
   <tr>
-    <th style="text-align: center;" width="33.33%">상품페이지 기능 영상</th>
-    <th style="text-align: center;" width="33.33%">견적게시판-작성 기능 영상</th>
-    <th style="text-align: center;" width="33.33%">견적게시판-채팅 기능 영상</th>
+    <th style="text-align: center;" width="33.33%">카페 세부 페이지</th>
+    <th style="text-align: center;" width="33.33%">얼굴 등록</th>
+    <th style="text-align: center;" width="33.33%">카드 등록</th>
   </tr>
   <tr>
     <td style="text-align: center;" width="33.33%"><img src="" height="400"></td>
@@ -237,11 +227,18 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
     <td style="text-align: center;" width="33.33%"><img src="" height="400"></td>
   </tr>
 </table>
+
+### 🧋 키오스크
+
 <table style="text-align: center;" width="100%">
   <tr>
-    <th style="text-align: center;" width="33.33%">마이페이지 기능 영상</th>
+    <th style="text-align: center;" width="33.33%">얼굴 인식 로그인</th>
+    <th style="text-align: center;" width="33.33%">주문-비회원</th>
+    <th style="text-align: center;" width="33.33%">주문-회원</th>
   </tr>
   <tr>
+    <td style="text-align: center;" width="33.33%"><img src="" height="400"></td>
+    <td style="text-align: center;" width="33.33%"><img src="" height="400"></td>
     <td style="text-align: center;" width="33.33%"><img src="" height="400"></td>
   </tr>
 </table>
