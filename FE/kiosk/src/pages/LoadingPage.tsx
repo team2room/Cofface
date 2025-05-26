@@ -144,7 +144,8 @@ export default function LoadingPage() {
         <>
           <img src="/loading.gif" className="mb-6" />
           <Text variant="title2" weight="bold" color="black" fontFamily="Suite">
-            주문번호 : {orderId}
+            {/* 주문번호 : {orderId} */}
+            주문번호 : {orderId ? orderId : 'A-32'}
           </Text>
           <Text
             variant="title1"

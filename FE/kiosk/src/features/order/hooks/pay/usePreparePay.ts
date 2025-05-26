@@ -27,6 +27,7 @@ export const usePreparePay = () => {
     try {
       const res = await postPreparePay(payData)
       setOrderId(res.orderId)
+      console.log(res.orderId)
       setResult(res)
       return res
     } catch (err: any) {

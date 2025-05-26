@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { usePayStore } from '@/stores/payStore'
+import { usePayResultStore, usePayStore } from '@/stores/payStore'
 import { postAutoPay } from '../services/autoPayService'
 import { PayData } from '@/interfaces/PayInterface'
 
@@ -7,6 +7,7 @@ export const useAutoPay = () => {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<null | any>(null)
   const [error, setError] = useState<null | string>(null)
+  const setOrderId = usePayResultStore((s) => s.setOrderId)
 
   const store = usePayStore.getState()
   const payData: PayData = {
@@ -25,6 +26,8 @@ export const useAutoPay = () => {
     setLoading(true)
     try {
       const res = await postAutoPay(payData)
+      console.log(res.orderNumber)
+      setOrderId(res.orderNumber)
       setResult(res)
     } catch (err: any) {
       setError(err?.message ?? '결제 실패')
