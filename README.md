@@ -1,4 +1,4 @@
-![시작사진]()
+![시작사진](https://s3.ap-northeast-2.amazonaws.com/order.me/readme.png)
 <br />
 
 ## 📌 목차
@@ -40,7 +40,7 @@
 여러 카페의 스탬프 적립, 주문 내역, 결제 관리까지 한 번에 하고 싶은 분<br/>
 직관적인 UI와 편리한 주문을 경험하고 싶은 분<br/>
 
-""🙆🏻 커페이스만의 특별한 기능""<br/>
+**🙆🏻 커페이스만의 특별한 기능**<br/>
 3D depth 카메라로 얼굴을 인식해 자동 로그인 및 개인 맞춤 추천<br/>
 AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
 머리 모션 인식으로 손 없이도 인터페이스 제어<br/>
@@ -92,7 +92,7 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
     <td style="text-align: center;" width="16.66%">보조모니터 프론트, 얼굴 검증 및 모션 인식 백엔드, 벡터 DB 클러스터링, GPU서버 구축, 인프라 세팅, CI/CD</td>
     <td style="text-align: center;" width="16.66%">ERD설계, 유저, 주문, 결제, 알림</td>
     <td style="text-align: center;" width="16.66%">ERD설계, 추천 알고리즘, 키오스크, 앱 선호조사</td>
-    <td style="text-align: center;" width="16.66%"></td>
+    <td style="text-align: center;" width="16.66%">앱 전체 개발 및 UX/UI 디자인, 키오스크 메인/옵션/결제 화면 구현</td>
   </tr>
 </table>
 
@@ -363,14 +363,556 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
 <details>
   <summary><strong>Back 폴더 구조 보기</strong></summary>
   <pre>
-
+📦main
+ ┣ 📂java
+ ┃ ┗ 📂com
+ ┃ ┃ ┗ 📂ssafy
+ ┃ ┃ ┃ ┗ 📂orderme
+ ┃ ┃ ┃ ┃ ┣ 📂common
+ ┃ ┃ ┃ ┃ ┃ ┗ 📜ApiResponse.java
+ ┃ ┃ ┃ ┃ ┣ 📂config
+ ┃ ┃ ┃ ┃ ┃ ┣ 📜AppConfig.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📜AsyncConfig.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📜FCMConfig.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📜RedisConfig.java
+ ┃ ┃ ┃ ┃ ┃ ┗ 📜SecurityConfig.java
+ ┃ ┃ ┃ ┃ ┣ 📂kiosk
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂controller
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜KioskController.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂dto
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📂request
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜PreferredOptionRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜UserPreferenceRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📂response
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜CategoryResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜MenuDetailResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜MenuOptionCategoryResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜MenuOptionResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜MenuResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜PreferenceOptionCategoryResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜PreferenceOptionItemResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜PreferredMenuCategoryResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜PreferredMenuResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜RecommendedMenuResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂mapper
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜CategoryMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜MenuMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜PreferenceMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜StoresMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂model
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜Category.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜Menu.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜MenuOptionCategory.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OptionCategory.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OptionItem.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜Order.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OrderMenu.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OrderOption.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜StampPolicy.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜Store.java
+ ┃ ┃ ┃ ┃ ┃ ┗ 📂service
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜CategoryService.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜MenuService.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜PreferenceService.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜StoreServices.java
+ ┃ ┃ ┃ ┃ ┣ 📂manager
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂controller
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜MenuImageController.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂dto
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📂response
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜MenuImageUploadResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂S3
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜S3Uploader.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂service
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜MenuImageService.java
+ ┃ ┃ ┃ ┃ ┃ ┗ 📂statistics
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📂controller
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜StatisticsController.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📂dto
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📂request
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜StatisticsRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📂response
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜DailySalesResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜GenderAgePreferenceResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜PopularMenuResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜WeeklySalesResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📂mapper
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜StatisticsMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📂scheduler
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜StatisticsScheduler.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📂service
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜StatisticsService.java
+ ┃ ┃ ┃ ┃ ┣ 📂notification
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂controller
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜FcmController.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂dto
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📂request
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜FcmTokenRegistrationRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜FcmMessageDto.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜FcmSendDto.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂mapper
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜FcmTokenMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂model
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜FcmToken.java
+ ┃ ┃ ┃ ┃ ┃ ┗ 📂service
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜FcmService.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜NotificationService.java
+ ┃ ┃ ┃ ┃ ┣ 📂order
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂controller
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OrderController.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜StampController.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜UserOrderController.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂dto
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📂response
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OrderMenuResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OrderOptionResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OrderResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜StampResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜TopMenuResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂mapper
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OptionItemMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OrderMenuMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OrderOptionMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜StampHistoryMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜StampMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜StampPolicyMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂model
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜MenuFrequency.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OptionItem.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OrderMenu.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OrderOption.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜Stamp.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜StampHistory.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜StampPolicy.java
+ ┃ ┃ ┃ ┃ ┃ ┗ 📂service
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OrderService.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜StampService.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜UserOrderService.java
+ ┃ ┃ ┃ ┃ ┣ 📂payment
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂controller
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜AutoPaymentController.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜PaymentController.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂dto
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📂request
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜AutoPaymentRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜CardRegistrationRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜MenuOrderRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OptionOrderRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜PaymentApprovalRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜PaymentConfirmRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜PaymentRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜SetDefaultCardRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📂response
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜CardCompanyResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜PaymentInfoResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜PaymentResponseDto.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂exception
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜CardNotFoundException.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜CardRegistrationException.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂mapper
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜OrderMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜PaymentInfoMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜PaymentMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂model
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜CardInfo.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜Order.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜Payment.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜PaymentInfo.java
+ ┃ ┃ ┃ ┃ ┃ ┗ 📂service
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜AutoPaymentService.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜CardService.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜PaymentService.java
+ ┃ ┃ ┃ ┃ ┣ 📂recommendation
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂controller
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜RecommendationController.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂dto
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📂response
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜AdvancedMenuRecommendation.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜MenuWithOptionsDto.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜RecommendationResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜RecommendedMenuGroup.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂mapper
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜RecommendationMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜WeatherMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂model
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜GeoLocation.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜WeatherData.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜WeatherPreference.java
+ ┃ ┃ ┃ ┃ ┃ ┗ 📂service
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜RecommendationService.java
+ ┃ ┃ ┃ ┃ ┣ 📂security
+ ┃ ┃ ┃ ┃ ┃ ┣ 📜CustomUserDetailsService.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📜JwtAuthenticationFilter.java
+ ┃ ┃ ┃ ┃ ┃ ┗ 📜JwtTokenProvider.java
+ ┃ ┃ ┃ ┃ ┣ 📂store
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂controller
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜StoreController.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂dto
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📂response
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜StoreResponse.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂mapper
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜StoreMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂model
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜Store.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜StoreVisit.java
+ ┃ ┃ ┃ ┃ ┃ ┗ 📂service
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜StoreService.java
+ ┃ ┃ ┃ ┃ ┣ 📂user
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂controller
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜AuthController.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂dto
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📂request
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜AdminLoginRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜AdminRegisterRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜KioskSessionRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜PhoneLoginRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜RefreshTokenRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜VerificationConfirmRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜VerificationRequest.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜AdminDto.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜UserDto.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂mapper
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜AdminMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜UserMapper.java
+ ┃ ┃ ┃ ┃ ┃ ┣ 📂model
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜Admin.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜Gender.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜User.java
+ ┃ ┃ ┃ ┃ ┃ ┗ 📂service
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜AdminService.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┣ 📜SmsService.java
+ ┃ ┃ ┃ ┃ ┃ ┃ ┗ 📜UserService.java
+ ┃ ┃ ┃ ┃ ┗ 📜OrdermeApplication.java
+ ┗ 📂resources
+ ┃ ┗ 📂mappers
+ ┃ ┃ ┣ 📂kiosk
+ ┃ ┃ ┃ ┣ 📜CategoryMapper.xml
+ ┃ ┃ ┃ ┣ 📜MenuMapper.xml
+ ┃ ┃ ┃ ┣ 📜PreferenceMapper.xml
+ ┃ ┃ ┃ ┗ 📜StoreMapper.xml
+ ┃ ┃ ┣ 📂manager
+ ┃ ┃ ┃ ┗ 📜StatisticsMapper.xml
+ ┃ ┃ ┣ 📂notification
+ ┃ ┃ ┃ ┗ 📜FcmTokenMapper.xml
+ ┃ ┃ ┣ 📂order
+ ┃ ┃ ┃ ┣ 📜OptionItemMapper.xml
+ ┃ ┃ ┃ ┣ 📜OrderMenuMapper.xml
+ ┃ ┃ ┃ ┣ 📜OrderOptionMapper.xml
+ ┃ ┃ ┃ ┣ 📜StampHistoryMapper.xml
+ ┃ ┃ ┃ ┣ 📜StampMapper.xml
+ ┃ ┃ ┃ ┗ 📜StampPolicyMapper.xml
+ ┃ ┃ ┣ 📂payment
+ ┃ ┃ ┃ ┣ 📜OrderMapper.xml
+ ┃ ┃ ┃ ┣ 📜PaymentInfoMapper.xml
+ ┃ ┃ ┃ ┗ 📜PaymentMapper.xml
+ ┃ ┃ ┣ 📂recommendation
+ ┃ ┃ ┃ ┗ 📜RecommendationMapper.xml
+ ┃ ┃ ┣ 📂store
+ ┃ ┃ ┃ ┗ 📜StoreMapper.xml
+ ┃ ┃ ┗ 📂user
+ ┃ ┃ ┃ ┣ 📜AdminMapper.xml
+ ┃ ┃ ┃ ┗ 📜UserMapper.xml
   </pre>
 </details>
 
 <details>
-  <summary><strong>Front 폴더 구조 보기</strong></summary>
+  <summary><strong>Front - kiosk 폴더 구조 보기</strong></summary>
   <pre>
+📦src
+ ┣ 📂assets
+ ┃ ┗ 📜react.svg
+ ┣ 📂components
+ ┃ ┣ 📂ui
+ ┃ ┃ ┣ 📜alert-dialog.tsx
+ ┃ ┃ ┗ 📜button.tsx
+ ┃ ┣ 📜CustomButton.tsx
+ ┃ ┣ 📜CustomDialog.tsx
+ ┃ ┣ 📜GestureDetector.tsx
+ ┃ ┣ 📜Header.tsx
+ ┃ ┣ 📜HighlightText.tsx
+ ┃ ┣ 📜ReasonText.tsx
+ ┃ ┣ 📜slotDigit.tsx
+ ┃ ┗ 📜slotNumber.tsx
+ ┣ 📂features
+ ┃ ┣ 📂adminLogin
+ ┃ ┃ ┣ 📂components
+ ┃ ┃ ┃ ┗ 📜LoginForm.tsx
+ ┃ ┃ ┣ 📂hooks
+ ┃ ┃ ┃ ┗ 📜useAdminLogin.ts
+ ┃ ┃ ┗ 📂services
+ ┃ ┃ ┃ ┗ 📜adminService.ts
+ ┃ ┣ 📂order
+ ┃ ┃ ┣ 📂components
+ ┃ ┃ ┃ ┣ 📂Main
+ ┃ ┃ ┃ ┃ ┣ 📜AnimatedContainer.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜MenuInfo.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜OptionLayerComponent.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜OptionList.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜ProgressBar.tsx
+ ┃ ┃ ┃ ┃ ┗ 📜SlideButtion.tsx
+ ┃ ┃ ┃ ┣ 📂Menu
+ ┃ ┃ ┃ ┃ ┣ 📜AllMenuSection.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜MenuCard.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜OrderSection.tsx
+ ┃ ┃ ┃ ┃ ┗ 📜RecommendSection.tsx
+ ┃ ┃ ┃ ┣ 📂Option
+ ┃ ┃ ┃ ┃ ┣ 📜OptionalOptionSection.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜OptionButton.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜OptionDialog.tsx
+ ┃ ┃ ┃ ┃ ┗ 📜RequiredOptionSection.tsx
+ ┃ ┃ ┃ ┣ 📂pay
+ ┃ ┃ ┃ ┃ ┣ 📜FailContent.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜PayMethodButton.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜ProgressContent.tsx
+ ┃ ┃ ┃ ┃ ┗ 📜SuccessContent.tsx
+ ┃ ┃ ┃ ┣ 📂Receipt
+ ┃ ┃ ┃ ┃ ┣ 📜ReceiptDialog.tsx
+ ┃ ┃ ┃ ┃ ┗ 📜ReceiptItemList.tsx
+ ┃ ┃ ┃ ┣ 📜MainContent.tsx
+ ┃ ┃ ┃ ┣ 📜MenuContent.tsx
+ ┃ ┃ ┃ ┣ 📜PayContent.tsx
+ ┃ ┃ ┃ ┗ 📜PlaceSelectContent.tsx
+ ┃ ┃ ┣ 📂hooks
+ ┃ ┃ ┃ ┣ 📂pay
+ ┃ ┃ ┃ ┃ ┣ 📜useClientKey.ts
+ ┃ ┃ ┃ ┃ ┣ 📜useConfirmPay.ts
+ ┃ ┃ ┃ ┃ ┣ 📜usePreparePay.ts
+ ┃ ┃ ┃ ┃ ┗ 📜useProgressPay.ts
+ ┃ ┃ ┃ ┣ 📜useAllMenu.ts
+ ┃ ┃ ┃ ┣ 📜useAutoPay.ts
+ ┃ ┃ ┃ ┣ 📜useCategory.ts
+ ┃ ┃ ┃ ┣ 📜useCoupon.ts
+ ┃ ┃ ┃ ┣ 📜useNewRecommend.ts
+ ┃ ┃ ┃ ┣ 📜useOption.ts
+ ┃ ┃ ┃ ┣ 📜useRecommendMenu.ts
+ ┃ ┃ ┃ ┗ 📜useSlideAnimation.ts
+ ┃ ┃ ┗ 📂services
+ ┃ ┃ ┃ ┣ 📂pay
+ ┃ ┃ ┃ ┃ ┣ 📜confirmPayService.ts
+ ┃ ┃ ┃ ┃ ┣ 📜keyService.ts
+ ┃ ┃ ┃ ┃ ┗ 📜preparePayService.ts
+ ┃ ┃ ┃ ┣ 📜allMenuService.ts
+ ┃ ┃ ┃ ┣ 📜autoPayService.ts
+ ┃ ┃ ┃ ┣ 📜categoryService.ts
+ ┃ ┃ ┃ ┣ 📜couponService.ts
+ ┃ ┃ ┃ ┣ 📜newRecommendService.ts
+ ┃ ┃ ┃ ┣ 📜optionService.ts
+ ┃ ┃ ┃ ┗ 📜recommendMenuService.ts
+ ┃ ┗ 📂userLogin
+ ┃ ┃ ┣ 📂components
+ ┃ ┃ ┃ ┣ 📜NewStartScreen.tsx
+ ┃ ┃ ┃ ┗ 📜NumKeyPad.tsx
+ ┃ ┃ ┣ 📂hooks
+ ┃ ┃ ┃ ┣ 📜useExtendSession.ts
+ ┃ ┃ ┃ ┣ 📜useLogin.ts
+ ┃ ┃ ┃ ┣ 📜useLogout.ts
+ ┃ ┃ ┃ ┗ 📜useWeather.ts
+ ┃ ┃ ┗ 📂services
+ ┃ ┃ ┃ ┣ 📜extendSessionService.ts
+ ┃ ┃ ┃ ┣ 📜faceRecogService.ts
+ ┃ ┃ ┃ ┣ 📜logoutService.ts
+ ┃ ┃ ┃ ┣ 📜phoneLoginService.ts
+ ┃ ┃ ┃ ┗ 📜weatherService.ts
+ ┣ 📂fonts
+ ┃ ┣ 📜SUIT-Variable.woff2
+ ┃ ┗ 📜SUITE-Variable.woff2
+ ┣ 📂hooks
+ ┃ ┗ 📜useDragScroll.ts
+ ┣ 📂interfaces
+ ┃ ┣ 📜OrderInterface.ts
+ ┃ ┣ 📜PayInterface.ts
+ ┃ ┣ 📜RecommendInterface.ts
+ ┃ ┗ 📜UserInterface.ts
+ ┣ 📂lib
+ ┃ ┣ 📜axios.ts
+ ┃ ┣ 📜changeCamera.ts
+ ┃ ┣ 📜changeDisplay.ts
+ ┃ ┣ 📜cookie.ts
+ ┃ ┗ 📜utils.ts
+ ┣ 📂pages
+ ┃ ┣ 📂adminLogin
+ ┃ ┃ ┗ 📜AdminLoginPage.tsx
+ ┃ ┣ 📂order
+ ┃ ┃ ┗ 📜OrderPage.tsx
+ ┃ ┣ 📂pay
+ ┃ ┃ ┣ 📜FailPage.tsx
+ ┃ ┃ ┣ 📜PayPage.tsx
+ ┃ ┃ ┗ 📜SuccessPage.tsx
+ ┃ ┣ 📂userLogin
+ ┃ ┃ ┗ 📜UserLoginPage.tsx
+ ┃ ┗ 📜LoadingPage.tsx
+ ┣ 📂stores
+ ┃ ┣ 📜adminStore.ts
+ ┃ ┣ 📜directOrderStore.ts
+ ┃ ┣ 📜loginStore.ts
+ ┃ ┣ 📜orderStore.ts
+ ┃ ┣ 📜payStore.ts
+ ┃ ┣ 📜recommendStore.ts
+ ┃ ┗ 📜stepStore.ts
+ ┣ 📂styles
+ ┃ ┣ 📜colors.ts
+ ┃ ┣ 📜fonts.tsx
+ ┃ ┣ 📜RippleEffect.tsx
+ ┃ ┗ 📜typography.ts
+ ┣ 📂utils
+ ┃ ┣ 📜calculateAge.ts
+ ┃ ┣ 📜convertMenuToOrder.ts
+ ┃ ┣ 📜formatOptionLabel.ts
+ ┃ ┣ 📜generateReasonPart.ts
+ ┃ ┗ 📜maskUserName.ts
+ ┣ 📜App.tsx
+ ┣ 📜config.ts
+ ┣ 📜index.css
+ ┣ 📜main.tsx
+ ┗ 📜vite-env.d.ts
+  </pre>
+</details>
 
+<details>
+  <summary><strong>Front - userApp 폴더 구조 보기</strong></summary>
+  <pre>
+📦src
+ ┣ 📂assets
+ ┃ ┣ 📂drinks
+ ┃ ┃ ┣ 📜cookie.png
+ ┃ ┃ ┣ 📜greentea.png
+ ┃ ┃ ┗ 📜strawberry.png
+ ┃ ┣ 📂icons
+ ┃ ┃ ┣ 📜icon-cookie.png
+ ┃ ┃ ┣ 📜icon-greentea.png
+ ┃ ┃ ┗ 📜icon-strawberry.png
+ ┃ ┣ 📜face-scan.gif
+ ┃ ┣ 📜ice.png
+ ┃ ┣ 📜loading.gif
+ ┃ ┣ 📜lock.png
+ ┃ ┣ 📜logo.png
+ ┃ ┣ 📜phone.png
+ ┃ ┣ 📜scroll-down.gif
+ ┃ ┣ 📜shield-check.gif
+ ┃ ┣ 📜shield.png
+ ┃ ┗ 📜wallet.png
+ ┣ 📂components
+ ┃ ┣ 📂ui
+ ┃ ┃ ┣ 📜button.tsx
+ ┃ ┃ ┣ 📜drawer.tsx
+ ┃ ┃ ┗ 📜input.tsx
+ ┃ ┣ 📜AuthRedirect.tsx
+ ┃ ┣ 📜DetailHeader.tsx
+ ┃ ┣ 📜LoadingMessage.tsx
+ ┃ ┣ 📜MainButton.tsx
+ ┃ ┣ 📜ProtectedRoute.tsx
+ ┃ ┗ 📜WavyHeader.tsx
+ ┣ 📂features
+ ┃ ┣ 📂home
+ ┃ ┃ ┣ 📂components
+ ┃ ┃ ┃ ┣ 📂home
+ ┃ ┃ ┃ ┃ ┣ 📜HomeMainButton.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜HomeSelectDrinks.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜HomeTitleLock.tsx
+ ┃ ┃ ┃ ┃ ┗ 📜HomeTitleUnlock.tsx
+ ┃ ┃ ┃ ┗ 📂order
+ ┃ ┃ ┃ ┃ ┣ 📜OrderHistorySection.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜StampSection.tsx
+ ┃ ┃ ┃ ┃ ┗ 📜TopOrdersSection.tsx
+ ┃ ┃ ┗ 📂services
+ ┃ ┃ ┃ ┣ 📜homeService.ts
+ ┃ ┃ ┃ ┗ 📜storeService.ts
+ ┃ ┣ 📂login
+ ┃ ┃ ┣ 📂components
+ ┃ ┃ ┃ ┣ 📜LoginCodeComponents.tsx
+ ┃ ┃ ┃ ┣ 📜LoginComponents.tsx
+ ┃ ┃ ┃ ┣ 📜LoginSelectModal.tsx
+ ┃ ┃ ┃ ┣ 📜MainLoginButton.tsx
+ ┃ ┃ ┃ ┗ 📜MainTopSection.tsx
+ ┃ ┃ ┣ 📂hooks
+ ┃ ┃ ┃ ┗ 📜useAuth.ts
+ ┃ ┃ ┗ 📂services
+ ┃ ┃ ┃ ┗ 📜authService.ts
+ ┃ ┣ 📂register
+ ┃ ┃ ┣ 📂components
+ ┃ ┃ ┃ ┣ 📂capture
+ ┃ ┃ ┃ ┃ ┣ 📜ActionButton.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜CameraView.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜CapturedImages.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜CaptureHeader.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜FaceGuidelines.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜StageIndicator.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜StatusMessage.tsx
+ ┃ ┃ ┃ ┃ ┗ 📜styles.ts
+ ┃ ┃ ┃ ┗ 📂intro
+ ┃ ┃ ┃ ┃ ┣ 📜FaceRegisterCheckModal.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜FaceRegisterMainButton.tsx
+ ┃ ┃ ┃ ┃ ┣ 📜PayRandomKeyPad.tsx
+ ┃ ┃ ┃ ┃ ┗ 📜PayRegisterComponents.tsx
+ ┃ ┃ ┣ 📂hooks
+ ┃ ┃ ┃ ┗ 📜useFaceDetection.tsx
+ ┃ ┃ ┗ 📂services
+ ┃ ┃ ┃ ┣ 📜captureService.ts
+ ┃ ┃ ┃ ┗ 📜payService.ts
+ ┃ ┣ 📂setting
+ ┃ ┃ ┗ 📂components
+ ┃ ┃ ┃ ┗ 📜CardComponent.tsx
+ ┃ ┗ 📂survey
+ ┃ ┃ ┣ 📂components
+ ┃ ┃ ┃ ┣ 📜MenuSelectContent.tsx
+ ┃ ┃ ┃ ┣ 📜OptionSelectContent.tsx
+ ┃ ┃ ┃ ┗ 📜SurveyHeader.tsx
+ ┃ ┃ ┗ 📂services
+ ┃ ┃ ┃ ┗ 📜surveyService.ts
+ ┣ 📂fonts
+ ┃ ┣ 📜SUIT-Variable.woff2
+ ┃ ┗ 📜SUITE-Variable.woff2
+ ┣ 📂interfaces
+ ┃ ┣ 📜FaceRegisterInterfaces.ts
+ ┃ ┣ 📜HomeInterfaces.ts
+ ┃ ┣ 📜LoginInterfaces.ts
+ ┃ ┣ 📜PayRegisterInterfaces.ts
+ ┃ ┣ 📜StoreInterfaces.ts
+ ┃ ┗ 📜SurveyInterfaces.ts
+ ┣ 📂lib
+ ┃ ┗ 📜utils.ts
+ ┣ 📂mocks
+ ┃ ┣ 📜mockStore.ts
+ ┃ ┗ 📜testStore.ts
+ ┣ 📂pages
+ ┃ ┣ 📂home
+ ┃ ┃ ┣ 📜HomePage.tsx
+ ┃ ┃ ┗ 📜StorePage.tsx
+ ┃ ┣ 📂login
+ ┃ ┃ ┣ 📜LoginConfirmPage.tsx
+ ┃ ┃ ┣ 📜LoginVerifyPage.tsx
+ ┃ ┃ ┗ 📜MainPage.tsx
+ ┃ ┣ 📂register
+ ┃ ┃ ┣ 📜FaceRegisterCapturePage.tsx
+ ┃ ┃ ┣ 📜FaceRegisterConfirmPage.tsx
+ ┃ ┃ ┣ 📜FaceRegisterPage.tsx
+ ┃ ┃ ┗ 📜PayRegisterPage.tsx
+ ┃ ┣ 📂setting
+ ┃ ┃ ┣ 📜SettingPage.tsx
+ ┃ ┃ ┗ 📜SettingPayPage.tsx
+ ┃ ┗ 📂survey
+ ┃ ┃ ┗ 📜SurveyPage.tsx
+ ┣ 📂services
+ ┃ ┣ 📜api.ts
+ ┃ ┗ 📜notificationService.ts
+ ┣ 📂stores
+ ┃ ┣ 📜authStore.ts
+ ┃ ┗ 📜visitedStoreStore.ts
+ ┣ 📂styles
+ ┃ ┣ 📜colors.ts
+ ┃ ┣ 📜fonts.tsx
+ ┃ ┗ 📜typography.ts
+ ┣ 📂utils
+ ┃ ┣ 📜captureUtils.ts
+ ┃ ┣ 📜cookieAuth.ts
+ ┃ ┣ 📜firebaseUtils.ts
+ ┃ ┗ 📜storeUtils.ts
+ ┣ 📜App.tsx
+ ┣ 📜config.ts
+ ┣ 📜firebaseConfig.ts
+ ┣ 📜index.css
+ ┣ 📜main.tsx
+ ┗ 📜vite-env.d.ts
   </pre>
 </details>
 
