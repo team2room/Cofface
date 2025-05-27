@@ -108,17 +108,19 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
     <th style="text-align: center;" width="25%">홈페이지 하단</th>
   </tr>
   <tr>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src="" ></td>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="login" src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_pic/login.jpg" ></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_pic/home_lock.jpg"></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_pic/home_unlock.jpg"></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_pic/home_under.jpg"></td>
   </tr>
   <tr>
     <td style="text-align: center;" width="25%">문자 인증 회원가입/로그인 기능을 제공합니다.</td>
     <td style="text-align: center;" width="25%">정보가 등록되어있지 않은 사용자는 홈화면 기능이 비활성화 됩니다.</td>
     <td style="text-align: center;" width="25%">얼굴/결제 정보가 등록된 사용자만 홈화면이 활성화되며</br>방문한 카페와 횟수를 확인할 수 있습니다.</td>
     <td style="text-align: center;" width="25%">홈페이지 하단에는 얼굴 등록과 결제정보등록 버튼이 구성되어있습니다.</td>
-  </tr>  
+  </tr> 
+  </table>
+  <table style="text-align: center;" width="100%"> 
   <tr>
     <th style="text-align: center;" width="25%">메뉴선호조사</th>
     <th style="text-align: center;" width="25%">옵션선택조사</th>    
@@ -126,10 +128,10 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
     <th style="text-align: center;" width="25%">카드설정 페이지</th>
   </tr>
   <tr>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src="" ></td>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_pic/research_menu.jpg" ></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_pic/research_option.jpg"></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_pic/setting.jpg"></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_pic/register_card.jpg"></td>
   </tr>
   <tr>
     <td style="text-align: center;" width="25%">처음 가입한 사용자의 경우 자신이 좋아하는 메뉴들를 선택하면 <br/> 추후 추천 알고리즘에 반영됩니다.</td>
@@ -137,13 +139,15 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
     <td style="text-align: center;" width="25%">설정 페이지 입니다.</td>
     <td style="text-align: center;" width="25%">자신이 등록한 결제 카드 정보를 간략하게 확인하고 수정할 수 있습니다.</td>
   </tr>
+  </table>
+  <table style="text-align: center;" width="50%">
   <tr>
     <th style="text-align: center;" width="25%">얼굴등록</th>
     <th style="text-align: center;" width="25%">카드등록</th>
   </tr>
   <tr>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src="" ></td>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_pic/register_face.jpg" ></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_pic/register_card.jpg"></td>
   </tr>
   <tr>
     <td style="text-align: center;" width="25%">전면 카메라로 정면/좌/우/상/하 얼굴을 가이드라인에 맞게 캡쳐하여 등록할 수 있습니다.</td>
