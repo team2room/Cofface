@@ -167,10 +167,10 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
     <th style="text-align: center;" width="25%">포장/방문 페이지</th>
   </tr>
   <tr>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src="" ></td>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/readme_pic/kiosk-1.jpg" ></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/readme_pic/kiosk-2.jpg"></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/readme_pic/kiosk-3.jpg"></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/readme_pic/kiosk-4.jpg"></td>
   </tr>
   <tr>
     <td style="text-align: center;" width="25%">처음 로그인 시 얼굴인식이 보조모니터를 통해 진행됩니다.</td>
@@ -185,10 +185,10 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
     <th style="text-align: center;" width="25%">비회원 안내 페이지</th>
   </tr>
   <tr>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src="" ></td>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
-    <td style="text-align: center;" width="25%"><img height="400" alt="" src=""></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/readme_pic/kiosk-5.jpg" ></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/readme_pic/kiosk-6.jpg"></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/readme_pic/kiosk-7.jpg"></td>
+    <td style="text-align: center;" width="25%"><img height="400" alt="" src="https://s3.ap-northeast-2.amazonaws.com/order.me/readme_pic/kiosk-8.jpg"></td>
   </tr>
   <tr>
     <td style="text-align: center;" width="25%">카드를 드래그하여 리더기 쪽으로 올리면 자동 결제가 진행됩니다.</td>
@@ -236,14 +236,22 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
 
 <table style="text-align: center;" width="100%">
   <tr>
-    <th style="text-align: center;" width="33.33%">얼굴 인식 로그인</th>
-    <th style="text-align: center;" width="33.33%">주문-비회원</th>
-    <th style="text-align: center;" width="33.33%">주문-회원</th>
+    <th style="text-align: center;" width="50%">얼굴 인식 로그인 및 라이브니스</th>
+    <th style="text-align: center;" width="50%">주문-회원</th>
   </tr>
   <tr>
-    <td style="text-align: center;" width="33.33%"><img src="" height="400"></td>
-    <td style="text-align: center;" width="33.33%"><img src="" height="400"></td>
-    <td style="text-align: center;" width="33.33%"><img src="" height="400"></td>
+    <td style="text-align: center;" width="50%"><img src="" height="400"></td>
+    <td style="text-align: center;" width="50%"><img src="" height="400"></td>
+  </tr>
+</table>
+<table style="text-align: center;" width="100%">
+  <tr>
+    <th style="text-align: center;" width="50%">주문-비회원</th>
+    <th style="text-align: center;" width="50%">전체 메뉴</th>
+  </tr>
+  <tr>
+    <td style="text-align: center;" width="50%"><img src="" height="400"></td>
+    <td style="text-align: center;" width="50%"><img src="" height="400"></td>
   </tr>
 </table>
 
@@ -943,7 +951,7 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
   <h3>🔹 유저 앱</h3>
   <img src="https://s3.ap-northeast-2.amazonaws.com/order.me/readme_pic/api-user-app.png" alt="api명세서">
   <h3>🔹 얼굴 인식</h3>
-  <img src="" alt="api명세서">
+  <img src="https://s3.ap-northeast-2.amazonaws.com/order.me/readme_pic/api-face.png" alt="api명세서">
   <h3>🔹 결제</h3>
   <img src="https://s3.ap-northeast-2.amazonaws.com/order.me/readme_pic/api-pay.png" alt="api명세서">
   <h3>🔹 알림</h3>
