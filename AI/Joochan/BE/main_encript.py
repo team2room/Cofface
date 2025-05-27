@@ -1,4 +1,4 @@
-# main.py
+# main.py - 개선된 검색 방식
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -20,6 +20,12 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from dotenv import load_dotenv
 
+# AES 암호화를 위한 추가 import
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+import secrets
+
 load_dotenv()
 
 # 로깅 설정
@@ -37,9 +43,88 @@ logger = logging.getLogger("face_verification_server")
 QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
 QDRANT_PORT = int(os.getenv("QDRANT_PORT", 6333))
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
-COLLECTION_NAME = "face_embeddings"
+COLLECTION_NAME = "face_embeddings_encript"
 VECTOR_SIZE = 512  # InsightFace 임베딩 차원
 SIMILARITY_THRESHOLD = 0.7  # 유사도 임계값
+
+# 암호화 설정
+ENCRYPTION_PASSWORD = os.getenv("ENCRYPTION_PASSWORD", "CANNOT_FIND_ENV_FILE")
+
+
+class AESEncryption:
+    """AES-256 암호화/복호화 클래스"""
+    
+    def __init__(self, password: str):
+        self.password = password.encode()
+    
+    def _derive_key(self, salt: bytes) -> bytes:
+        """비밀번호와 솔트를 사용하여 AES-256 키 생성"""
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,  # AES-256
+            salt=salt,
+            iterations=100000,
+        )
+        return kdf.derive(self.password)
+    
+    def encrypt(self, plaintext: str) -> str:
+        """문자열을 AES-256으로 암호화하고 Base64로 인코딩"""
+        try:
+            # 솔트와 IV 생성
+            salt = secrets.token_bytes(16)
+            iv = secrets.token_bytes(16)
+            
+            # 키 생성
+            key = self._derive_key(salt)
+            
+            # 암호화
+            cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
+            encryptor = cipher.encryptor()
+            
+            # 패딩 추가 (PKCS7)
+            plaintext_bytes = plaintext.encode('utf-8')
+            padding_length = 16 - (len(plaintext_bytes) % 16)
+            padded_plaintext = plaintext_bytes + bytes([padding_length] * padding_length)
+            
+            ciphertext = encryptor.update(padded_plaintext) + encryptor.finalize()
+            
+            # 솔트 + IV + 암호문을 결합하여 Base64로 인코딩
+            encrypted_data = salt + iv + ciphertext
+            return base64.b64encode(encrypted_data).decode('utf-8')
+            
+        except Exception as e:
+            logger.error(f"암호화 실패: {e}")
+            raise
+    
+    def decrypt(self, encrypted_data: str) -> str:
+        """Base64로 인코딩된 암호문을 복호화"""
+        try:
+            # Base64 디코딩
+            encrypted_bytes = base64.b64decode(encrypted_data.encode('utf-8'))
+            
+            # 솔트, IV, 암호문 분리
+            salt = encrypted_bytes[:16]
+            iv = encrypted_bytes[16:32]
+            ciphertext = encrypted_bytes[32:]
+            
+            # 키 생성
+            key = self._derive_key(salt)
+            
+            # 복호화
+            cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
+            decryptor = cipher.decryptor()
+            
+            padded_plaintext = decryptor.update(ciphertext) + decryptor.finalize()
+            
+            # 패딩 제거
+            padding_length = padded_plaintext[-1]
+            plaintext = padded_plaintext[:-padding_length]
+            
+            return plaintext.decode('utf-8')
+            
+        except Exception as e:
+            logger.error(f"복호화 실패: {e}")
+            raise
 
 
 # 데이터 모델
@@ -90,13 +175,99 @@ class FaceProcessor:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         logger.info(f"딥러닝 모델 실행 장치: {self.device}")
         self.qdrant_client = None
+        
+        # AES 암호화 인스턴스 생성
+        self.encryption = AESEncryption(ENCRYPTION_PASSWORD)
+        logger.info("AES-256 암호화 모듈 초기화 완료")
+        
         self.init_qdrant()
         self.init_models()
 
-    def init_qdrant(self):
-        """Qdrant 클라이언트 초기화 및 컬렉션 생성"""
+    def _find_user_points_by_plaintext(self, phone_number: str, name: str) -> List:
+        """평문 전화번호와 이름으로 사용자의 모든 포인트를 찾기 (서버에서 복호화하여 검색)"""
         try:
-            self.qdrant_client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT, api_key=QDRANT_API_KEY, https=False)
+            # 모든 포인트를 가져와서 복호화하여 비교
+            all_points = []
+            
+            # 스크롤을 사용하여 모든 데이터 조회
+            scroll_result = self.qdrant_client.scroll(
+                collection_name=COLLECTION_NAME,
+                limit=100,
+                with_payload=True,
+                with_vectors=False
+            )
+            
+            points, next_page_offset = scroll_result
+            all_points.extend(points)
+            
+            # 다음 페이지가 있으면 계속 조회
+            while next_page_offset:
+                scroll_result = self.qdrant_client.scroll(
+                    collection_name=COLLECTION_NAME,
+                    limit=100,
+                    offset=next_page_offset,
+                    with_payload=True,
+                    with_vectors=False
+                )
+                points, next_page_offset = scroll_result
+                all_points.extend(points)
+            
+            # 복호화하여 일치하는 사용자 찾기
+            matching_points = []
+            for point in all_points:
+                try:
+                    encrypted_phone = point.payload.get("encrypted_phone_number")
+                    encrypted_name = point.payload.get("encrypted_name")
+                    
+                    if encrypted_phone and encrypted_name:
+                        decrypted_phone = self.encryption.decrypt(encrypted_phone)
+                        decrypted_name = self.encryption.decrypt(encrypted_name)
+                        
+                        if decrypted_phone == phone_number and decrypted_name == name:
+                            matching_points.append(point)
+                except Exception as decrypt_error:
+                    # 복호화 실패 시 건너뛰기 (다른 암호화 키로 암호화된 데이터일 수 있음)
+                    continue
+            
+            return matching_points
+            
+        except Exception as e:
+            logger.error(f"사용자 검색 오류: {e}")
+            return []
+
+    def init_qdrant(self):
+        """Qdrant 클라이언트 초기화 및 컬렉션 생성 (SSL 문제 해결)"""
+        try:
+            # SSL 문제 해결을 위한 여러 연결 방법 시도
+            connection_methods = [
+                # 방법 1: HTTP 명시적 사용 (가장 안전)
+                {"https": False},
+                # 방법 2: HTTPS + SSL 검증 비활성화
+                {"https": True, "verify": False},
+                # 방법 3: 기본 설정
+                {}
+            ]
+            
+            for i, extra_params in enumerate(connection_methods):
+                try:
+                    logger.info(f"Qdrant 연결 방법 {i+1} 시도 중...")
+                    self.qdrant_client = QdrantClient(
+                        host=QDRANT_HOST, 
+                        port=QDRANT_PORT, 
+                        api_key=QDRANT_API_KEY,
+                        **extra_params
+                    )
+                    
+                    # 연결 테스트
+                    collections = self.qdrant_client.get_collections()
+                    logger.info(f"✅ Qdrant 연결 성공 (방법 {i+1})")
+                    break
+                    
+                except Exception as method_error:
+                    logger.warning(f"연결 방법 {i+1} 실패: {str(method_error)[:100]}...")
+                    if i == len(connection_methods) - 1:  # 마지막 방법도 실패
+                        raise method_error
+                    continue
 
             # 컬렉션이 이미 존재하는지 확인
             collections = self.qdrant_client.get_collections().collections
@@ -167,7 +338,7 @@ class FaceProcessor:
             return None
 
     def register_face(self, phone_number, name, face_images):
-        """여러 방향의 얼굴 이미지를 등록"""
+        """여러 방향의 얼굴 이미지를 등록 (평문으로 받아서 서버에서 암호화)"""
         try:
             # 필요한 방향 확인
             required_directions = ['front', 'left', 'right', 'up', 'down']
@@ -175,29 +346,22 @@ class FaceProcessor:
                 if direction not in face_images:
                     raise ValueError(f"{direction} 방향 이미지가 누락됨")
 
-            # 기존 사용자 데이터가 있으면 삭제
+            # 기존 사용자 데이터가 있으면 삭제 (평문으로 검색)
             try:
-                # 전화번호와 이름으로 검색하여 삭제
-                self.qdrant_client.delete(
-                    collection_name=COLLECTION_NAME,
-                    points_selector=models.FilterSelector(
-                        filter=models.Filter(
-                            must=[
-                                models.FieldCondition(
-                                    key="phone_number",
-                                    match=models.MatchValue(value=phone_number)
-                                ),
-                                models.FieldCondition(
-                                    key="name",
-                                    match=models.MatchValue(value=name)
-                                )
-                            ]
-                        )
+                existing_points = self._find_user_points_by_plaintext(phone_number, name)
+                if existing_points:
+                    point_ids = [point.id for point in existing_points]
+                    self.qdrant_client.delete(
+                        collection_name=COLLECTION_NAME,
+                        points_selector=models.PointIdsList(points=point_ids)
                     )
-                )
-                logger.info(f"사용자 {name}({phone_number})의 기존 임베딩 삭제 완료")
+                    logger.info(f"사용자 {name}({phone_number})의 기존 임베딩 {len(point_ids)}개 삭제 완료")
             except Exception as e:
                 logger.warning(f"사용자 {name}({phone_number})의 기존 데이터 삭제 중 오류 (무시됨): {e}")
+
+            # 사용자 데이터 암호화 (등록 시에만 암호화)
+            encrypted_phone = self.encryption.encrypt(phone_number)
+            encrypted_name = self.encryption.encrypt(name)
 
             # 각 방향별 이미지 처리
             for direction, base64_img in face_images.items():
@@ -209,7 +373,7 @@ class FaceProcessor:
                 if embedding is None:
                     raise ValueError(f"{direction} 방향 얼굴 감지 실패")
 
-                # Qdrant에 포인트 저장
+                # Qdrant에 포인트 저장 (암호화된 데이터)
                 self.qdrant_client.upsert(
                     collection_name=COLLECTION_NAME,
                     points=[
@@ -217,16 +381,16 @@ class FaceProcessor:
                             id=str(uuid.uuid4()),  # UUID 형식으로 생성
                             vector=embedding.tolist(),
                             payload={
-                                "phone_number": phone_number,
-                                "name": name,
-                                "direction": direction,
+                                "encrypted_phone_number": encrypted_phone,
+                                "encrypted_name": encrypted_name,
+                                "direction": direction,  # 방향은 민감정보가 아니므로 평문 저장
                                 "timestamp": datetime.now().timestamp(),
                                 "register_time": datetime.now().isoformat()
                             }
                         )
                     ]
                 )
-                logger.info(f"사용자 {name}({phone_number})의 {direction} 방향 임베딩 저장 완료")
+                logger.info(f"사용자 {name}({phone_number})의 {direction} 방향 임베딩 저장 완료 (암호화)")
 
             return {
                 "status": "success",
@@ -238,49 +402,18 @@ class FaceProcessor:
             raise
 
     def check_registration(self, phone_number, name):
-        """사용자 등록 여부 확인"""
+        """사용자 등록 여부 확인 (평문으로 받아서 서버에서 검색)"""
         try:
-            # 필터 조건 생성
-            filter_condition = models.Filter(
-                must=[
-                    models.FieldCondition(
-                        key="phone_number",
-                        match=models.MatchValue(value=phone_number)
-                    ),
-                    models.FieldCondition(
-                        key="name",
-                        match=models.MatchValue(value=name)
-                    )
-                ]
-            )
-
-            scroll_result = self.qdrant_client.scroll(
-                collection_name=COLLECTION_NAME,
-                scroll_filter=filter_condition,
-                limit=1,
-                with_payload=True,
-                with_vectors=False
-            )
-
-            points, _ = scroll_result
-            is_registered = len(points) > 0
+            # 평문으로 사용자 검색
+            matching_points = self._find_user_points_by_plaintext(phone_number, name)
+            is_registered = len(matching_points) > 0
 
             if is_registered:
                 logger.info(f"사용자 {name}({phone_number}) 등록 확인: 등록된 사용자")
+                
                 # 등록된 방향 확인
                 all_directions = set()
-                
-                # 추가 스크롤 검색으로 모든 방향 가져오기
-                scroll_result = self.qdrant_client.scroll(
-                    collection_name=COLLECTION_NAME,
-                    scroll_filter=filter_condition,
-                    limit=10,  # 최대 방향 수
-                    with_payload=True,
-                    with_vectors=False
-                )
-                
-                points, _ = scroll_result
-                for point in points:
+                for point in matching_points:
                     if "direction" in point.payload:
                         all_directions.add(point.payload["direction"])
                 
@@ -289,7 +422,7 @@ class FaceProcessor:
                     "is_registered": True,
                     "message": f"사용자 {name}({phone_number})는 등록된 사용자입니다.",
                     "registered_directions": list(all_directions),
-                    "registration_time": points[0].payload.get("register_time") if points else None
+                    "registration_time": matching_points[0].payload.get("register_time") if matching_points else None
                 }
             else:
                 logger.info(f"사용자 {name}({phone_number}) 등록 확인: 미등록 사용자")
@@ -305,8 +438,39 @@ class FaceProcessor:
                 "message": f"사용자 등록 확인 중 오류 발생: {str(e)}"
             }
 
+    def delete_user(self, phone_number, name):
+        """등록된 사용자 데이터 삭제 (평문으로 받아서 서버에서 검색 후 삭제)"""
+        try:
+            # 사용자가 등록되어 있는지 먼저 확인
+            matching_points = self._find_user_points_by_plaintext(phone_number, name)
+            
+            if not matching_points:
+                return {
+                    "status": "error",
+                    "message": f"사용자 {name}({phone_number})는 등록되어 있지 않습니다."
+                }
+            
+            # 포인트 ID 수집하여 삭제
+            point_ids = [point.id for point in matching_points]
+            self.qdrant_client.delete(
+                collection_name=COLLECTION_NAME,
+                points_selector=models.PointIdsList(points=point_ids)
+            )
+            
+            logger.info(f"사용자 {name}({phone_number})의 모든 얼굴 데이터 {len(point_ids)}개 삭제 완료")
+            return {
+                "status": "success",
+                "message": f"사용자 {name}({phone_number})의 얼굴 데이터가 성공적으로 삭제되었습니다."
+            }
+        except Exception as e:
+            logger.error(f"사용자 삭제 오류: {e}")
+            return {
+                "status": "error",
+                "message": f"사용자 삭제 중 오류 발생: {str(e)}"
+            }
+
     def verify_face(self, rgb_image, liveness_result=None):
-        """얼굴 인증 수행"""
+        """얼굴 인증 수행 (모든 포인트를 복호화하여 검색)"""
         start_time = datetime.now()
         try:
             # 이미지 디코딩
@@ -349,24 +513,32 @@ class FaceProcessor:
                     "liveness_result": liveness_result
                 }
 
-            # 사용자별 평균 유사도 계산
+            # 사용자별 평균 유사도 계산 (복호화 적용)
             user_scores = {}
             for result in search_result:
-                phone_number = result.payload.get("phone_number")
-                name = result.payload.get("name")
-                user_key = f"{phone_number}_{name}"
-                score = result.score
+                encrypted_phone = result.payload.get("encrypted_phone_number")
+                encrypted_name = result.payload.get("encrypted_name")
+                
+                # 복호화
+                try:
+                    phone_number = self.encryption.decrypt(encrypted_phone)
+                    name = self.encryption.decrypt(encrypted_name)
+                    user_key = f"{phone_number}_{name}"
+                    score = result.score
 
-                if user_key not in user_scores:
-                    user_scores[user_key] = {
-                        "count": 0, 
-                        "total_score": 0.0, 
-                        "phone_number": phone_number, 
-                        "name": name
-                    }
+                    if user_key not in user_scores:
+                        user_scores[user_key] = {
+                            "count": 0, 
+                            "total_score": 0.0, 
+                            "phone_number": phone_number, 
+                            "name": name
+                        }
 
-                user_scores[user_key]["count"] += 1
-                user_scores[user_key]["total_score"] += score
+                    user_scores[user_key]["count"] += 1
+                    user_scores[user_key]["total_score"] += score
+                except Exception as decrypt_error:
+                    logger.error(f"사용자 데이터 복호화 실패: {decrypt_error}")
+                    continue
 
             # 가장 높은 평균 유사도를 가진 사용자 선택
             best_user_key = None
@@ -415,7 +587,6 @@ class FaceProcessor:
                 "processing_time": processing_time
             }
     
-    # 여러장 한번에 처리
     def verify_multiple_faces(self, rgb_images, liveness_result=None):
         """여러 얼굴 이미지를 인증하고 결과를 종합"""
         if not rgb_images or len(rgb_images) == 0:
@@ -460,24 +631,31 @@ class FaceProcessor:
                     logger.warning(f"이미지 {i+1}: 일치하는 얼굴이 없습니다.")
                     continue
 
-                # 사용자별 평균 유사도 계산
+                # 사용자별 평균 유사도 계산 (복호화 적용)
                 user_scores = {}
                 for result in search_result:
-                    phone_number = result.payload.get("phone_number")
-                    name = result.payload.get("name")
-                    user_key = f"{phone_number}_{name}"
-                    score = result.score
+                    encrypted_phone = result.payload.get("encrypted_phone_number")
+                    encrypted_name = result.payload.get("encrypted_name")
+                    
+                    try:
+                        phone_number = self.encryption.decrypt(encrypted_phone)
+                        name = self.encryption.decrypt(encrypted_name)
+                        user_key = f"{phone_number}_{name}"
+                        score = result.score
 
-                    if user_key not in user_scores:
-                        user_scores[user_key] = {
-                            "count": 0, 
-                            "total_score": 0.0, 
-                            "phone_number": phone_number, 
-                            "name": name
-                        }
+                        if user_key not in user_scores:
+                            user_scores[user_key] = {
+                                "count": 0, 
+                                "total_score": 0.0, 
+                                "phone_number": phone_number, 
+                                "name": name
+                            }
 
-                    user_scores[user_key]["count"] += 1
-                    user_scores[user_key]["total_score"] += score
+                        user_scores[user_key]["count"] += 1
+                        user_scores[user_key]["total_score"] += score
+                    except Exception as decrypt_error:
+                        logger.error(f"이미지 {i+1} 사용자 데이터 복호화 실패: {decrypt_error}")
+                        continue
 
                 # 가장 높은 평균 유사도를 가진 사용자 선택
                 best_user_key = None
@@ -564,57 +742,12 @@ class FaceProcessor:
             }
         else:
             return {
-                "type": "failure",
                 "status": "failure",
                 "message": "일치하는 얼굴을 찾을 수 없음",
                 "confidence": 0.0,
                 "processing_time": processing_time,
                 "liveness_result": liveness_result
             }
-    
-    def delete_user(self, phone_number, name):
-        """등록된 사용자 데이터 삭제"""
-        try:
-            # 사용자가 등록되어 있는지 먼저 확인
-            registration_check = self.check_registration(phone_number, name)
-            
-            if not registration_check.get("is_registered", False):
-                return {
-                    "status": "error",
-                    "message": f"사용자 {name}({phone_number})는 등록되어 있지 않습니다."
-                }
-            
-            # 전화번호와 이름으로 검색하여 삭제
-            delete_result = self.qdrant_client.delete(
-                collection_name=COLLECTION_NAME,
-                points_selector=models.FilterSelector(
-                    filter=models.Filter(
-                        must=[
-                            models.FieldCondition(
-                                key="phone_number",
-                                match=models.MatchValue(value=phone_number)
-                            ),
-                            models.FieldCondition(
-                                key="name",
-                                match=models.MatchValue(value=name)
-                            )
-                        ]
-                    )
-                )
-            )
-            
-            logger.info(f"사용자 {name}({phone_number})의 모든 얼굴 데이터 삭제 완료")
-            return {
-                "status": "success",
-                "message": f"사용자 {name}({phone_number})의 얼굴 데이터가 성공적으로 삭제되었습니다."
-            }
-        except Exception as e:
-            logger.error(f"사용자 삭제 오류: {e}")
-            return {
-                "status": "error",
-                "message": f"사용자 삭제 중 오류 발생: {str(e)}"
-            }
-
 
 
 # 시스템 인스턴스 생성
@@ -629,15 +762,15 @@ async def lifespan(app: FastAPI):
     global face_processor
     try:
         face_processor = FaceProcessor()
-        logger.info("얼굴 인식 모델 및 Qdrant 초기화 완료")
+        logger.info("얼굴 인식 모델, Qdrant 및 AES-256 암호화 초기화 완료")
     except Exception as e:
-        logger.error(f"얼굴 인식 모델 또는 Qdrant 초기화 실패: {e}")
+        logger.error(f"얼굴 인식 모델, Qdrant 또는 암호화 모듈 초기화 실패: {e}")
 
     yield
 
 
 # 앱 초기화
-app = FastAPI(title="얼굴 인증 GPU 서버", lifespan=lifespan)
+app = FastAPI(title="얼굴 인증 GPU 서버 (AES-256 암호화 + 서버측 검색)", lifespan=lifespan)
 
 # CORS 설정
 app.add_middleware(
@@ -652,7 +785,7 @@ app.add_middleware(
 # API 엔드포인트: 얼굴 등록
 @app.post("/register")
 async def register(request: RegisterRequest):
-    """여러 방향에서 촬영한 얼굴 이미지를 등록"""
+    """여러 방향에서 촬영한 얼굴 이미지를 등록 (평문으로 받아서 서버에서 암호화)"""
     try:
         if face_processor is None:
             raise HTTPException(status_code=500, detail="얼굴 인식 모델이 초기화되지 않았습니다")
@@ -670,7 +803,7 @@ async def register(request: RegisterRequest):
 # API 엔드포인트: 등록 여부 확인
 @app.post("/check-registration")
 async def check_registration(request: CheckRegistrationRequest):
-    """사용자의 얼굴 등록 여부 확인"""
+    """사용자의 얼굴 등록 여부 확인 (평문으로 받아서 서버에서 검색)"""
     try:
         if face_processor is None:
             raise HTTPException(status_code=500, detail="얼굴 인식 모델이 초기화되지 않았습니다")
@@ -685,7 +818,7 @@ async def check_registration(request: CheckRegistrationRequest):
 # API 엔드포인트: 등록된 얼굴 삭제
 @app.post("/delete-user", status_code=200)
 async def delete_user(request: DeleteUserRequest):
-    """등록된 사용자의 얼굴 데이터 삭제"""
+    """등록된 사용자의 얼굴 데이터 삭제 (평문으로 받아서 서버에서 검색 후 삭제)"""
     try:
         if face_processor is None:
             return {
@@ -771,7 +904,7 @@ async def websocket_verify(websocket: WebSocket):
                 # 얼굴 인증 수행
                 result = face_processor.verify_face(rgb_image, liveness_result)
                 
-                # 결과 전송 (result에 이미 'type' 필드가 포함되어 있음)
+                # 결과 전송
                 await connection_manager.send_personal_message(result, websocket)
 
             elif message_data.get('type') == 'ping':
@@ -799,7 +932,7 @@ async def websocket_verify(websocket: WebSocket):
 # 등록된 사용자 목록 조회 엔드포인트
 @app.get("/users")
 async def list_users():
-    """등록된 사용자 목록 조회"""
+    """등록된 사용자 목록 조회 (복호화 적용)"""
     try:
         if face_processor is None or face_processor.qdrant_client is None:
             raise HTTPException(status_code=500, detail="시스템이 초기화되지 않았습니다")
@@ -820,10 +953,17 @@ async def list_users():
         points, next_page_offset = scroll_result
 
         for point in points:
-            phone_number = point.payload.get("phone_number")
-            name = point.payload.get("name")
-            if phone_number and name:
-                users.add(f"{phone_number}_{name}")
+            encrypted_phone = point.payload.get("encrypted_phone_number")
+            encrypted_name = point.payload.get("encrypted_name")
+            if encrypted_phone and encrypted_name:
+                try:
+                    # 복호화
+                    phone_number = face_processor.encryption.decrypt(encrypted_phone)
+                    name = face_processor.encryption.decrypt(encrypted_name)
+                    users.add(f"{phone_number}_{name}")
+                except Exception as decrypt_error:
+                    logger.error(f"사용자 데이터 복호화 실패: {decrypt_error}")
+                    continue
 
         # 다음 페이지가 있으면 스크롤 계속
         while next_page_offset:
@@ -838,10 +978,17 @@ async def list_users():
             points, next_page_offset = scroll_result
 
             for point in points:
-                phone_number = point.payload.get("phone_number")
-                name = point.payload.get("name")
-                if phone_number and name:
-                    users.add(f"{phone_number}_{name}")
+                encrypted_phone = point.payload.get("encrypted_phone_number")
+                encrypted_name = point.payload.get("encrypted_name")
+                if encrypted_phone and encrypted_name:
+                    try:
+                        # 복호화
+                        phone_number = face_processor.encryption.decrypt(encrypted_phone)
+                        name = face_processor.encryption.decrypt(encrypted_name)
+                        users.add(f"{phone_number}_{name}")
+                    except Exception as decrypt_error:
+                        logger.error(f"사용자 데이터 복호화 실패: {decrypt_error}")
+                        continue
 
         # 사용자 정보 분리 및 응답 형식 작성
         user_list = []
@@ -865,6 +1012,8 @@ async def health_check():
     return {
         "status": "healthy",
         "initialized": face_processor is not None,
+        "encryption_enabled": True,
+        "server_side_search": True,
         "gpu_available": torch.cuda.is_available(),
         "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None",
         "timestamp": datetime.now().isoformat()

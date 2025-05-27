@@ -205,7 +205,7 @@ def parse_args():
     parser.add_argument('--required_frames', type=int, default=10, 
                         help='수집할 얼굴 인식 프레임 개수')
     # 추가: 최대 대기 시간 (초)
-    parser.add_argument('--max_wait_time', type=float, default=5.0, 
+    parser.add_argument('--max_wait_time', type=float, default=1.5, 
                         help='얼굴 인식 최대 대기 시간 (초)')
     return parser.parse_args()
 
@@ -1967,13 +1967,13 @@ class FaceRecognitionServer:
         is_gif = False
         
         if display_type == "motion":
-            path = self.app_instance.motion_gif
+            path = "assets/motioncheck.gif"
             is_gif = True
         elif display_type == "pay":
-            path = self.app_instance.pay_gif
+            path = "assets/pay.gif"
             is_gif = True
         elif display_type == "loading":
-            path = self.app_instance.loading_png
+            path = "assets/loading.png"
             is_gif = False
         elif display_type == "default":
             path = self.app_instance.original_idle_gif_path
@@ -2015,13 +2015,13 @@ class FaceRecognitionServer:
             is_gif = False
             
             if display_type == "motion":
-                path = self.app_instance.motion_gif
+                path = "assets/motioncheck.gif"
                 is_gif = True
             elif display_type == "pay":
-                path = self.app_instance.pay_gif
+                path = "assets/pay.gif"
                 is_gif = True
             elif display_type == "loading":
-                path = self.app_instance.loading_png
+                path = "assets/loading.png"
                 is_gif = False
             elif display_type == "default":
                 path = self.app_instance.original_idle_gif_path
@@ -2100,7 +2100,7 @@ class FaceRecognitionServer:
             
             # 프레임 수집 설정 업데이트
             self.app_instance.required_frames = 13  # 최대 13개 프레임
-            self.app_instance.max_wait_time = 1.0   # 1.5초 제한
+            self.app_instance.max_wait_time = 1.5   # 1.5초 제한
             
             # 프레임 수집 시작
             self.app_instance.start_frame_collection(frame_based=True)
@@ -2254,7 +2254,6 @@ class FaceRecognitionServer:
             if not self.app_instance.camera_mode:
                 self.app_instance.set_camera_mode(True)
             
-            # 제스처 감지 모드 활성화 (세션 ID 제거)
             success = self.app_instance.start_gesture_detection("default")
             
             if not success:
