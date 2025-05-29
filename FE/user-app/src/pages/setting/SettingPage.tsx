@@ -83,10 +83,16 @@ export function SettingPage() {
             <Text variant="body1">고객센터</Text>
           </MenuItem>
           <MenuItem>
-            <Text variant="body1">서비스 이용약관</Text>
+            <Text variant="body1">
+              <a href="https://cofface.netlify.app/">서비스 이용약관</a>
+            </Text>
           </MenuItem>
           <MenuItem>
-            <Text variant="body1">개인정보처리 방침</Text>
+            <Text variant="body1">
+              <a href="https://cofface.netlify.app/privacy">
+                개인정보처리 방침
+              </a>
+            </Text>
           </MenuItem>
           <MenuItem>
             <Text variant="body1">버전 정보</Text>
