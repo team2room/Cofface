@@ -209,9 +209,9 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
 
 <table style="text-align: center;" width="100%">
   <tr>
-    <th style="text-align: center;" width="33.33%">회원가입/로그인</th>
-    <th style="text-align: center;" width="33.33%">선호조사</th>
-    <th style="text-align: center;" width="33.33%">홈페이지</th>
+    <th style="text-align: center;" width="33.33%">[회원가입/로그인](https://youtube.com/shorts/3m_njAepnew)</th>
+    <th style="text-align: center;" width="33.33%">[선호조사](https://youtube.com/shorts/FoFl6QTNiTU)</th>
+    <th style="text-align: center;" width="33.33%">[홈페이지](https://youtube.com/shorts/5M8LMc9Xd54)</th>
   </tr>
   <tr>
     <td style="text-align: center;" width="33.33%"><img src="https://cofface.netlify.app/assets/login.gif" height="400"></td>
@@ -221,9 +221,9 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
 </table>
 <table style="text-align: center;" width="100%">
   <tr>
-    <th style="text-align: center;" width="33.33%">카페 세부 페이지</th>
-    <th style="text-align: center;" width="33.33%">얼굴 등록</th>
-    <th style="text-align: center;" width="33.33%">카드 등록</th>
+    <th style="text-align: center;" width="33.33%">[카페 세부 페이지](https://youtube.com/shorts/6zD7jb8-Le4)</th>
+    <th style="text-align: center;" width="33.33%">[얼굴 등록](https://youtube.com/shorts/Q6oKyHgETdo)</th>
+    <th style="text-align: center;" width="33.33%">[카드 등록](https://youtube.com/shorts/nftDlEMxPh8)</th>
   </tr>
   <tr>
     <td style="text-align: center;" width="33.33%"><img src="https://cofface.netlify.app/assets/cafepage.gif" height="400"></td>
@@ -236,8 +236,8 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
 
 <table style="text-align: center;" width="100%">
   <tr>
-    <th style="text-align: center;" width="50%">얼굴 인식 로그인 및 라이브니스</th>
-    <th style="text-align: center;" width="50%">주문-회원</th>
+    <th style="text-align: center;" width="50%">[얼굴 인식 로그인 및 라이브니스](https://youtube.com/shorts/9kh_MFGWtRw)</th>
+    <th style="text-align: center;" width="50%">[주문-회원](https://youtube.com/shorts/v5fS14aKoLY)</th>
   </tr>
   <tr>
     <td style="text-align: center;" width="50%"><img src="https://stwch.netlify.app/Liveness.gif" height="400"></td>
@@ -246,8 +246,8 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
 </table>
 <table style="text-align: center;" width="100%">
   <tr>
-    <th style="text-align: center;" width="50%">주문-비회원</th>
-    <th style="text-align: center;" width="50%">전체 메뉴</th>
+    <th style="text-align: center;" width="50%">[주문-비회원](https://youtube.com/shorts/IXSWFW6RGJE)</th>
+    <th style="text-align: center;" width="50%">[전체 메뉴](https://youtube.com/shorts/42jnNhPulx4)</th>
   </tr>
   <tr>
     <td style="text-align: center;" width="50%"><img src="https://stwch.netlify.app/kyu_none.gif" height="400"></td>
