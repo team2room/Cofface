@@ -81,7 +81,7 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
   <tr>
     <td style="text-align: center;" width="16.66%">AI 개발 </br> (팀장)</td>
     <td style="text-align: center;" width="16.66%">프론트 개발</td>
-    <td style="text-align: center;" width="16.66%">AI 개발</td>
+    <td style="text-align: center;" width="16.66%">인프라/AI 개발</td>
     <td style="text-align: center;" width="16.66%">백엔드 개발</td>
     <td style="text-align: center;" width="16.66%">백엔드 개발</td>
     <td style="text-align: center;" width="16.66%">프론트 개발</td>
@@ -240,8 +240,8 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
     <th style="text-align: center;" width="50%">주문-회원</th>
   </tr>
   <tr>
-    <td style="text-align: center;" width="50%"><img src="" height="400"></td>
-    <td style="text-align: center;" width="50%"><img src="" height="400"></td>
+    <td style="text-align: center;" width="50%"><img src="https://stwch.netlify.app/Liveness.gif" height="400"></td>
+    <td style="text-align: center;" width="50%"><img src="https://stwch.netlify.app/su_aa.gif" height="400"></td>
   </tr>
 </table>
 <table style="text-align: center;" width="100%">
@@ -250,15 +250,15 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
     <th style="text-align: center;" width="50%">전체 메뉴</th>
   </tr>
   <tr>
-    <td style="text-align: center;" width="50%"><img src="" height="400"></td>
-    <td style="text-align: center;" width="50%"><img src="" height="400"></td>
+    <td style="text-align: center;" width="50%"><img src="https://stwch.netlify.app/kyu_none.gif" height="400"></td>
+    <td style="text-align: center;" width="50%"><img src="https://stwch.netlify.app/kyu_none_all.gif" height="400"></td>
   </tr>
 </table>
 
 ## 🔍 주요 기술
 
 <details>
-<summary><strong>MSA</strong></summary>
+<summary><strong>카메라 기술</strong></summary>
 
 #### &emsp; 얼굴인식
 
