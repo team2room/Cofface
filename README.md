@@ -214,9 +214,9 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
     <th style="text-align: center;" width="33.33%">홈페이지</th>
   </tr>
   <tr>
-    <td style="text-align: center;" width="33.33%"><img src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_movie/login.mp4" height="400"></td>
-    <td style="text-align: center;" width="33.33%"><img src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_movie/research.mp4" height="400"></td>
-    <td style="text-align: center;" width="33.33%"><img src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_movie/homepage.mp4" height="400"></td>
+    <td style="text-align: center;" width="33.33%"><img src="https://cofface.netlify.app/assets/login.gif" height="400"></td>
+    <td style="text-align: center;" width="33.33%"><img src="https://cofface.netlify.app/assets/research.gif" height="400"></td>
+    <td style="text-align: center;" width="33.33%"><img src="https://cofface.netlify.app/assets/homepage.gif" height="400"></td>
   </tr>
 </table>
 <table style="text-align: center;" width="100%">
@@ -226,9 +226,9 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
     <th style="text-align: center;" width="33.33%">카드 등록</th>
   </tr>
   <tr>
-    <td style="text-align: center;" width="33.33%"><img src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_movie/cafepage.mp4" height="400"></td>
-    <td style="text-align: center;" width="33.33%"><img src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_movie/registerface.mp4" height="400"></td>
-    <td style="text-align: center;" width="33.33%"><img src="https://s3.ap-northeast-2.amazonaws.com/order.me/app_movie/registercard.mp4" height="400"></td>
+    <td style="text-align: center;" width="33.33%"><img src="https://cofface.netlify.app/assets/cafepage.gif" height="400"></td>
+    <td style="text-align: center;" width="33.33%"><img src="https://cofface.netlify.app/assets/registerface.gif" height="400"></td>
+    <td style="text-align: center;" width="33.33%"><img src="https://cofface.netlify.app/assets/registercard.gif" height="400"></td>
   </tr>
 </table>
 
@@ -361,9 +361,9 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
 
 ![기술스택1](https://s3.ap-northeast-2.amazonaws.com/order.me/readme_pic/skill-infra.png)
 
-## 🗺️ 기술 아키텍처
+## 🗺️ 시스템 아키텍처
 
-![아키텍처]()
+![아키텍처](https://celesteportfolio.netlify.app/assets/cofface_architecture.png)
 
 ## 📂 프로젝트 구조
 
