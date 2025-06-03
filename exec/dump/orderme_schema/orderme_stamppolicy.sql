@@ -1,0 +1,57 @@
+-- MySQL dump 10.13  Distrib 8.0.42, for Win64 (x86_64)
+--
+-- Host: 127.0.0.1    Database: orderme
+-- ------------------------------------------------------
+-- Server version	8.0.42
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `stamppolicy`
+--
+
+DROP TABLE IF EXISTS `stamppolicy`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `stamppolicy` (
+  `policy_id` int NOT NULL AUTO_INCREMENT COMMENT '정책 ID',
+  `store_id` int NOT NULL COMMENT '매장 ID',
+  `stamps_required` int NOT NULL COMMENT '필요 스탬프 수',
+  `discount_amount` int NOT NULL COMMENT '할인 금액',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '활성화 여부',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '생성일시',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정일시',
+  PRIMARY KEY (`policy_id`),
+  KEY `idx_store_active` (`store_id`,`is_active`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `stamppolicy`
+--
+
+LOCK TABLES `stamppolicy` WRITE;
+/*!40000 ALTER TABLE `stamppolicy` DISABLE KEYS */;
+INSERT INTO `stamppolicy` VALUES (1,1,10,3000,1,'2024-03-15 10:00:00','2024-03-15 10:00:00'),(2,1,8,2000,0,'2023-10-20 09:30:00','2024-03-15 09:59:59'),(3,1,12,3500,0,'2023-05-05 14:00:00','2023-10-20 09:29:59'),(4,2,10,4000,1,'2024-01-10 11:30:00','2025-05-13 14:30:06'),(5,2,10,3000,0,'2023-08-18 16:45:00','2024-01-10 11:29:59'),(6,2,15,5000,0,'2023-03-22 13:15:00','2023-08-18 16:44:59');
+/*!40000 ALTER TABLE `stamppolicy` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2025-05-13 14:52:18
