@@ -16,33 +16,32 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `categories`
+-- Table structure for table `weatherpreference`
 --
 
-DROP TABLE IF EXISTS `categories`;
+DROP TABLE IF EXISTS `weatherpreference`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `categories` (
-  `category_id` int NOT NULL AUTO_INCREMENT COMMENT '카테고리 ID',
+CREATE TABLE `weatherpreference` (
+  `stats_id` int NOT NULL AUTO_INCREMENT COMMENT '통계 ID',
   `store_id` int NOT NULL COMMENT '매장 ID',
-  `category_name` varchar(100) NOT NULL COMMENT '카테고리명',
-  `display_order` int NOT NULL DEFAULT '0' COMMENT '정렬순서',
-  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '활성화여부',
-  `is_deleted` tinyint(1) NOT NULL DEFAULT '0' COMMENT '삭제여부',
-  `deleted_at` datetime DEFAULT NULL COMMENT '삭제일시',
-  PRIMARY KEY (`category_id`),
-  KEY `idx_store_display` (`store_id`,`display_order`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `menu_id` int NOT NULL COMMENT '메뉴 ID',
+  `gender` varchar(10) NOT NULL COMMENT '성별',
+  `age_group` varchar(10) NOT NULL COMMENT '나이대',
+  `weather_condition` varchar(20) NOT NULL COMMENT '날씨 상태',
+  PRIMARY KEY (`stats_id`),
+  KEY `idx_store_menu` (`store_id`,`menu_id`),
+  KEY `idx_weather` (`weather_condition`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `categories`
+-- Dumping data for table `weatherpreference`
 --
 
-LOCK TABLES `categories` WRITE;
-/*!40000 ALTER TABLE `categories` DISABLE KEYS */;
-INSERT INTO `categories` VALUES (1,1,'에이드&주스',1,1,0,NULL),(2,1,'커피&라떼',2,1,0,NULL),(3,1,'음료',3,1,0,NULL),(4,1,'스무디&프라페',4,1,0,NULL),(5,1,'티',5,1,0,NULL);
-/*!40000 ALTER TABLE `categories` ENABLE KEYS */;
+LOCK TABLES `weatherpreference` WRITE;
+/*!40000 ALTER TABLE `weatherpreference` DISABLE KEYS */;
+/*!40000 ALTER TABLE `weatherpreference` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -54,4 +53,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-06-04  9:11:48
+-- Dump completed on 2025-06-04  9:11:49
