@@ -362,7 +362,7 @@ AI 기반 성별/연령 분석으로 비회원도 맞춤 추천 제공<br/>
 
 ## 🗺️ 시스템 아키텍처
 
-![아키텍처](https://celesteportfolio.netlify.app/assets/cofface_architecture.png)
+![아키텍처](https://celesteportfolio.netlify.app/cofface_architecture.png)
 
 ## 📂 프로젝트 구조
 
